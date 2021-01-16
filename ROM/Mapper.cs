@@ -17,7 +17,7 @@
             {
                 if (File.Exists(ramPath))
                 {
-                    sram = File.ReadAllBytes(ramPath);
+                    File.ReadAllBytes(ramPath).CopyTo(sram, 0);
                 }
             }
 
