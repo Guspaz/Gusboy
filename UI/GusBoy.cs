@@ -28,7 +28,7 @@ namespace Gusboy
             { Keys.Right, Input.Keys.Right },
         };
 
-        private readonly BufferedWaveProvider audioBuffer = new BufferedWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(48000, 2)) { DiscardOnBufferOverflow = true };
+        private readonly BufferedCallbackWaveProvider audioBuffer;
         private readonly WaveOutEvent outputDevice = new WaveOutEvent() { DesiredLatency = 50, NumberOfBuffers = 10 };
         private readonly DirectBitmap framebuffer = new DirectBitmap(160, 144);
 
@@ -42,10 +42,31 @@ namespace Gusboy
         {
             this.InitializeComponent();
 
+            this.gb = new Gameboy(this.AddMessage, this.DrawFramebuffer, this.framebuffer.Bits, 48000);
+
+            this.audioBuffer = new BufferedCallbackWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(48000, 2), Gusboy.BufferLowCallback, this.gb);
             this.outputDevice.Init(this.audioBuffer);
             this.outputDevice.Play();
+        }
 
-            this.gb = new Gameboy(this.AddMessage, this.DrawFramebuffer, this.framebuffer.Bits, 48000);
+        public static bool BufferLowCallback(BufferedCallbackWaveProvider audioBuffer, object param)
+        {
+            Gameboy gb = (Gameboy)param;
+            gb.Tick();
+
+            // Read buffer in 5ms (at 48 kHz) chunks
+            if (gb.Apu.Buffer.Count >= audioBuffer.WaveFormat.AverageBytesPerSecond / 1000 * 5 / 4)
+            {
+                float[] inBuffer = gb.Apu.Buffer.ToArray();
+                byte[] outBuffer = new byte[inBuffer.Length * 4];
+                Buffer.BlockCopy(inBuffer, 0, outBuffer, 0, outBuffer.Length);
+
+                audioBuffer.AddSamples(outBuffer, 0, outBuffer.Length);
+                gb.Apu.Buffer.Clear();
+                return true;
+            }
+
+            return true;
         }
 
         public bool AddMessage(string message)
@@ -72,7 +93,8 @@ namespace Gusboy
                 double framerate = 120 / timeElapsed;
                 double clockspeed = (this.gb.Cpu.Ticks - this.cpuTicks) / 1000000.0 / timeElapsed;
 
-                this.statusStrip.Items[0].Text = $"Clockspeed: {clockspeed,5:N} MHz  Framerate: {framerate,2:N} Hz";
+                // Because NAudio might be a different thread, use invoke to touch the control
+                this.Invoke(new Action<string>(text => { this.statusStrip.Items[0].Text = text; }), $"Clockspeed: {clockspeed,5:N} MHz  Framerate: {framerate,2:N} Hz");
 
                 this.cpuTicks = this.gb.Cpu.Ticks;
                 this.clockTicks = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -81,40 +103,11 @@ namespace Gusboy
             return true;
         }
 
-        private void EmuWorker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            while (!this.IsDisposed)
-            {
-                this.gb.Tick();
-
-                if (this.gb.Apu.Buffer.Count >= 100)
-                {
-                    float[] inBuffer = this.gb.Apu.Buffer.ToArray();
-                    byte[] outBuffer = new byte[inBuffer.Length * 4];
-                    Buffer.BlockCopy(inBuffer, 0, outBuffer, 0, outBuffer.Length);
-
-                    this.audioBuffer.AddSamples(outBuffer, 0, outBuffer.Length);
-                    this.gb.Apu.Buffer.Clear();
-
-                    // Drain the buffer
-                    while (this.audioBuffer.BufferedBytes > 4096)
-                    {
-                    }
-                }
-            }
-        }
-
         private void Gusboy_Shown(object sender, EventArgs e)
         {
             this.ClientSize = new Size(160 * 2, this.ClientSize.Height);
 
             this.SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
-
-            BackgroundWorker emuWorker = new BackgroundWorker();
-
-            emuWorker.DoWork += this.EmuWorker_DoWork;
-
-            emuWorker.RunWorkerAsync();
         }
 
         private void Gusboy_Paint(object sender, PaintEventArgs e)
