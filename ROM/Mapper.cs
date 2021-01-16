@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 
 namespace GusBoy
 {
@@ -11,21 +10,21 @@ namespace GusBoy
         protected byte[] romFile;
         protected byte[] sram;
 
-        private string ramPath;
+        private readonly string ramPath;
 
         protected bool RAMG
         {
-            get => _RAMG;
+            get => this._RAMG;
 
             set
             {
-                if (!value & _RAMG)
+                if ( !value & this._RAMG )
                 {
                     // RAM access was enabled and is being disabled, dump the RAM to disk
-                    SaveSRAM();
+                    this.SaveSRAM();
                 }
 
-                _RAMG = value;
+                this._RAMG = value;
             }
         }
 
@@ -37,16 +36,16 @@ namespace GusBoy
             this.sram = sram;
             this.ramPath = ramPath;
 
-            if (sram.Length > 0)
+            if ( sram.Length > 0 )
             {
-                if (File.Exists(ramPath))
+                if ( File.Exists(ramPath) )
                 {
                     sram = File.ReadAllBytes(ramPath);
                 }
             }
 
-            romAddressMask = romFile.Length - 1;
-            ramAddressMask = sram.Length - 1;
+            this.romAddressMask = romFile.Length - 1;
+            this.ramAddressMask = sram.Length - 1;
         }
 
         public abstract byte Read(int address);
@@ -54,10 +53,10 @@ namespace GusBoy
 
         public void SaveSRAM()
         {
-            if (sram?.Length > 0)
+            if ( this.sram?.Length > 0 )
             {
                 // RAM access was enabled and is being disabled, dump the RAM to disk
-                File.WriteAllBytes(ramPath, sram);
+                File.WriteAllBytes(this.ramPath, this.sram);
             }
         }
     }

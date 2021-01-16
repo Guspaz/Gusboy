@@ -5,20 +5,19 @@ namespace GusBoy
 {
     public class GPU
     {
-        const int TIME_HBLANK = 204;
-        const int TIME_OAM = 80;
-        const int TIME_VRAM = 172;
-        const int TIME_VBLANK = TIME_OAM + TIME_VRAM + TIME_HBLANK; // Time per scanline, vblank will be 10 of these
-        const int MAX_LINE = 143;
-        const int VBLANK_LENGTH = 10; // Number of scanlines
-        const int TIME_DMA = 648;
-        const int TIME_DMA_DELAY = 8;
-
-        const int TILE_MAP_WIDTH = 32;
-        const int TILE_HEIGHT = 8;
-        const int TILE_ROW_BYTES = 2;
-        const int WINDOW_X_OFFSET = 7;
-        const int WINDOW_MAX_X = 166;
+        private const int TIME_HBLANK = 204;
+        private const int TIME_OAM = 80;
+        private const int TIME_VRAM = 172;
+        private const int TIME_VBLANK = TIME_OAM + TIME_VRAM + TIME_HBLANK; // Time per scanline, vblank will be 10 of these
+        private const int MAX_LINE = 143;
+        private const int VBLANK_LENGTH = 10; // Number of scanlines
+        private const int TIME_DMA = 648;
+        private const int TIME_DMA_DELAY = 8;
+        private const int TILE_MAP_WIDTH = 32;
+        private const int TILE_HEIGHT = 8;
+        private const int TILE_ROW_BYTES = 2;
+        private const int WINDOW_X_OFFSET = 7;
+        private const int WINDOW_MAX_X = 166;
 
         // Default
         //private int[] palBG = { 0xE0F8D0, 0x88C070, 0x346856, 0x08181A };
@@ -29,8 +28,8 @@ namespace GusBoy
         //private int[] palOBJ = { 0x7b8210, 0x5a7942, 0x39594a, 0x294139 };
 
         // MGB
-        private int[] palBG = { 0xc6cba5, 0x8c926b, 0x4a5139, 0x181818 };
-        private int[] palOBJ = { 0xc6cba5, 0x8c926b, 0x4a5139, 0x181818 };
+        private readonly int[] palBG = { 0xc6cba5, 0x8c926b, 0x4a5139, 0x181818 };
+        private readonly int[] palOBJ = { 0xc6cba5, 0x8c926b, 0x4a5139, 0x181818 };
 
         // GBL
         //private int[] palBG = { 0x00b284, 0x009a73, 0x00694a, 0x005139 };
@@ -42,15 +41,13 @@ namespace GusBoy
         //private int[] palOBJ = { 0xFFFFFF, 0xAAAAAA, 0x555555, 0x000000 }; // grey
 
         private const bool FRAME_LIMITER = false;
-        private TimeSpan FRAME_DURATION = new TimeSpan((long)(10000000.0 / (4194304.0 / (TIME_VBLANK * (MAX_LINE + VBLANK_LENGTH + 1.0)))));
-        private System.Diagnostics.Stopwatch frameLimiterClock = new System.Diagnostics.Stopwatch();
+        private readonly TimeSpan FRAME_DURATION = new TimeSpan((long)(10000000.0 / (4194304.0 / (TIME_VBLANK * (MAX_LINE + VBLANK_LENGTH + 1.0)))));
+        private readonly System.Diagnostics.Stopwatch frameLimiterClock = new System.Diagnostics.Stopwatch();
 
         // Colour transform for 5bpc GGB to 8bpc VGA
         // From https://byuu.net/video/color-emulation/
-        int FilterCGB(int color)
+        private int FilterCGB(int color)
         {
-            return color;
-
             int r = (color & 0xFF0000) >> 16;
             int g = (color & 0x00FF00) >> 8;
             int b = (color & 0x0000FF);
@@ -106,70 +103,72 @@ namespace GusBoy
         private int[][] palObjMap = new int[4][];
         private long gpuTicks = 0;
         private long oldCpuTicks = 0;
-        
-        private Gameboy gb;
-        
+
+        private readonly Gameboy gb;
+
         // Accessors
-        private gRAM ram => gb.ram;
-        private CPU cpu => gb.cpu;
-        
+        private gRAM ram => this.gb.ram;
+        private CPU cpu => this.gb.cpu;
+
         private byte _currentLine = 0;
-        private Sprite[] sprites = new Sprite[40];
+        private readonly Sprite[] sprites = new Sprite[40];
         public bool spriteCacheDirty = false;
-        private int[] framebuffer;
-        private Func<bool> drawFramebuffer;
+        private readonly int[] framebuffer;
+        private readonly Func<bool> drawFramebuffer;
         private bool renderingWindow = false;
-                
+
         public byte stat
         {
-            get => (byte)((_stat & 0xFC) | (byte)mode);
+            get => (byte)((this._stat & 0xFC) | (byte)this.mode);
 
-            set =>_stat = value;
+            set => this._stat = value;
         }
 
         public byte bgPal
         {
-            get => PackByte(palBgMap[0], palBgMap[1], palBgMap[2], palBgMap[3]);
+            get => this.PackByte(this.palBgMap[0], this.palBgMap[1], this.palBgMap[2], this.palBgMap[3]);
 
-            set => palBgMap = UnpackByte(value);
+            set => this.palBgMap = this.UnpackByte(value);
         }
 
         public byte objPal0
         {
-            get => PackByte(palObjMap[0][0], palObjMap[0][1], palObjMap[0][2], palObjMap[0][3]);
+            get => this.PackByte(this.palObjMap[0][0], this.palObjMap[0][1], this.palObjMap[0][2], this.palObjMap[0][3]);
 
-            set => palObjMap[0] = UnpackByte(value);
+            set => this.palObjMap[0] = this.UnpackByte(value);
         }
 
         public byte objPal1
         {
-            get => PackByte(palObjMap[1][0], palObjMap[1][1], palObjMap[1][2], palObjMap[1][3]);
+            get => this.PackByte(this.palObjMap[1][0], this.palObjMap[1][1], this.palObjMap[1][2], this.palObjMap[1][3]);
 
-            set => palObjMap[1] = UnpackByte(value);
+            set => this.palObjMap[1] = this.UnpackByte(value);
         }
 
         public byte currentLine
         {
-            get => _currentLine;
-            
+            get => this._currentLine;
+
             set
             {
-                if (value == rLYC)
+                if ( value == this.rLYC )
                 {
                     // Set match bit
-                    _stat |= (1 << 2);
+                    this._stat |= (1 << 2);
 
                     // LYC = LY status interrupt
-                    if ((_stat & (1 << 6)) != 0)
-                        gb.cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
+                    if ( (this._stat & (1 << 6)) != 0 )
+                    {
+                        this.gb.cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
+                    }
                 }
                 else
                 {
                     // Clear match bit
-                    _stat &= 0xFB;
+                    this._stat &= 0xFB;
                 }
 
-                _currentLine = value;
+                this._currentLine = value;
             }
         }
 
@@ -188,28 +187,28 @@ namespace GusBoy
             this.gb = gameBoy;
 
             // Initialize sprite array
-            for (int i = 0; i < sprites.Length; i++)
+            for ( int i = 0; i < this.sprites.Length; i++ )
             {
-                sprites[i] = new Sprite();
+                this.sprites[i] = new Sprite();
             }
 
             this.drawFramebuffer = drawFramebuffer;
             this.framebuffer = framebuffer;
 
             // Pre-set palette alpha
-            for (int i = 0; i < 4; i++)
+            for ( int i = 0; i < 4; i++ )
             {
-                palBG[i] |= 0xFF << 24;
-                palOBJ[i] |= 0xFF << 24;
+                this.palBG[i] |= 0xFF << 24;
+                this.palOBJ[i] |= 0xFF << 24;
             }
 
             // Init object palette maps so they're at least not undefined
-            palObjMap[0] = new int[4];
-            palObjMap[1] = new int[4];
+            this.palObjMap[0] = new int[4];
+            this.palObjMap[1] = new int[4];
 
-            if (FRAME_LIMITER)
+            if ( FRAME_LIMITER )
             {
-                frameLimiterClock.Start();
+                this.frameLimiterClock.Start();
             }
         }
 
@@ -218,79 +217,86 @@ namespace GusBoy
             bool[] bgIsTransparent = new bool[256];
 
             // Tiles
-            if (LCDCFlag(LCDC.BGEnabled) || renderingWindow)
+            if ( this.LCDCFlag(LCDC.BGEnabled) || this.renderingWindow )
             {
                 byte x;
                 byte y;
                 int offset;
-                
-                for (int i = 0; i < 160; i++)
+
+                for ( int i = 0; i < 160; i++ )
                 {
-                    renderingWindow =
-                        renderingWindow || (
-                            LCDCFlag(LCDC.WindowEnable)
-                            && i + WINDOW_X_OFFSET >= winX
-                            && currentLine >= startWinY
-                            && winX <= WINDOW_MAX_X
+                    this.renderingWindow =
+                        this.renderingWindow || (
+                            this.LCDCFlag(LCDC.WindowEnable)
+                            && i + WINDOW_X_OFFSET >= this.winX
+                            && this.currentLine >= this.startWinY
+                            && this.winX <= WINDOW_MAX_X
                         );
 
-                    if (renderingWindow)
+                    if ( this.renderingWindow )
                     {
-                        x = (byte)(i + WINDOW_X_OFFSET - winX);
-                        y = (byte)(currentWinY);
-                        offset = !LCDCFlag(LCDC.WindowTileMap) ? 0x1800 : 0x1C00;
+                        x = (byte)(i + WINDOW_X_OFFSET - this.winX);
+                        y = this.currentWinY;
+                        offset = !this.LCDCFlag(LCDC.WindowTileMap) ? 0x1800 : 0x1C00;
                     }
                     else
                     {
-                        x = (byte)(scrollX + i);
-                        y = (byte)(scrollY + currentLine);
-                        offset = !LCDCFlag(LCDC.BGTileMap) ? 0x1800 : 0x1C00;
+                        x = (byte)(this.scrollX + i);
+                        y = (byte)(this.scrollY + this.currentLine);
+                        offset = !this.LCDCFlag(LCDC.BGTileMap) ? 0x1800 : 0x1C00;
                     }
 
-                    int framebufferLine = currentLine * 160;
+                    int framebufferLine = this.currentLine * 160;
 
-                    int tileNum = ram.vram[offset + ((y >> 3) * TILE_MAP_WIDTH | (x >> 3))];
-                    if (!LCDCFlag(LCDC.BGWindowTileset)) tileNum = 256 + (sbyte)tileNum;
+                    int tileNum = this.ram.vram[offset + ((y >> 3) * TILE_MAP_WIDTH | (x >> 3))];
+                    if ( !this.LCDCFlag(LCDC.BGWindowTileset) )
+                    {
+                        tileNum = 256 + (sbyte)tileNum;
+                    }
 
-                    var tileAddress = (tileNum * TILE_HEIGHT + (y & 7)) * TILE_ROW_BYTES;
+                    int tileAddress = (tileNum * TILE_HEIGHT + (y & 7)) * TILE_ROW_BYTES;
                     byte shift = (byte)(7 - (x & 7));
-                    byte palIndex = (byte)((((ram.vram[tileAddress + 1] >> shift) & 1) << 1) | ((ram.vram[tileAddress] >> shift) & 1));
+                    byte palIndex = (byte)((((this.ram.vram[tileAddress + 1] >> shift) & 1) << 1) | ((this.ram.vram[tileAddress] >> shift) & 1));
 
                     bgIsTransparent[i] = palIndex == 0;
 
-                    framebuffer[framebufferLine + i] = palBG[palBgMap[palIndex]];
+                    this.framebuffer[framebufferLine + i] = this.palBG[this.palBgMap[palIndex]];
                 }
             }
 
             // Regenerate the sprite cache if OAM has been touched since our last scanline
-            if (spriteCacheDirty)
+            if ( this.spriteCacheDirty )
             {
-                CacheSprites();
+                this.CacheSprites();
             }
 
             // Sprites
-            if (LCDCFlag(LCDC.SpritesEnabled))
+            if ( this.LCDCFlag(LCDC.SpritesEnabled) )
             {
-                byte spriteHeight = (byte)(LCDCFlag(LCDC.SpriteSize) ? 16 : 8);
+                byte spriteHeight = (byte)(this.LCDCFlag(LCDC.SpriteSize) ? 16 : 8);
 
-                foreach (var currentSprite in sprites.Where(s => (byte)(currentLine - s.y) < spriteHeight).Take(10).OrderBy(s => s.x).Reverse())
+                foreach ( var currentSprite in this.sprites.Where(s => (byte)(this.currentLine - s.y) < spriteHeight).Take(10).OrderBy(s => s.x).Reverse() )
                 {
                     // Sprite appears on this scanline, draw it.
-                    for (int i = 0; i < 8; i++)
+                    for ( int i = 0; i < 8; i++ )
                     {
-                        byte spriteRelY = (byte)(currentLine - currentSprite.y);
+                        byte spriteRelY = (byte)(this.currentLine - currentSprite.y);
                         byte spriteRelX = (byte)i;
 
-                        if (currentSprite.xFlip)
-                            spriteRelX = (byte)((spriteRelX - 7) * -1);
-
-                        if (currentSprite.yFlip)
-                            spriteRelY = (byte)(spriteHeight - 1 - spriteRelY);
-
-                        var tileNum = currentSprite.tileNum;
-                        if (spriteHeight == 16)
+                        if ( currentSprite.xFlip )
                         {
-                            if (spriteRelY < 8)
+                            spriteRelX = (byte)((spriteRelX - 7) * -1);
+                        }
+
+                        if ( currentSprite.yFlip )
+                        {
+                            spriteRelY = (byte)(spriteHeight - 1 - spriteRelY);
+                        }
+
+                        byte tileNum = currentSprite.tileNum;
+                        if ( spriteHeight == 16 )
+                        {
+                            if ( spriteRelY < 8 )
                             {
                                 tileNum &= 0xFE;
                             }
@@ -301,14 +307,16 @@ namespace GusBoy
                             }
                         }
 
-                        var tileAddress = (tileNum * TILE_HEIGHT + (spriteRelY & 7)) * TILE_ROW_BYTES;
+                        int tileAddress = (tileNum * TILE_HEIGHT + (spriteRelY & 7)) * TILE_ROW_BYTES;
 
                         byte shift = (byte)(7 - (spriteRelX & 7));
 
-                        byte palIndex = (byte)((((ram.vram[tileAddress + 1] >> shift) & 1) << 1) | ((ram.vram[tileAddress] >> shift) & 1));
+                        byte palIndex = (byte)((((this.ram.vram[tileAddress + 1] >> shift) & 1) << 1) | ((this.ram.vram[tileAddress] >> shift) & 1));
 
-                        if (palIndex != 0 && (!currentSprite.priority || bgIsTransparent[(byte)(currentSprite.x + i)]) && (byte)(currentSprite.x + i) < 160)
-                            framebuffer[(currentLine * 160) + (byte)(currentSprite.x + i)] = palOBJ[palObjMap[currentSprite.palette][palIndex]];
+                        if ( palIndex != 0 && (!currentSprite.priority || bgIsTransparent[(byte)(currentSprite.x + i)]) && (byte)(currentSprite.x + i) < 160 )
+                        {
+                            this.framebuffer[(this.currentLine * 160) + (byte)(currentSprite.x + i)] = this.palOBJ[this.palObjMap[currentSprite.palette][palIndex]];
+                        }
                     }
                 }
             }
@@ -316,230 +324,218 @@ namespace GusBoy
 
         public void CacheSprites()
         {
-            for (int n = 0; n < sprites.Length; n++)
+            for ( int n = 0; n < this.sprites.Length; n++ )
             {
-                sprites[n].y = (byte)(ram[0xFE00 + (n << 2) + 0] - 16); // Pre-offset the location
-                sprites[n].x = (byte)(ram[0xFE00 + (n << 2) + 1] - 8); // Pre-offset the location
-                sprites[n].tileNum = ram[0xFE00 + (n << 2) + 2];
-                sprites[n].priority = (ram[0xFE00 + (n << 2) + 3] & (1 << 7)) != 0;
-                sprites[n].yFlip = (ram[0xFE00 + (n << 2) + 3] & (1 << 6)) != 0;
-                sprites[n].xFlip = (ram[0xFE00 + (n << 2) + 3] & (1 << 5)) != 0;
-                sprites[n].palette = (ram[0xFE00 + (n << 2) + 3] & (1 << 4)) != 0 ? 1 : 0;
+                this.sprites[n].y = (byte)(this.ram[0xFE00 + (n << 2) + 0] - 16); // Pre-offset the location
+                this.sprites[n].x = (byte)(this.ram[0xFE00 + (n << 2) + 1] - 8); // Pre-offset the location
+                this.sprites[n].tileNum = this.ram[0xFE00 + (n << 2) + 2];
+                this.sprites[n].priority = (this.ram[0xFE00 + (n << 2) + 3] & (1 << 7)) != 0;
+                this.sprites[n].yFlip = (this.ram[0xFE00 + (n << 2) + 3] & (1 << 6)) != 0;
+                this.sprites[n].xFlip = (this.ram[0xFE00 + (n << 2) + 3] & (1 << 5)) != 0;
+                this.sprites[n].palette = (this.ram[0xFE00 + (n << 2) + 3] & (1 << 4)) != 0 ? 1 : 0;
             }
 
-            spriteCacheDirty = false;
+            this.spriteCacheDirty = false;
         }
 
-        public byte GetLCDC() => control;
+        public byte GetLCDC() => this.control;
 
         public void SetLCDC(byte value)
         {
-            control = value;
+            this.control = value;
 
             // https://www.reddit.com/r/Gameboy/comments/a1c8h0/what_happens_when_a_gameboy_screen_is_disabled/eap4f8c/
-            if (!LCDCFlag(LCDC.LCDPower))
+            if ( !this.LCDCFlag(LCDC.LCDPower) )
             {
-                _currentLine = 0; // Reset rLY to 0
-                gpuTicks = 0; // Reset GPU clock
-                mode = GPUMode.HBLANK; // Reset mode to 0                
+                this._currentLine = 0; // Reset rLY to 0
+                this.gpuTicks = 0; // Reset GPU clock
+                this.mode = GPUMode.HBLANK; // Reset mode to 0                
 
                 // Clear framebuffer
-                if (!LCDCFlag(LCDC.LCDPower))
+                if ( !this.LCDCFlag(LCDC.LCDPower) )
                 {
-                    ClearFramebuffer();
-                    drawFramebuffer();
+                    this.ClearFramebuffer();
+                    this.drawFramebuffer();
 
                     // Used to skip the first frame after re-enabling it
-                    lcdWasOff = true;
+                    this.lcdWasOff = true;
                 }
 
             }
         }
 
-        private void ClearFramebuffer()
-        {
-            // This should be palBG[0] but for debugs, do white
-            //Array.Copy(Enumerable.Repeat(0xFFFFFF, framebuffer.Length).ToArray(), framebuffer, framebuffer.Length);
-            Array.Copy(Enumerable.Repeat(palBG[0], framebuffer.Length).ToArray(), framebuffer, framebuffer.Length);
-        }
+        // This should be palBG[0] but for debugs, do white
+        //Array.Copy(Enumerable.Repeat(0xFFFFFF, framebuffer.Length).ToArray(), framebuffer, framebuffer.Length);
+        private void ClearFramebuffer() => Array.Copy(Enumerable.Repeat(this.palBG[0], this.framebuffer.Length).ToArray(), this.framebuffer, this.framebuffer.Length);
 
-        public bool CanAccessOAM(bool isDma)
-        {
-            // Always access when LCD power is off, but that forces mode 0 anyway. DMA period blocks access but the memory mapper handles that globally.
-            // DMA itself gets to bypass the restriction, I think?
-            return mode == GPUMode.HBLANK || mode == GPUMode.VBLANK || isDma;
-        }
+        // Always access when LCD power is off, but that forces mode 0 anyway. DMA period blocks access but the memory mapper handles that globally.
+        // DMA itself gets to bypass the restriction, I think?
+        public bool CanAccessOAM(bool isDma) => this.mode == GPUMode.HBLANK || this.mode == GPUMode.VBLANK || isDma;
 
-        public bool CanAccessVRAM(bool isDma)
-        {
-            // Always access when LCD power is off, but that forces mode 0 anyway. DMA periodblocks access but the memory mapper handles that globally.
-            // DMA itself gets to bypass the restriction, I think?
-            return mode == GPUMode.HBLANK || mode == GPUMode.VBLANK || mode == GPUMode.OAM || isDma;
-        }
+        // Always access when LCD power is off, but that forces mode 0 anyway. DMA periodblocks access but the memory mapper handles that globally.
+        // DMA itself gets to bypass the restriction, I think?
+        public bool CanAccessVRAM(bool isDma) => this.mode == GPUMode.HBLANK || this.mode == GPUMode.VBLANK || this.mode == GPUMode.OAM || isDma;
 
         public void TriggerDMA(byte address)
         {
-            IsDmaActive = true;
+            this.IsDmaActive = true;
 
             int dmaAddress = address << 8;
 
             // In a real DMG this should happen bit by bit during normal execution, not all in one chunk
-            for ( int i = 0; i < 0xA0; i++)
+            for ( int i = 0; i < 0xA0; i++ )
             {
-                ram[0xFE00 + i, isDma: true] = ram[dmaAddress + i, isDma: true];
+                this.ram[0xFE00 + i, isDma: true] = this.ram[dmaAddress + i, isDma: true];
             }
 
             // TODO: Ideally we should keep this set to true until a timer elapses for how long DMA is supposed to take, so that memory access can be restricted to HRAM (FF80-FFFE) during that period.
-            IsDmaActive = false;
+            this.IsDmaActive = false;
         }
 
         public void Tick()
         {
-            if (!LCDCFlag(LCDC.LCDPower))
+            if ( !this.LCDCFlag(LCDC.LCDPower) )
             {
-                oldCpuTicks = cpu.ticks;
+                this.oldCpuTicks = this.cpu.ticks;
                 return;
             }
 
-            gpuTicks += (cpu.ticks - oldCpuTicks);
-            oldCpuTicks = cpu.ticks;
+            this.gpuTicks += (this.cpu.ticks - this.oldCpuTicks);
+            this.oldCpuTicks = this.cpu.ticks;
 
-            switch (mode)
+            switch ( this.mode )
             {
                 case GPUMode.HBLANK:
-                    if (oldMode != mode)
+                    if ( this.oldMode != this.mode )
                     {
-                        oldMode = mode;
+                        this.oldMode = this.mode;
 
-                        if ((_stat & (1 << 3)) != 0)
-                            gb.cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
+                        if ( (this._stat & (1 << 3)) != 0 )
+                        {
+                            this.gb.cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
+                        }
                     }
 
                     // Switch to VBLANK mode
-                    if (gpuTicks >= TIME_HBLANK)
+                    if ( this.gpuTicks >= TIME_HBLANK )
                     {
-                        gpuTicks -= TIME_HBLANK;
+                        this.gpuTicks -= TIME_HBLANK;
 
-                        RenderScanline();
-                        currentLine++;
-                        if (renderingWindow) currentWinY++;
-
-                        if (currentLine == MAX_LINE+1)
+                        this.RenderScanline();
+                        this.currentLine++;
+                        if ( this.renderingWindow )
                         {
-                            mode = GPUMode.VBLANK;
+                            this.currentWinY++;
+                        }
+
+                        if ( this.currentLine == MAX_LINE + 1 )
+                        {
+                            this.mode = GPUMode.VBLANK;
 
                             // The first frame after turning the LCD on is skipped (some games show garbage on this frame, real hardware doesn't draw it)
-                            if (lcdWasOff)
+                            if ( this.lcdWasOff )
                             {
                                 // Draw blank frame
-                                ClearFramebuffer();
-                                lcdWasOff = false;
+                                this.ClearFramebuffer();
+                                this.lcdWasOff = false;
                             }
 
-                            drawFramebuffer();
+                            this.drawFramebuffer();
 
                             //Sleepwait
-                            if (FRAME_LIMITER)
+                            if ( FRAME_LIMITER )
                             {
-                                while (frameLimiterClock.Elapsed < FRAME_DURATION)
+                                while ( this.frameLimiterClock.Elapsed < this.FRAME_DURATION )
                                 {
                                 }
 
-                                frameLimiterClock.Restart();
+                                this.frameLimiterClock.Restart();
                             }
                         }
                         else
                         {
-                            mode = GPUMode.OAM;
+                            this.mode = GPUMode.OAM;
                         }
                     }
 
                     break;
                 case GPUMode.VBLANK:
 
-                    if (oldMode != mode)
+                    if ( this.oldMode != this.mode )
                     {
-                        oldMode = mode;
+                        this.oldMode = this.mode;
 
-                        gb.cpu.TriggerInterrupt(CPU.INT_VBLANK);
+                        this.gb.cpu.TriggerInterrupt(CPU.INT_VBLANK);
 
-                        if ((_stat & (1 << 4)) != 0)
+                        if ( (this._stat & (1 << 4)) != 0 )
                         {
-                            gb.cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
+                            this.gb.cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
                         }
                     }
 
                     // Switch to OAM mode
-                    if (gpuTicks >= TIME_VBLANK)
+                    if ( this.gpuTicks >= TIME_VBLANK )
                     {
-                        gpuTicks -= TIME_VBLANK;
-                        currentLine++;
-                        if (renderingWindow) currentWinY++;
+                        this.gpuTicks -= TIME_VBLANK;
+                        this.currentLine++;
 
-                        if (currentLine > MAX_LINE + VBLANK_LENGTH+1)
+                        if ( this.renderingWindow )
                         {
-                            renderingWindow = false;
+                            this.currentWinY++;
+                        }
 
-                            mode = GPUMode.OAM;
-                            currentLine = 0;
-                            startWinY = winY;
-                            currentWinY = 0;
+                        if ( this.currentLine > MAX_LINE + VBLANK_LENGTH + 1 )
+                        {
+                            this.renderingWindow = false;
+
+                            this.mode = GPUMode.OAM;
+                            this.currentLine = 0;
+                            this.startWinY = this.winY;
+                            this.currentWinY = 0;
                         }
                     }
 
                     break;
                 case GPUMode.OAM:
-                    if (oldMode != mode)
+                    if ( this.oldMode != this.mode )
                     {
-                        oldMode = mode;
+                        this.oldMode = this.mode;
 
-                        if ((_stat & (1 << 5)) != 0)
-                            gb.cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
+                        if ( (this._stat & (1 << 5)) != 0 )
+                        {
+                            this.gb.cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
+                        }
                     }
 
                     // Switch to VRAM mode
-                    if (gpuTicks >= TIME_OAM)
+                    if ( this.gpuTicks >= TIME_OAM )
                     {
-                        gpuTicks -= TIME_OAM;
-                        mode = GPUMode.VRAM;
+                        this.gpuTicks -= TIME_OAM;
+                        this.mode = GPUMode.VRAM;
                     }
 
                     break;
                 case GPUMode.VRAM:
-                    if (oldMode != mode)
+                    if ( this.oldMode != this.mode )
                     {
-                        oldMode = mode;
+                        this.oldMode = this.mode;
                     }
 
                     // Switch to HBLANK mode
-                    if (gpuTicks >= TIME_VRAM)
+                    if ( this.gpuTicks >= TIME_VRAM )
                     {
-                        gpuTicks -= TIME_VRAM;
-                        mode = GPUMode.HBLANK;
+                        this.gpuTicks -= TIME_VRAM;
+                        this.mode = GPUMode.HBLANK;
                     }
 
                     break;
             }
         }
 
-        private bool LCDCFlag(LCDC flag)
-        {
-            return (control & (byte)flag) != 0;
-        }
+        private bool LCDCFlag(LCDC flag) => (this.control & (byte)flag) != 0;
 
-        private byte PackByte(int val0, int val1, int val2, int val3)
-        {
-            return (byte)(((val0 & 3) << 0) | ((val1 & 3) << 2) | ((val2 & 3) << 4) | ((val3 & 3) << 6));
-        }
+        private byte PackByte(int val0, int val1, int val2, int val3) => (byte)(((val0 & 3) << 0) | ((val1 & 3) << 2) | ((val2 & 3) << 4) | ((val3 & 3) << 6));
 
-        private int[] UnpackByte(byte value)
-        {
-            return new int[] {
-                (value >> 0) & 3,
-                (value >> 2) & 3,
-                (value >> 4) & 3,
-                (value >> 6) & 3
-            };
-        }
+        private int[] UnpackByte(byte value) => new int[] { (value >> 0) & 3, (value >> 2) & 3, (value >> 4) & 3, (value >> 6) & 3 };
     }
 }

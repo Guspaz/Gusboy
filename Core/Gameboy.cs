@@ -20,15 +20,15 @@ namespace GusBoy
         public gRAM ram;
         public Input input;
 
-        public Gameboy(Func<string, bool> messageCallback, Func<bool> drawFramebuffer, Int32[] framebuffer, int sampleRate)
+        public Gameboy(Func<string, bool> messageCallback, Func<bool> drawFramebuffer, int[] framebuffer, int sampleRate)
         {
             this.messageCallback = messageCallback;
 
-            ram = new gRAM(this);
-            cpu = new CPU(this);
-            gpu = new GPU(this, drawFramebuffer, framebuffer);
-            apu = new APU(this, sampleRate);
-            input = new Input(this);
+            this.ram = new gRAM(this);
+            this.cpu = new CPU(this);
+            this.gpu = new GPU(this, drawFramebuffer, framebuffer);
+            this.apu = new APU(this, sampleRate);
+            this.input = new Input(this);
 
             //rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\test roms\mooneye\acceptance\interrupts\ie_push.gb", false);
 
@@ -37,7 +37,7 @@ namespace GusBoy
 
             //rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\dr_mario.gb", false);
             //rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\ff_legend_3.gb", false);
-            rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\kirby.gb", false);
+            this.rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\kirby.gb", false);
             //rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\marioland.gb", false);
             //rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\marioland2.gb", false);
             //rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\pokemon_blue.gb", false);
@@ -91,22 +91,22 @@ namespace GusBoy
 
         public void Tick()
         {
-            if (cpu.fHalt || cpu.fStop)
+            if ( this.cpu.fHalt || this.cpu.fStop )
             {
-                cpu.ticks += 4;
+                this.cpu.ticks += 4;
             }
-            else if (!cpu.fStop)
+            else if ( !this.cpu.fStop )
             {
-                cpu.Tick();
+                this.cpu.Tick();
             }
 
-            gpu.Tick();
+            this.gpu.Tick();
 
-            apu.Tick();
+            this.apu.Tick();
 
-            cpu.TimerTick();
+            this.cpu.TimerTick();
 
-            cpu.InterruptTick();
+            this.cpu.InterruptTick();
         }
     }
 }

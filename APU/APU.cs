@@ -9,26 +9,29 @@ namespace GusBoy
         {
             get
             {
-                int sweep = (Channel1.InitialSweepTimer << 4) & 0b0111_0000;
-                int negate = (Convert.ToInt32(Channel1.SweepNegate) << 3) & 0b0000_1000;
-                int shift = Channel1.SweepShift & 0b0000_0111;
+                int sweep = (this.Channel1.InitialSweepTimer << 4) & 0b0111_0000;
+                int negate = (Convert.ToInt32(this.Channel1.SweepNegate) << 3) & 0b0000_1000;
+                int shift = this.Channel1.SweepShift & 0b0000_0111;
 
                 return (byte)(sweep | negate | shift | 0b1000_0000);
             }
             set
             {
-                if (!NR52_Power) return;
+                if ( !this.NR52_Power )
+                {
+                    return;
+                }
 
-                Channel1.InitialSweepTimer = (value & 0b0111_0000) >> 4;
-                Channel1.SweepShift = value & 0b0000_0111;
+                this.Channel1.InitialSweepTimer = (value & 0b0111_0000) >> 4;
+                this.Channel1.SweepShift = value & 0b0000_0111;
 
-                bool oldNegate = Channel1.SweepNegate;
-                Channel1.SweepNegate = Convert.ToBoolean((value & 0b0000_1000) >> 3);
+                bool oldNegate = this.Channel1.SweepNegate;
+                this.Channel1.SweepNegate = Convert.ToBoolean((value & 0b0000_1000) >> 3);
 
                 // Switching from negative to positive after we've calculated using negative disables the channel
-                if (Channel1.NegateDirty && oldNegate && !Channel1.SweepNegate)
+                if ( this.Channel1.NegateDirty && oldNegate && !this.Channel1.SweepNegate )
                 {
-                    Channel1.LengthStatus = false;
+                    this.Channel1.LengthStatus = false;
                 }
             }
         }
@@ -37,17 +40,20 @@ namespace GusBoy
         {
             get
             {
-                int duty = (Channel1.Duty << 6) & 0b1100_0000;
+                int duty = (this.Channel1.Duty << 6) & 0b1100_0000;
 
                 return (byte)(duty | 0b0011_1111);
             }
             set
             {
-                Channel1.LengthLoad = value & 0b0011_1111;
+                this.Channel1.LengthLoad = value & 0b0011_1111;
 
-                if (!NR52_Power) return;
+                if ( !this.NR52_Power )
+                {
+                    return;
+                }
 
-                Channel1.Duty = (value & 0b1100_0000) >> 6;
+                this.Channel1.Duty = (value & 0b1100_0000) >> 6;
             }
         }
 
@@ -55,44 +61,47 @@ namespace GusBoy
         {
             get
             {
-                int volume = (Channel1.InitialVolume << 4) & 0b1111_0000;
-                int envelope = (Convert.ToInt32(Channel1.EnvelopeAddMode) << 3) & 0b0000_1000;
-                int period = Channel1.InitialVolumeTimer & 0b0000_0111;
+                int volume = (this.Channel1.InitialVolume << 4) & 0b1111_0000;
+                int envelope = (Convert.ToInt32(this.Channel1.EnvelopeAddMode) << 3) & 0b0000_1000;
+                int period = this.Channel1.InitialVolumeTimer & 0b0000_0111;
 
                 return (byte)(volume | envelope | period);
             }
             set
             {
-                if (!NR52_Power) return;
+                if ( !this.NR52_Power )
+                {
+                    return;
+                }
 
-                Channel1.InitialVolume = (value & 0b1111_0000) >> 4;
-                Channel1.EnvelopeAddMode = Convert.ToBoolean((value & 0b0000_1000) >> 3);
-                Channel1.InitialVolumeTimer = value & 0b0000_0111;
+                this.Channel1.InitialVolume = (value & 0b1111_0000) >> 4;
+                this.Channel1.EnvelopeAddMode = Convert.ToBoolean((value & 0b0000_1000) >> 3);
+                this.Channel1.InitialVolumeTimer = value & 0b0000_0111;
 
-                if ((value & 0b1111_1000) == 0)
+                if ( (value & 0b1111_1000) == 0 )
                 {
                     // Disable DAC
-                    Channel1.LengthStatus = false;
-                    Channel1.DacEnable = false;
+                    this.Channel1.LengthStatus = false;
+                    this.Channel1.DacEnable = false;
                 }
                 else
                 {
-                    Channel1.DacEnable = true;
+                    this.Channel1.DacEnable = true;
                 }
             }
         }
 
         public byte NR13
         {
-            get
-            {
-                return 0b1111_1111;
-            }
+            get => 0b1111_1111;
             set
             {
-                if (!NR52_Power) return;
+                if ( !this.NR52_Power )
+                {
+                    return;
+                }
 
-                Channel1.Frequency = (Channel1.Frequency & 0b111_0000_0000) | value;
+                this.Channel1.Frequency = (this.Channel1.Frequency & 0b111_0000_0000) | value;
             }
         }
 
@@ -100,20 +109,23 @@ namespace GusBoy
         {
             get
             {
-                int enable = (Convert.ToInt32(Channel1.LengthEnable) << 6) & 0b0100_0000;
+                int enable = (Convert.ToInt32(this.Channel1.LengthEnable) << 6) & 0b0100_0000;
 
                 return (byte)(enable | 0b1011_1111);
             }
             set
             {
-                if (!NR52_Power) return;
-
-                Channel1.LengthEnable = Convert.ToBoolean((value & 0b0100_0000) >> 6);
-                Channel1.Frequency = (Channel1.Frequency & 0b000_1111_1111) | ((value & 0b0000_0111) << 8);
-
-                if ((value & 0b1000_0000) != 0)
+                if ( !this.NR52_Power )
                 {
-                    Channel1.Trigger();
+                    return;
+                }
+
+                this.Channel1.LengthEnable = Convert.ToBoolean((value & 0b0100_0000) >> 6);
+                this.Channel1.Frequency = (this.Channel1.Frequency & 0b000_1111_1111) | ((value & 0b0000_0111) << 8);
+
+                if ( (value & 0b1000_0000) != 0 )
+                {
+                    this.Channel1.Trigger();
                 }
             }
         }
@@ -122,17 +134,20 @@ namespace GusBoy
         {
             get
             {
-                int duty = (Channel2.Duty << 6) & 0b1100_0000;
+                int duty = (this.Channel2.Duty << 6) & 0b1100_0000;
 
                 return (byte)(duty | 0b0011_1111);
             }
             set
             {
-                Channel2.LengthLoad = value & 0b0011_1111;
+                this.Channel2.LengthLoad = value & 0b0011_1111;
 
-                if (!NR52_Power) return;
+                if ( !this.NR52_Power )
+                {
+                    return;
+                }
 
-                Channel2.Duty = (value & 0b1100_0000) >> 6;
+                this.Channel2.Duty = (value & 0b1100_0000) >> 6;
             }
         }
 
@@ -140,44 +155,47 @@ namespace GusBoy
         {
             get
             {
-                int volume = (Channel2.InitialVolume << 4) & 0b1111_0000;
-                int envelope = (Convert.ToInt32(Channel2.EnvelopeAddMode) << 3) & 0b0000_1000;
-                int period = Channel2.InitialVolumeTimer & 0b0000_0111;
+                int volume = (this.Channel2.InitialVolume << 4) & 0b1111_0000;
+                int envelope = (Convert.ToInt32(this.Channel2.EnvelopeAddMode) << 3) & 0b0000_1000;
+                int period = this.Channel2.InitialVolumeTimer & 0b0000_0111;
 
                 return (byte)(volume | envelope | period);
             }
             set
             {
-                if (!NR52_Power) return;
+                if ( !this.NR52_Power )
+                {
+                    return;
+                }
 
-                Channel2.InitialVolume = (value & 0b1111_0000) >> 4;
-                Channel2.EnvelopeAddMode = Convert.ToBoolean((value & 0b0000_1000) >> 3);
-                Channel2.InitialVolumeTimer = value & 0b0000_0111;
+                this.Channel2.InitialVolume = (value & 0b1111_0000) >> 4;
+                this.Channel2.EnvelopeAddMode = Convert.ToBoolean((value & 0b0000_1000) >> 3);
+                this.Channel2.InitialVolumeTimer = value & 0b0000_0111;
 
-                if ((value & 0b1111_1000) == 0)
+                if ( (value & 0b1111_1000) == 0 )
                 {
                     // Disable DAC
-                    Channel2.LengthStatus = false;
-                    Channel2.DacEnable = false;
+                    this.Channel2.LengthStatus = false;
+                    this.Channel2.DacEnable = false;
                 }
                 else
                 {
-                    Channel2.DacEnable = true;
+                    this.Channel2.DacEnable = true;
                 }
             }
         }
 
         public byte NR23
         {
-            get
-            {
-                return 0b1111_1111;
-            }
+            get => 0b1111_1111;
             set
             {
-                if (!NR52_Power) return;
+                if ( !this.NR52_Power )
+                {
+                    return;
+                }
 
-                Channel2.Frequency = (Channel2.Frequency & 0b111_0000_0000) | value;
+                this.Channel2.Frequency = (this.Channel2.Frequency & 0b111_0000_0000) | value;
             }
         }
 
@@ -185,20 +203,23 @@ namespace GusBoy
         {
             get
             {
-                int enable = (Convert.ToInt32(Channel2.LengthEnable) << 6) & 0b0100_0000;
+                int enable = (Convert.ToInt32(this.Channel2.LengthEnable) << 6) & 0b0100_0000;
 
                 return (byte)(enable | 0b1011_1111);
             }
             set
             {
-                if (!NR52_Power) return;
-
-                Channel2.LengthEnable = Convert.ToBoolean((value & 0b0100_0000) >> 6);
-                Channel2.Frequency = (Channel2.Frequency & 0b000_1111_1111) | ((value & 0b0000_0111) << 8);
-
-                if ((value & 0b1000_0000) != 0)
+                if ( !this.NR52_Power )
                 {
-                    Channel2.Trigger();
+                    return;
+                }
+
+                this.Channel2.LengthEnable = Convert.ToBoolean((value & 0b0100_0000) >> 6);
+                this.Channel2.Frequency = (this.Channel2.Frequency & 0b000_1111_1111) | ((value & 0b0000_0111) << 8);
+
+                if ( (value & 0b1000_0000) != 0 )
+                {
+                    this.Channel2.Trigger();
                 }
             }
         }
@@ -207,60 +228,57 @@ namespace GusBoy
         {
             get
             {
-                int power = (Convert.ToInt32(Channel3.DacEnable) << 7) & 0b1000_0000;
+                int power = (Convert.ToInt32(this.Channel3.DacEnable) << 7) & 0b1000_0000;
 
                 return (byte)(power | 0b0111_1111);
             }
             set
             {
-                if (!NR52_Power) return;
-
-                Channel3.DacEnable = Convert.ToBoolean((value & 0b1000_0000) >> 7);
-
-                if (!Channel3.DacEnable)
+                if ( !this.NR52_Power )
                 {
-                    Channel3.LengthStatus = false;
+                    return;
+                }
+
+                this.Channel3.DacEnable = Convert.ToBoolean((value & 0b1000_0000) >> 7);
+
+                if ( !this.Channel3.DacEnable )
+                {
+                    this.Channel3.LengthStatus = false;
                 }
             }
         }
 
         public byte NR31
         {
-            get
-            {
-                return 0b1111_1111;
-            }
-            set
-            {
-                Channel3.LengthLoad = value;
-            }
+            get => 0b1111_1111;
+            set => this.Channel3.LengthLoad = value;
         }
 
         public byte NR32
         {
-            get
-            {
-                return (byte)(((Channel3.Volume << 5) & 0b0110_0000) | 0b1001_1111);
-            }
+            get => (byte)(((this.Channel3.Volume << 5) & 0b0110_0000) | 0b1001_1111);
             set
             {
-                if (!NR52_Power) return;
+                if ( !this.NR52_Power )
+                {
+                    return;
+                }
 
-                Channel3.Volume = (value & 0b0110_0000) >> 5;
+                this.Channel3.Volume = (value & 0b0110_0000) >> 5;
             }
         }
 
         public byte NR33
         {
-            get
-            {
-                return 0b1111_1111;
-            }
+            get => 0b1111_1111;
             set
             {
-                if (!NR52_Power) return;
+                if ( !this.NR52_Power )
+                {
+                    return;
+                }
 
-                Channel3.Frequency = (Channel3.Frequency & 0b111_0000_0000) | value;
+                this.Channel3.Frequency = (this.Channel3.Frequency & 0b111_0000_0000) | value;
             }
         }
 
@@ -268,63 +286,63 @@ namespace GusBoy
         {
             get
             {
-                int enable = (Convert.ToInt32(Channel3.LengthEnable) << 6) & 0b0100_0000;
+                int enable = (Convert.ToInt32(this.Channel3.LengthEnable) << 6) & 0b0100_0000;
 
                 return (byte)(enable | 0b1011_1111);
             }
             set
             {
-                if (!NR52_Power) return;
-
-                Channel3.LengthEnable = Convert.ToBoolean((value & 0b0100_0000) >> 6);
-                Channel3.Frequency = (Channel3.Frequency & 0b000_1111_1111) | ((value & 0b0000_0111) << 8);
-
-                if ((value & 0b1000_0000) != 0)
+                if ( !this.NR52_Power )
                 {
-                    Channel3.Trigger();
+                    return;
+                }
+
+                this.Channel3.LengthEnable = Convert.ToBoolean((value & 0b0100_0000) >> 6);
+                this.Channel3.Frequency = (this.Channel3.Frequency & 0b000_1111_1111) | ((value & 0b0000_0111) << 8);
+
+                if ( (value & 0b1000_0000) != 0 )
+                {
+                    this.Channel3.Trigger();
                 }
             }
         }
 
         public byte NR41
         {
-            get
-            {
-                return 0b1111_1111;
-            }
-            set
-            {
-                Channel4.LengthLoad = value & 0b0011_1111;
-            }
+            get => 0b1111_1111;
+            set => this.Channel4.LengthLoad = value & 0b0011_1111;
         }
 
         public byte NR42
         {
             get
             {
-                int volume = (Channel4.InitialVolume << 4) & 0b1111_0000;
-                int envelope = (Convert.ToInt32(Channel4.EnvelopeAddMode) << 3) & 0b0000_1000;
-                int period = Channel4.InitialVolumeTimer & 0b0000_0111;
+                int volume = (this.Channel4.InitialVolume << 4) & 0b1111_0000;
+                int envelope = (Convert.ToInt32(this.Channel4.EnvelopeAddMode) << 3) & 0b0000_1000;
+                int period = this.Channel4.InitialVolumeTimer & 0b0000_0111;
 
                 return (byte)(volume | envelope | period);
             }
             set
             {
-                if (!NR52_Power) return;
+                if ( !this.NR52_Power )
+                {
+                    return;
+                }
 
-                Channel4.InitialVolume = (value & 0b1111_0000) >> 4;
-                Channel4.EnvelopeAddMode = Convert.ToBoolean((value & 0b0000_1000) >> 3);
-                Channel4.InitialVolumeTimer = value & 0b0000_0111;
+                this.Channel4.InitialVolume = (value & 0b1111_0000) >> 4;
+                this.Channel4.EnvelopeAddMode = Convert.ToBoolean((value & 0b0000_1000) >> 3);
+                this.Channel4.InitialVolumeTimer = value & 0b0000_0111;
 
-                if ((value & 0b1111_1000) == 0)
+                if ( (value & 0b1111_1000) == 0 )
                 {
                     // Disable DAC
-                    Channel4.LengthStatus = false;
-                    Channel4.DacEnable = false;
+                    this.Channel4.LengthStatus = false;
+                    this.Channel4.DacEnable = false;
                 }
                 else
                 {
-                    Channel4.DacEnable = true;
+                    this.Channel4.DacEnable = true;
                 }
             }
         }
@@ -333,19 +351,22 @@ namespace GusBoy
         {
             get
             {
-                int shift = (Channel4.ClockShift << 4) & 0b1111_0000;
-                int width = (Convert.ToInt32(Channel4.WidthMode) << 3) & 0b0000_1000;
-                int divisor = Channel4.DivisorCode & 0b0000_0111;
+                int shift = (this.Channel4.ClockShift << 4) & 0b1111_0000;
+                int width = (Convert.ToInt32(this.Channel4.WidthMode) << 3) & 0b0000_1000;
+                int divisor = this.Channel4.DivisorCode & 0b0000_0111;
 
                 return (byte)(shift | width | divisor);
             }
             set
             {
-                if (!NR52_Power) return;
+                if ( !this.NR52_Power )
+                {
+                    return;
+                }
 
-                Channel4.ClockShift = (value & 0b1111_0000) >> 4;
-                Channel4.WidthMode = Convert.ToBoolean((value & 0b0000_1000) >> 3);
-                Channel4.DivisorCode = value & 0b0000_0111;
+                this.Channel4.ClockShift = (value & 0b1111_0000) >> 4;
+                this.Channel4.WidthMode = Convert.ToBoolean((value & 0b0000_1000) >> 3);
+                this.Channel4.DivisorCode = value & 0b0000_0111;
             }
         }
 
@@ -353,19 +374,22 @@ namespace GusBoy
         {
             get
             {
-                int enable = (Convert.ToInt32(Channel4.LengthEnable) << 6) & 0b0100_0000;
+                int enable = (Convert.ToInt32(this.Channel4.LengthEnable) << 6) & 0b0100_0000;
 
                 return (byte)(enable | 0b1011_1111);
             }
             set
             {
-                if (!NR52_Power) return;
-
-                Channel4.LengthEnable = Convert.ToBoolean((value & 0b0100_0000) >> 6);
-
-                if ((value & 0b1000_0000) != 0)
+                if ( !this.NR52_Power )
                 {
-                    Channel4.Trigger();
+                    return;
+                }
+
+                this.Channel4.LengthEnable = Convert.ToBoolean((value & 0b0100_0000) >> 6);
+
+                if ( (value & 0b1000_0000) != 0 )
+                {
+                    this.Channel4.Trigger();
                 }
             }
         }
@@ -374,22 +398,25 @@ namespace GusBoy
         {
             get
             {
-                int vlenable = (Convert.ToInt32(NR50_VinLEnable) << 7) & 0b1000_0000;
-                int lvol = (NR50_LeftVol << 4) & 0b0111_0000;
-                int vrenable = (Convert.ToInt32(NR50_VinREnable) << 3) & 0b0000_1000;
-                int rvol = NR50_RightVol & 0b0000_0111;
+                int vlenable = (Convert.ToInt32(this.NR50_VinLEnable) << 7) & 0b1000_0000;
+                int lvol = (this.NR50_LeftVol << 4) & 0b0111_0000;
+                int vrenable = (Convert.ToInt32(this.NR50_VinREnable) << 3) & 0b0000_1000;
+                int rvol = this.NR50_RightVol & 0b0000_0111;
 
                 return (byte)(vlenable | lvol | vrenable | rvol);
             }
 
             set
             {
-                if (!NR52_Power) return;
+                if ( !this.NR52_Power )
+                {
+                    return;
+                }
 
-                NR50_VinLEnable = Convert.ToBoolean((value & 0b1000_0000) >> 7);
-                NR50_LeftVol = (value & 0b0111_0000) >> 4;
-                NR50_VinREnable = Convert.ToBoolean((value & 0b0000_1000) >> 3);
-                NR50_RightVol = value & 0b0000_0111;
+                this.NR50_VinLEnable = Convert.ToBoolean((value & 0b1000_0000) >> 7);
+                this.NR50_LeftVol = (value & 0b0111_0000) >> 4;
+                this.NR50_VinREnable = Convert.ToBoolean((value & 0b0000_1000) >> 3);
+                this.NR50_RightVol = value & 0b0000_0111;
             }
         }
 
@@ -397,29 +424,32 @@ namespace GusBoy
         {
             get
             {
-                int l1 = (Convert.ToInt32(Channel4.LeftEnable) << 7) & 0b1000_0000;
-                int l2 = (Convert.ToInt32(Channel3.LeftEnable) << 6) & 0b0100_0000;
-                int l3 = (Convert.ToInt32(Channel2.LeftEnable) << 5) & 0b0010_0000;
-                int l4 = (Convert.ToInt32(Channel1.LeftEnable) << 4) & 0b0001_0000;
-                int r1 = (Convert.ToInt32(Channel4.RightEnable) << 3) & 0b0000_1000;
-                int r2 = (Convert.ToInt32(Channel3.RightEnable) << 2) & 0b0000_0100;
-                int r3 = (Convert.ToInt32(Channel2.RightEnable) << 1) & 0b0000_0010;
-                int r4 = (Convert.ToInt32(Channel1.RightEnable) << 0) & 0b0000_0001;
+                int l1 = (Convert.ToInt32(this.Channel4.LeftEnable) << 7) & 0b1000_0000;
+                int l2 = (Convert.ToInt32(this.Channel3.LeftEnable) << 6) & 0b0100_0000;
+                int l3 = (Convert.ToInt32(this.Channel2.LeftEnable) << 5) & 0b0010_0000;
+                int l4 = (Convert.ToInt32(this.Channel1.LeftEnable) << 4) & 0b0001_0000;
+                int r1 = (Convert.ToInt32(this.Channel4.RightEnable) << 3) & 0b0000_1000;
+                int r2 = (Convert.ToInt32(this.Channel3.RightEnable) << 2) & 0b0000_0100;
+                int r3 = (Convert.ToInt32(this.Channel2.RightEnable) << 1) & 0b0000_0010;
+                int r4 = (Convert.ToInt32(this.Channel1.RightEnable) << 0) & 0b0000_0001;
 
                 return (byte)(l1 | l2 | l3 | l4 | r1 | r2 | r3 | r4);
             }
             set
             {
-                if (!NR52_Power) return;
+                if ( !this.NR52_Power )
+                {
+                    return;
+                }
 
-                Channel4.LeftEnable = Convert.ToBoolean((value & 0b1000_0000) >> 7);
-                Channel3.LeftEnable = Convert.ToBoolean((value & 0b0100_0000) >> 6);
-                Channel2.LeftEnable = Convert.ToBoolean((value & 0b0010_0000) >> 5);
-                Channel1.LeftEnable = Convert.ToBoolean((value & 0b0001_0000) >> 4);
-                Channel4.RightEnable = Convert.ToBoolean((value & 0b0000_1000) >> 3);
-                Channel3.RightEnable = Convert.ToBoolean((value & 0b0000_0100) >> 2);
-                Channel2.RightEnable = Convert.ToBoolean((value & 0b0000_0010) >> 1);
-                Channel1.RightEnable = Convert.ToBoolean((value & 0b0000_0001) >> 0);
+                this.Channel4.LeftEnable = Convert.ToBoolean((value & 0b1000_0000) >> 7);
+                this.Channel3.LeftEnable = Convert.ToBoolean((value & 0b0100_0000) >> 6);
+                this.Channel2.LeftEnable = Convert.ToBoolean((value & 0b0010_0000) >> 5);
+                this.Channel1.LeftEnable = Convert.ToBoolean((value & 0b0001_0000) >> 4);
+                this.Channel4.RightEnable = Convert.ToBoolean((value & 0b0000_1000) >> 3);
+                this.Channel3.RightEnable = Convert.ToBoolean((value & 0b0000_0100) >> 2);
+                this.Channel2.RightEnable = Convert.ToBoolean((value & 0b0000_0010) >> 1);
+                this.Channel1.RightEnable = Convert.ToBoolean((value & 0b0000_0001) >> 0);
             }
         }
 
@@ -427,61 +457,61 @@ namespace GusBoy
         {
             get
             {
-                int power = (Convert.ToInt32(NR52_Power) << 7) & 0b1000_0000;
-                int l4 = (Convert.ToInt32(Channel4.LengthStatus) << 3) & 0b0000_1000;
-                int l3 = (Convert.ToInt32(Channel3.LengthStatus) << 2) & 0b0000_0100;
-                int l2 = (Convert.ToInt32(Channel2.LengthStatus) << 1) & 0b0000_0010;
-                int l1 = (Convert.ToInt32(Channel1.LengthStatus) << 0) & 0b0000_0001;
+                int power = (Convert.ToInt32(this.NR52_Power) << 7) & 0b1000_0000;
+                int l4 = (Convert.ToInt32(this.Channel4.LengthStatus) << 3) & 0b0000_1000;
+                int l3 = (Convert.ToInt32(this.Channel3.LengthStatus) << 2) & 0b0000_0100;
+                int l2 = (Convert.ToInt32(this.Channel2.LengthStatus) << 1) & 0b0000_0010;
+                int l1 = (Convert.ToInt32(this.Channel1.LengthStatus) << 0) & 0b0000_0001;
 
                 return (byte)(power | l4 | l3 | l2 | l1 | 0b0111_0000);
             }
 
             set
             {
-                bool initialPower = NR52_Power;
-                bool newPower  = Convert.ToBoolean((value & 0b1000_0000) << 7);
+                bool initialPower = this.NR52_Power;
+                bool newPower = Convert.ToBoolean((value & 0b1000_0000) << 7);
 
-                if (!initialPower && newPower)
+                if ( !initialPower && newPower )
                 {
                     // Power off => on
-                    frameSequencerStep = 0;
-                    Channel1.DutyStep = 0;
-                    Channel2.DutyStep = 0;
-                    Channel3.sampleBuffer = 0;
+                    this.frameSequencerStep = 0;
+                    this.Channel1.DutyStep = 0;
+                    this.Channel2.DutyStep = 0;
+                    this.Channel3.sampleBuffer = 0;
                 }
-                else if (initialPower && !newPower)
+                else if ( initialPower && !newPower )
                 {
                     // TODO: DMG preserves length counters on poweroff
 
                     // Power on => off
-                    NR10 = 0;
-                    NR11 = 0;
-                    NR12 = 0;
-                    NR13 = 0;
-                    NR14 = 0;
-                    NR21 = 0;
-                    NR22 = 0;
-                    NR23 = 0;
-                    NR24 = 0;
-                    NR30 = 0;
-                    NR31 = 0;
-                    NR32 = 0;
-                    NR33 = 0;
-                    NR34 = 0;
-                    NR41 = 0;
-                    NR42 = 0;
-                    NR43 = 0;
-                    NR44 = 0;
-                    NR50 = 0;
-                    NR51 = 0;
+                    this.NR10 = 0;
+                    this.NR11 = 0;
+                    this.NR12 = 0;
+                    this.NR13 = 0;
+                    this.NR14 = 0;
+                    this.NR21 = 0;
+                    this.NR22 = 0;
+                    this.NR23 = 0;
+                    this.NR24 = 0;
+                    this.NR30 = 0;
+                    this.NR31 = 0;
+                    this.NR32 = 0;
+                    this.NR33 = 0;
+                    this.NR34 = 0;
+                    this.NR41 = 0;
+                    this.NR42 = 0;
+                    this.NR43 = 0;
+                    this.NR44 = 0;
+                    this.NR50 = 0;
+                    this.NR51 = 0;
 
-                    Channel1.LengthStatus = false;
-                    Channel2.LengthStatus = false;
-                    Channel3.LengthStatus = false;
-                    Channel4.LengthStatus = false;
+                    this.Channel1.LengthStatus = false;
+                    this.Channel2.LengthStatus = false;
+                    this.Channel3.LengthStatus = false;
+                    this.Channel4.LengthStatus = false;
                 }
 
-                NR52_Power = newPower;
+                this.NR52_Power = newPower;
             }
         }
 
@@ -490,7 +520,7 @@ namespace GusBoy
         public WaveChannel Channel3 = new WaveChannel();
         public NoiseChannel Channel4 = new NoiseChannel();
 
-        public byte[] WaveTable => Channel3.WaveTable;
+        public byte[] WaveTable => this.Channel3.WaveTable;
 
         private bool NR50_VinLEnable;
         private int NR50_LeftVol;
@@ -500,15 +530,15 @@ namespace GusBoy
 
         public List<float> buffer = new List<float>(8000);
 
-        private Gameboy gb;
+        private readonly Gameboy gb;
         private long oldCpuTicks;
         private long timer;
         private long frameSequencerTimer;
         private long frameSequencerStep;
 
-        private double[] capacitor = new double[2];
-        private double capacitorFactor;
-        private int sampleClock;
+        private readonly double[] capacitor = new double[2];
+        private readonly double capacitorFactor;
+        private readonly int sampleClock;
 
         private const int CPU_CLOCK = 4194304;
         private const double CAPACITOR_BASE = 0.999958;
@@ -522,103 +552,103 @@ namespace GusBoy
 
         public void Tick()
         {
-            long apuTicks = gb.cpu.ticks - oldCpuTicks;
-            oldCpuTicks = gb.cpu.ticks;
+            long apuTicks = this.gb.cpu.ticks - this.oldCpuTicks;
+            this.oldCpuTicks = this.gb.cpu.ticks;
 
-            for (int i = 0; i < apuTicks; i++)
+            for ( int i = 0; i < apuTicks; i++ )
             {
-                if (frameSequencerTimer > 0)
+                if ( this.frameSequencerTimer > 0 )
                 {
-                    frameSequencerTimer--;
+                    this.frameSequencerTimer--;
                 }
 
-                if (frameSequencerTimer == 0)
+                if ( this.frameSequencerTimer == 0 )
                 {
-                    if (NR52_Power)
+                    if ( this.NR52_Power )
                     {
-                        switch (frameSequencerStep)
+                        switch ( this.frameSequencerStep )
                         {
                             case 0:
-                                Channel1.LengthTimerTick();
-                                Channel2.LengthTimerTick();
-                                Channel3.LengthTimerTick();
-                                Channel4.LengthTimerTick();
+                                this.Channel1.LengthTimerTick();
+                                this.Channel2.LengthTimerTick();
+                                this.Channel3.LengthTimerTick();
+                                this.Channel4.LengthTimerTick();
                                 break;
                             case 2:
-                                Channel1.SweepTick();
-                                Channel1.LengthTimerTick();
-                                Channel2.LengthTimerTick();
-                                Channel3.LengthTimerTick();
-                                Channel4.LengthTimerTick();
+                                this.Channel1.SweepTick();
+                                this.Channel1.LengthTimerTick();
+                                this.Channel2.LengthTimerTick();
+                                this.Channel3.LengthTimerTick();
+                                this.Channel4.LengthTimerTick();
                                 break;
                             case 4:
-                                Channel1.LengthTimerTick();
-                                Channel2.LengthTimerTick();
-                                Channel3.LengthTimerTick();
-                                Channel4.LengthTimerTick();
+                                this.Channel1.LengthTimerTick();
+                                this.Channel2.LengthTimerTick();
+                                this.Channel3.LengthTimerTick();
+                                this.Channel4.LengthTimerTick();
                                 break;
                             case 6:
-                                Channel1.SweepTick();
-                                Channel1.LengthTimerTick();
-                                Channel2.LengthTimerTick();
-                                Channel3.LengthTimerTick();
-                                Channel4.LengthTimerTick();
+                                this.Channel1.SweepTick();
+                                this.Channel1.LengthTimerTick();
+                                this.Channel2.LengthTimerTick();
+                                this.Channel3.LengthTimerTick();
+                                this.Channel4.LengthTimerTick();
                                 break;
                             case 7:
-                                Channel1.VolumeEnvelopeTick();
-                                Channel2.VolumeEnvelopeTick();
-                                Channel4.VolumeEnvelopeTick();
+                                this.Channel1.VolumeEnvelopeTick();
+                                this.Channel2.VolumeEnvelopeTick();
+                                this.Channel4.VolumeEnvelopeTick();
                                 break;
                         }
 
-                        if (++frameSequencerStep > 7)
+                        if ( ++this.frameSequencerStep > 7 )
                         {
-                            frameSequencerStep = 0;
+                            this.frameSequencerStep = 0;
                         }
                     }
 
-                    frameSequencerTimer = 8192;
+                    this.frameSequencerTimer = 8192;
                 }
 
-                if (NR52_Power)
+                if ( this.NR52_Power )
                 {
-                    Channel1.ClockTick();
-                    Channel2.ClockTick();
-                    Channel3.ClockTick();
-                    Channel4.ClockTick();
+                    this.Channel1.ClockTick();
+                    this.Channel2.ClockTick();
+                    this.Channel3.ClockTick();
+                    this.Channel4.ClockTick();
                 }
 
-                if (timer == 0)
+                if ( this.timer == 0 )
                 {
-                    if (NR52_Power)
+                    if ( this.NR52_Power )
                     {
-                        buffer.Add(high_pass((Channel1.OutputLeft + Channel2.OutputLeft + Channel3.OutputLeft + Channel4.OutputLeft) / 4 * (NR50_LeftVol + 1), 1));
-                        buffer.Add(high_pass((Channel1.OutputRight + Channel2.OutputRight + Channel3.OutputRight + Channel4.OutputRight) / 4 * (NR50_RightVol + 1), 2));
+                        this.buffer.Add(this.high_pass((this.Channel1.OutputLeft + this.Channel2.OutputLeft + this.Channel3.OutputLeft + this.Channel4.OutputLeft) / 4 * (this.NR50_LeftVol + 1), 1));
+                        this.buffer.Add(this.high_pass((this.Channel1.OutputRight + this.Channel2.OutputRight + this.Channel3.OutputRight + this.Channel4.OutputRight) / 4 * (this.NR50_RightVol + 1), 2));
                     }
                     else
                     {
-                        buffer.Add(0);
-                        buffer.Add(0);
+                        this.buffer.Add(0);
+                        this.buffer.Add(0);
                     }
 
-                    timer = sampleClock;
+                    this.timer = this.sampleClock;
                 }
                 else
                 {
-                    timer--;
+                    this.timer--;
                 }
             }
         }
 
-        float high_pass(float input, int channel, bool dacs_enabled = true)
+        private float high_pass(float input, int channel, bool dacs_enabled = true)
         {
             // TODO: Implement this flag
-            if (dacs_enabled)
+            if ( dacs_enabled )
             {
-                double output = input - capacitor[channel-1];
+                double output = input - this.capacitor[channel - 1];
 
                 // capacitor slowly charges to 'in' via their difference
-                capacitor[channel-1] = input - output * capacitorFactor;
+                this.capacitor[channel - 1] = input - output * this.capacitorFactor;
 
                 return (float)output;
             }

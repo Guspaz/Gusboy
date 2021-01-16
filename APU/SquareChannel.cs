@@ -4,10 +4,7 @@
     {
         public int LengthLoad
         {
-            set
-            {
-                LengthTimer = 64 - value;
-            }
+            set => this.LengthTimer = 64 - value;
         }
 
         public bool DacEnable;
@@ -28,8 +25,8 @@
         public int Duty;
         public int DutyStep;
 
-        public float OutputLeft => (LengthStatus && LeftEnable) ? (SquareDuty[Duty, DutyStep] * Volume) / 100f : 0;
-        public float OutputRight => (LengthStatus && RightEnable) ? (SquareDuty[Duty, DutyStep] * Volume) / 100f : 0;
+        public float OutputLeft => (this.LengthStatus && this.LeftEnable) ? (this.SquareDuty[this.Duty, this.DutyStep] * this.Volume) / 100f : 0;
+        public float OutputRight => (this.LengthStatus && this.RightEnable) ? (this.SquareDuty[this.Duty, this.DutyStep] * this.Volume) / 100f : 0;
 
         public bool LeftEnable;
         public bool RightEnable;
@@ -52,14 +49,14 @@
         public void Trigger()
         {
             this.LengthStatus = this.DacEnable;
-            
-            if (this.LengthTimer == 0)
+
+            if ( this.LengthTimer == 0 )
             {
-                LengthTimer = 64;
+                this.LengthTimer = 64;
             }
 
             // When triggering a square channel, the low two bits of the frequency timer are NOT modified.
-            this.FrequencyTimer = (FrequencyTimer & 0b11) | (((2048 - this.Frequency) * 4) & ~0b11 );
+            this.FrequencyTimer = (this.FrequencyTimer & 0b11) | (((2048 - this.Frequency) * 4) & ~0b11);
 
             // Volume/sweep timer treat a period of 0 as 8
             this.VolumeTimer = this.InitialVolumeTimer == 0 ? 8 : this.InitialVolumeTimer;
@@ -73,64 +70,64 @@
 
             this.NegateDirty = false;
 
-            if (this.SweepShift != 0)
+            if ( this.SweepShift != 0 )
             {
-                SweepCalculation();
+                this.SweepCalculation();
             }
         }
 
         public void ClockTick()
         {
-            if (FrequencyTimer > 0)
+            if ( this.FrequencyTimer > 0 )
             {
-                FrequencyTimer--;
+                this.FrequencyTimer--;
             }
 
-            if (FrequencyTimer == 0)
+            if ( this.FrequencyTimer == 0 )
             {
-                FrequencyTimer = (2048 - this.Frequency) * 4;
+                this.FrequencyTimer = (2048 - this.Frequency) * 4;
 
-                if (++DutyStep > 7)
+                if ( ++this.DutyStep > 7 )
                 {
-                    DutyStep = 0;
+                    this.DutyStep = 0;
                 }
-            }            
+            }
         }
 
         public void LengthTimerTick()
         {
-            if (LengthEnable)
+            if ( this.LengthEnable )
             {
-                if (LengthTimer > 0)
+                if ( this.LengthTimer > 0 )
                 {
-                    LengthTimer--;
+                    this.LengthTimer--;
                 }
 
-                if (LengthTimer == 0)
+                if ( this.LengthTimer == 0 )
                 {
-                    LengthStatus = false;
+                    this.LengthStatus = false;
                 }
             }
         }
 
         public void VolumeEnvelopeTick()
         {
-            if (InitialVolumeTimer > 0)
+            if ( this.InitialVolumeTimer > 0 )
             {
-                if (VolumeTimer > 0)
+                if ( this.VolumeTimer > 0 )
                 {
-                    VolumeTimer--;
+                    this.VolumeTimer--;
                 }
 
-                if (VolumeTimer == 0)
+                if ( this.VolumeTimer == 0 )
                 {
-                    if (Volume < 15 && EnvelopeAddMode)
+                    if ( this.Volume < 15 && this.EnvelopeAddMode )
                     {
-                        Volume++;
+                        this.Volume++;
                     }
-                    else if (Volume > 0 && !EnvelopeAddMode)
+                    else if ( this.Volume > 0 && !this.EnvelopeAddMode )
                     {
-                        Volume--;
+                        this.Volume--;
                     }
 
                     // Volume/sweep timer treat a period of 0 as 8
@@ -141,28 +138,28 @@
 
         public void SweepTick()
         {
-            if (SweepTimer > 0)
+            if ( this.SweepTimer > 0 )
             {
-                SweepTimer--;
+                this.SweepTimer--;
             }
 
-            if (SweepTimer == 0)
+            if ( this.SweepTimer == 0 )
             {
-                if (SweepEnabled && InitialSweepTimer != 0)
+                if ( this.SweepEnabled && this.InitialSweepTimer != 0 )
                 {
-                    int newFrequency = SweepCalculation();
+                    int newFrequency = this.SweepCalculation();
 
-                    if (newFrequency <= 2047 && SweepShift != 0)
+                    if ( newFrequency <= 2047 && this.SweepShift != 0 )
                     {
                         this.SweepFrequency = newFrequency;
                         this.Frequency = newFrequency;
 
-                        SweepCalculation();
+                        this.SweepCalculation();
                     }
                 }
 
                 // Volume/sweep timer treat a period of 0 as 8
-                SweepTimer = this.InitialSweepTimer == 0 ? 8 : this.InitialSweepTimer;
+                this.SweepTimer = this.InitialSweepTimer == 0 ? 8 : this.InitialSweepTimer;
             }
         }
 
@@ -170,14 +167,14 @@
         {
             int newFrequency = this.SweepFrequency + (this.SweepFrequency >> this.SweepShift) * (this.SweepNegate ? -1 : 1);
 
-            if (this.SweepNegate)
+            if ( this.SweepNegate )
             {
                 this.NegateDirty = true;
             }
 
-            if (newFrequency > 2047 || newFrequency < 0)
+            if ( newFrequency > 2047 || newFrequency < 0 )
             {
-                LengthStatus = false;
+                this.LengthStatus = false;
             }
 
             return newFrequency;

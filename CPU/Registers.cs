@@ -13,148 +13,75 @@
         // 8-bit registers
         public byte rA
         {
-            get
-            {
-                return rAF.Hi;
-            }
-            set
-            {
-                rAF.Hi = value;
-            }
+            get => this.rAF.Hi;
+            set => this.rAF.Hi = value;
         }
 
         public byte rF
         {
-            get
-            {
-                return rAF.Lo;
-            }
-            set
-            {
-                rAF.Lo = value;
-            }
+            get => this.rAF.Lo;
+            set => this.rAF.Lo = value;
         }
 
         public byte rB
         {
-            get
-            {
-                return rBC.Hi;
-            }
-            set
-            {
-                rBC.Hi = value;
-            }
+            get => this.rBC.Hi;
+            set => this.rBC.Hi = value;
         }
 
         public byte rC
         {
-            get
-            {
-                return rBC.Lo;
-            }
-            set
-            {
-                rBC.Lo = value;
-            }
+            get => this.rBC.Lo;
+            set => this.rBC.Lo = value;
         }
 
         public byte rD
         {
-            get
-            {
-                return rDE.Hi;
-            }
-            set
-            {
-                rDE.Hi = value;
-            }
+            get => this.rDE.Hi;
+            set => this.rDE.Hi = value;
         }
 
         public byte rE
         {
-            get
-            {
-                return rDE.Lo;
-            }
-            set
-            {
-                rDE.Lo = value;
-            }
+            get => this.rDE.Lo;
+            set => this.rDE.Lo = value;
         }
 
         public byte rH
         {
-            get
-            {
-                return rHL.Hi;
-            }
-            set
-            {
-                rHL.Hi = value;
-            }
+            get => this.rHL.Hi;
+            set => this.rHL.Hi = value;
         }
 
         public byte rL
         {
-            get
-            {
-                return rHL.Lo;
-            }
-            set
-            {
-                rHL.Lo = value;
-            }
+            get => this.rHL.Lo;
+            set => this.rHL.Lo = value;
         }
 
         // Flags
         public bool fZ
         {
-            get
-            {
-                return rAF[7];
-                
-            }
-            set
-            {
-                rAF[7] = value;
-            }
+            get => this.rAF[7];
+            set => this.rAF[7] = value;
         }
 
         public bool fN
         {
-            get
-            {
-                return rAF[6];
-            }
-            set
-            {
-                rAF[6] = value;
-            }
+            get => this.rAF[6];
+            set => this.rAF[6] = value;
         }
 
         public bool fH
         {
-            get
-            {
-                return rAF[5];
-            }
-            set
-            {
-                rAF[5] = value;
-            }
+            get => this.rAF[5];
+            set => this.rAF[5] = value;
         }
 
         public bool fC
         {
-            get
-            {
-                return rAF[4];
-            }
-            set
-            {
-                rAF[4] = value;
-            }
+            get => this.rAF[4];
+            set => this.rAF[4] = value;
         }
 
         public bool fHalt = false;

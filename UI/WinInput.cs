@@ -10,25 +10,25 @@ namespace GusBoy
             byte result = 0;
 
             // A button
-            if (!IsKeyDown(Keys.A))
+            if ( !IsKeyDown(Keys.A) )
             {
                 result |= 0x01;
             }
 
             // B button
-            if (!IsKeyDown(Keys.B))
+            if ( !IsKeyDown(Keys.B) )
             {
                 result |= 0x02;
             }
 
             // Select button
-            if (!IsKeyDown(Keys.Space))
+            if ( !IsKeyDown(Keys.Space) )
             {
                 result |= 0x04;
             }
 
             // Select button
-            if (!IsKeyDown(Keys.Enter))
+            if ( !IsKeyDown(Keys.Enter) )
             {
                 result |= 0x08;
             }
@@ -41,25 +41,25 @@ namespace GusBoy
             byte result = 0;
 
             // Right button
-            if (!IsKeyDown(Keys.Right))
+            if ( !IsKeyDown(Keys.Right) )
             {
                 result |= 0x01;
             }
 
             // Left button
-            if (!IsKeyDown(Keys.Left))
+            if ( !IsKeyDown(Keys.Left) )
             {
                 result |= 0x02;
             }
 
             // Up button
-            if (!IsKeyDown(Keys.Up))
+            if ( !IsKeyDown(Keys.Up) )
             {
                 result |= 0x04;
             }
 
             // Down button
-            if (!IsKeyDown(Keys.Down))
+            if ( !IsKeyDown(Keys.Down) )
             {
                 result |= 0x08;
             }
@@ -72,9 +72,6 @@ namespace GusBoy
         [DllImport("user32.dll")]
         private static extern short GetAsyncKeyState(Keys vKey);
 
-        private static bool IsKeyDown(Keys key)
-        {
-            return (GetAsyncKeyState(key) & IS_DOWN) > 0;
-        }
+        private static bool IsKeyDown(Keys key) => (GetAsyncKeyState(key) & IS_DOWN) > 0;
     }
 }

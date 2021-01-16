@@ -12,48 +12,33 @@
 
         public gshort(int u)
         {
-            var = (ushort)u;
+            this.var = (ushort)u;
         }
 
         public byte Lo
         {
-            get
-            {
-                return (byte)(var & 0x00FF);
-            }
-            set
-            {
-                var = (ushort)((var & 0xFF00) | value);
-            }
+            get => (byte)(this.var & 0x00FF);
+            set => this.var = (ushort)((this.var & 0xFF00) | value);
         }
 
         public byte Hi
         {
-            get
-            {
-                return (byte)(var >> 8);
-            }
-            set
-            {
-                var = (ushort)((var & 0x00FF) | (value << 8));
-            }
+            get => (byte)(this.var >> 8);
+            set => this.var = (ushort)((this.var & 0x00FF) | (value << 8));
         }
 
         public bool this[int i]
         {
-            get
-            {
-                return (var & (1 << i)) != 0;
-            }
+            get => (this.var & (1 << i)) != 0;
             set
             {
-                if (value)
+                if ( value )
                 {
-                    var = (ushort)(var | (1 << i));
+                    this.var = (ushort)(this.var | (1 << i));
                 }
                 else
                 {
-                    var = (ushort)(var & ~(1 << i));
+                    this.var = (ushort)(this.var & ~(1 << i));
                 }
             }
         }

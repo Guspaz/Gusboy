@@ -12,28 +12,28 @@
 
         public override byte Read(int address)
         {
-            if (address <= 0x3FFF)
-            {
-                // Only the first 14 bits of the address are wired up to the ROM chips
-                address &= 0b0011_1111_1111_1111;
-                
-                return romFile[address & romAddressMask];
-            }
-            else if (address >= 0x4000 && address <= 0x7FFF)
+            if ( address <= 0x3FFF )
             {
                 // Only the first 14 bits of the address are wired up to the ROM chips
                 address &= 0b0011_1111_1111_1111;
 
-                return romFile[((ROMB1 << 22) | (ROMB0 << 14) | address) & romAddressMask];
+                return this.romFile[address & this.romAddressMask];
             }
-            else if (address >= 0xA000 && address <= 0xBFFF)
+            else if ( address >= 0x4000 && address <= 0x7FFF )
             {
-                if (RAMG)
+                // Only the first 14 bits of the address are wired up to the ROM chips
+                address &= 0b0011_1111_1111_1111;
+
+                return this.romFile[((this.ROMB1 << 22) | (this.ROMB0 << 14) | address) & this.romAddressMask];
+            }
+            else if ( address >= 0xA000 && address <= 0xBFFF )
+            {
+                if ( this.RAMG )
                 {
                     // Only the first 13 bits of the address are wired up to the RAM chips
                     address &= 0b0001_1111_1111_1111;
 
-                    return sram[(address | (RAMB << 13)) & ramAddressMask];
+                    return this.sram[(address | (this.RAMB << 13)) & this.ramAddressMask];
                 }
             }
 
@@ -42,34 +42,34 @@
 
         public override void Write(int address, byte value)
         {
-            if (address >= 0x0000 && address <= 0x1FFF)
+            if ( address >= 0x0000 && address <= 0x1FFF )
             {
                 // RAMG: 8 bits
-                RAMG = value == 0b1010;
+                this.RAMG = value == 0b1010;
             }
-            else if (address >= 0x2000 && address <= 0x2FFF)
+            else if ( address >= 0x2000 && address <= 0x2FFF )
             {
                 // ROMB0: 8 bits
-                ROMB0 = value;
+                this.ROMB0 = value;
             }
-            else if (address >= 0x3000 && address <= 0x3FFF)
+            else if ( address >= 0x3000 && address <= 0x3FFF )
             {
                 // ROMB1: 1 bits
-                ROMB1 = (byte)(value & 0b0000_0001);
+                this.ROMB1 = (byte)(value & 0b0000_0001);
             }
-            else if (address >= 0x6000 && address <= 0x7FFF)
+            else if ( address >= 0x6000 && address <= 0x7FFF )
             {
                 // RAMB: 4 bit
-                RAMB = (byte)(value & 0b0000_1111);
+                this.RAMB = (byte)(value & 0b0000_1111);
             }
-            else if (address >= 0xA000 && address <= 0xBFFF)
+            else if ( address >= 0xA000 && address <= 0xBFFF )
             {
-                if (RAMG)
+                if ( this.RAMG )
                 {
                     // Only the first 13 bits of the address are wired up to the RAM chips
                     address &= 0b0001_1111_1111_1111;
 
-                    sram[(address | (RAMB << 13)) & ramAddressMask] = value;
+                    this.sram[(address | (this.RAMB << 13)) & this.ramAddressMask] = value;
                 }
             }
         }

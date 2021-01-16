@@ -291,55 +291,55 @@ namespace GusBoy
 
         public void ReadHeader(byte[] romFile)
         {
-            hTitle = Encoding.ASCII.GetString(romFile[OFFSET_TITLE .. (OFFSET_TITLE + 16)].TakeWhile(b => b != 0x80 && b != 0xC0 && b!= 0x00).ToArray());
+            this.hTitle = Encoding.ASCII.GetString(romFile[OFFSET_TITLE..(OFFSET_TITLE + 16)].TakeWhile(b => b != 0x80 && b != 0xC0 && b != 0x00).ToArray());
 
-            switch (romFile[OFFSET_CGB])
+            switch ( romFile[OFFSET_CGB] )
             {
                 case (byte)CGBType.Both:
-                    hCGB = CGBType.Both;
+                    this.hCGB = CGBType.Both;
                     break;
                 case (byte)CGBType.Yes:
-                    hCGB = CGBType.Yes;
+                    this.hCGB = CGBType.Yes;
                     break;
                 default:
-                    hCGB = CGBType.No;
+                    this.hCGB = CGBType.No;
                     break;
             }
 
-            if (romFile[OFFSET_OLD_LICENSEE_CODE] == 0x33)
+            if ( romFile[OFFSET_OLD_LICENSEE_CODE] == 0x33 )
             {
                 int licenseeNumber = ((romFile[OFFSET_NEW_LICENSEE_CODE] & 0b1111) << 4) | romFile[OFFSET_NEW_LICENSEE_CODE + 1] & 0b1111;
 
-                hLicensee = NewLicensee.ContainsKey(licenseeNumber) ? NewLicensee[licenseeNumber] : $"Unknown (0x{licenseeNumber:X2})";
+                this.hLicensee = this.NewLicensee.ContainsKey(licenseeNumber) ? this.NewLicensee[licenseeNumber] : $"Unknown (0x{licenseeNumber:X2})";
             }
             else
             {
                 int licenseeNumber = romFile[OFFSET_OLD_LICENSEE_CODE];
 
-                hLicensee = OldLicensee.ContainsKey(licenseeNumber) ? OldLicensee[licenseeNumber] : $"Unknown (0x{licenseeNumber:X2})";
+                this.hLicensee = this.OldLicensee.ContainsKey(licenseeNumber) ? this.OldLicensee[licenseeNumber] : $"Unknown (0x{licenseeNumber:X2})";
             }
 
-            hSGB = romFile[OFFSET_SGB] == 0x03;
+            this.hSGB = romFile[OFFSET_SGB] == 0x03;
 
-            hType = (CartridgeType)romFile[OFFSET_TYPE];
+            this.hType = (CartridgeType)romFile[OFFSET_TYPE];
 
-            hRomSize = 0x8000 << romFile[OFFSET_ROM_SIZE];
+            this.hRomSize = 0x8000 << romFile[OFFSET_ROM_SIZE];
 
             // Override for bad ROMs that say they have no RAM, but actually do
-            if (hRamSize == 0 && Enum.GetName(typeof(CartridgeType), hType).Contains("_RAM"))
+            if ( this.hRamSize == 0 && Enum.GetName(typeof(CartridgeType), this.hType).Contains("_RAM") )
             {
-                hRamSize = 0x8000;
+                this.hRamSize = 0x8000;
             }
 
-            hRamSize = (hType == CartridgeType.MBC2 || hType == CartridgeType.MBC2_BATTERY) ? 0x100 : RamSizeTable[romFile[OFFSET_RAM_SIZE]];
-            
-            hDestination = romFile[OFFSET_DESTINATION_CODE] == 0x01;
+            this.hRamSize = (this.hType == CartridgeType.MBC2 || this.hType == CartridgeType.MBC2_BATTERY) ? 0x100 : this.RamSizeTable[romFile[OFFSET_RAM_SIZE]];
 
-            hMaskRomVersion = romFile[OFFSET_MASKROM_VERSION];
+            this.hDestination = romFile[OFFSET_DESTINATION_CODE] == 0x01;
 
-            hHeaderChecksum = romFile[OFFSET_HEADER_CHECKSUM];
+            this.hMaskRomVersion = romFile[OFFSET_MASKROM_VERSION];
 
-            hGlobalChecksum = (ushort)((romFile[OFFSET_GLOBAL_CHECKSUM] << 8) | romFile[OFFSET_GLOBAL_CHECKSUM + 1]);
+            this.hHeaderChecksum = romFile[OFFSET_HEADER_CHECKSUM];
+
+            this.hGlobalChecksum = (ushort)((romFile[OFFSET_GLOBAL_CHECKSUM] << 8) | romFile[OFFSET_GLOBAL_CHECKSUM + 1]);
         }
     }
 }

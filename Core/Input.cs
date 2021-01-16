@@ -5,7 +5,7 @@
         private const byte JOY10MASK = 0b1101_0000;
         private const byte JOY20MASK = 0b1110_0000;
 
-        private Gameboy gb;
+        private readonly Gameboy gb;
 
         private int Joy10State = 0b1111;
         private int Joy20State = 0b1111;
@@ -34,22 +34,22 @@
             // This function is tediously written but I wanted to simplify the steps
             int result = 0b1111;
 
-            if (SelectJoy10)
+            if ( this.SelectJoy10 )
             {
-                result &= Joy10State;
+                result &= this.Joy10State;
             }
 
-            if (SelectJoy20)
+            if ( this.SelectJoy20 )
             {
-                result &= Joy20State;
+                result &= this.Joy20State;
             }
 
-            if (SelectJoy10)
+            if ( this.SelectJoy10 )
             {
                 result |= JOY10MASK;
             }
 
-            if (SelectJoy20)
+            if ( this.SelectJoy20 )
             {
                 result |= JOY20MASK;
             }
@@ -60,51 +60,51 @@
         public void Write(byte value)
         {
             // Possibly trigger an interrupt?
-            SelectJoy10 = (value & JOY10MASK) != 0;
-            SelectJoy20 = (value & JOY20MASK) != 0;
+            this.SelectJoy10 = (value & JOY10MASK) != 0;
+            this.SelectJoy20 = (value & JOY20MASK) != 0;
         }
 
         public void KeyDown(Keys key)
         {
             // Trigger CPU interrupt
-            gb.cpu.TriggerInterrupt(CPU.INT_JOYPAD);
+            this.gb.cpu.TriggerInterrupt(CPU.INT_JOYPAD);
 
-            switch(key)
+            switch ( key )
             {
                 case Keys.A:
                 case Keys.B:
                 case Keys.Select:
                 case Keys.Start:
-                    Joy10State &= (int)key;
-                    Joy10State &= 0b1111;
+                    this.Joy10State &= (int)key;
+                    this.Joy10State &= 0b1111;
                     break;
                 case Keys.Right:
                 case Keys.Left:
                 case Keys.Up:
                 case Keys.Down:
-                    Joy20State &= ((int)key) >> 4;
-                    Joy20State &= 0b1111;
+                    this.Joy20State &= ((int)key) >> 4;
+                    this.Joy20State &= 0b1111;
                     break;
             }
         }
 
         public void KeyUp(Keys key)
         {
-            switch (key)
+            switch ( key )
             {
                 case Keys.A:
                 case Keys.B:
                 case Keys.Select:
                 case Keys.Start:
-                    Joy10State |= ~((int)key);
-                    Joy10State &= 0b1111;
+                    this.Joy10State |= ~((int)key);
+                    this.Joy10State &= 0b1111;
                     break;
                 case Keys.Right:
                 case Keys.Left:
                 case Keys.Up:
                 case Keys.Down:
-                    Joy20State |= ~((int)key) >> 4;
-                    Joy20State &= 0b1111;
+                    this.Joy20State |= ~((int)key) >> 4;
+                    this.Joy20State &= 0b1111;
                     break;
             }
         }

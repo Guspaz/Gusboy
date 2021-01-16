@@ -4,10 +4,7 @@
     {
         public int LengthLoad
         {
-            set
-            {
-                LengthTimer = 256 - value;
-            }
+            set => this.LengthTimer = 256 - value;
         }
 
         public bool DacEnable;
@@ -30,17 +27,17 @@
         private int wavePosition;
 
 
-        private float[] VolumeFactor = { 0.00f, 1.00f, 0.50f, 0.25f };
+        private readonly float[] VolumeFactor = { 0.00f, 1.00f, 0.50f, 0.25f };
 
-        public float OutputLeft => (LengthStatus && LeftEnable) ? (sampleBuffer * VolumeFactor[Volume]) / 100f : 0;
+        public float OutputLeft => (this.LengthStatus && this.LeftEnable) ? (this.sampleBuffer * this.VolumeFactor[this.Volume]) / 100f : 0;
 
-        public float OutputRight => (LengthStatus && RightEnable) ? (sampleBuffer * VolumeFactor[Volume]) / 100f : 0;
+        public float OutputRight => (this.LengthStatus && this.RightEnable) ? (this.sampleBuffer * this.VolumeFactor[this.Volume]) / 100f : 0;
 
         public void Trigger()
         {
             this.LengthStatus = this.DacEnable;
 
-            if (this.LengthTimer == 0)
+            if ( this.LengthTimer == 0 )
             {
                 this.LengthTimer = 256;
             }
@@ -53,43 +50,43 @@
 
         public void ClockTick()
         {
-            if (FrequencyTimer > 0)
+            if ( this.FrequencyTimer > 0 )
             {
-                FrequencyTimer--;
+                this.FrequencyTimer--;
             }
 
-            if (FrequencyTimer == 0)
+            if ( this.FrequencyTimer == 0 )
             {
-                FrequencyTimer = (2048 - this.Frequency) * 2;
+                this.FrequencyTimer = (2048 - this.Frequency) * 2;
 
-                if (++wavePosition > 31)
+                if ( ++this.wavePosition > 31 )
                 {
-                    wavePosition = 0;
+                    this.wavePosition = 0;
                 }
 
-                if ((wavePosition & 0b0000_0001) == 0)
+                if ( (this.wavePosition & 0b0000_0001) == 0 )
                 {
-                    sampleBuffer = (WaveTable[wavePosition >> 1] >> 4) & 0b0000_1111;
+                    this.sampleBuffer = (this.WaveTable[this.wavePosition >> 1] >> 4) & 0b0000_1111;
                 }
                 else
                 {
-                    sampleBuffer = WaveTable[wavePosition >> 1] & 0b0000_1111;
+                    this.sampleBuffer = this.WaveTable[this.wavePosition >> 1] & 0b0000_1111;
                 }
             }
         }
 
         public void LengthTimerTick()
         {
-            if (LengthEnable)
+            if ( this.LengthEnable )
             {
-                if (LengthTimer > 0)
+                if ( this.LengthTimer > 0 )
                 {
-                    LengthTimer--;
+                    this.LengthTimer--;
                 }
 
-                if (LengthTimer == 0)
+                if ( this.LengthTimer == 0 )
                 {
-                    LengthStatus = false;
+                    this.LengthStatus = false;
                 }
             }
         }

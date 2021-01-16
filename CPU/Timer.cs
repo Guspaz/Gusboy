@@ -18,65 +18,65 @@
 
         public void TimerTick()
         {
-            long newCpuTicks = this.ticks - oldCpuTicks;
-            oldCpuTicks = this.ticks;
+            long newCpuTicks = this.ticks - this.oldCpuTicks;
+            this.oldCpuTicks = this.ticks;
 
-            for (int i = 0; i < newCpuTicks; i++)
+            for ( int i = 0; i < newCpuTicks; i++ )
             {
-                rDIV++;
+                this.rDIV++;
 
-                if (reloadingTima && --reloadTima == 0)
+                if ( this.reloadingTima && --this.reloadTima == 0 )
                 {
                     // Reload TIMA
-                    rTIMA = rTMA;
+                    this.rTIMA = this.rTMA;
 
                     // Fire the timer interrupt
-                    TriggerInterrupt(INT_TIMER);
+                    this.TriggerInterrupt(INT_TIMER);
 
                     // Reset the state
-                    reloadingTima = false;
-                    reloadTima = -1;
+                    this.reloadingTima = false;
+                    this.reloadTima = -1;
                 }
 
                 bool divBit = false;
 
-                switch (rTAC & 0b011)
+                switch ( this.rTAC & 0b011 )
                 {
                     case 0b00:
-                        divBit = (rDIV & 0b10_0000_0000) != 0;
+                        divBit = (this.rDIV & 0b10_0000_0000) != 0;
                         break;
                     case 0b01:
-                        divBit = (rDIV & 0b1000) != 0;
+                        divBit = (this.rDIV & 0b1000) != 0;
                         break;
                     case 0b10:
-                        divBit = (rDIV & 0b10_0000) != 0;
+                        divBit = (this.rDIV & 0b10_0000) != 0;
                         break;
                     case 0b11:
-                        divBit = (rDIV & 0b1000_0000) != 0;
+                        divBit = (this.rDIV & 0b1000_0000) != 0;
                         break;
                 }
 
-                bool timerEnableBit = (rTAC & 0b100) != 0;
+                bool timerEnableBit = (this.rTAC & 0b100) != 0;
 
                 bool andResult = divBit && timerEnableBit;
 
-                if (oldAndResult && !andResult)
+                if ( this.oldAndResult && !andResult )
                 {
-                    if (rTIMA == 255)
+                    if ( this.rTIMA == 255 )
                     {
                         // Overflow is about to happen
-                        rTIMA = 0;
-                        reloadTima = 4;
-                        reloadingTima = true;
+                        this.rTIMA = 0;
+                        this.reloadTima = 4;
+                        this.reloadingTima = true;
                     }
                     else
                     {
                         // No overflow
-                        rTIMA++;
+                        this.rTIMA++;
                     }
                 }
 
-                oldAndResult = andResult;
+                this.oldAndResult = andResult;
             }
         }
     }
