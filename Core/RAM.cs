@@ -1,4 +1,4 @@
-﻿namespace GusBoy
+﻿namespace Gusboy
 {
     public class RAM
     {
@@ -186,10 +186,10 @@
                         return (byte)(this.Gpu.Stat | 0b1000_0000);
 
                     case 0xFF42:
-                        return this.Gpu.scrollY;
+                        return this.Gpu.ScrollY;
 
                     case 0xFF43:
-                        return this.Gpu.scrollX;
+                        return this.Gpu.ScrollX;
 
                     case 0xFF44:
                         return this.Gpu.CurrentLine; // rLY register
@@ -210,10 +210,10 @@
                         return this.Gpu.ObjPal1;
 
                     case 0xFF4A:
-                        return this.Gpu.winY;
+                        return this.Gpu.WinY;
 
                     case 0xFF4B:
-                        return this.Gpu.winX;
+                        return this.Gpu.WinX;
 
                     case >= 0xFF4C and <= 0xFF7F:
                         return RAM.Unsupported(0xFF); // Unsupported/unused (mostly CGB stuff)
@@ -267,7 +267,7 @@
                         if (this.Gpu.CanAccessOAM(isDma))
                         {
                             this.oam[i - 0xFE00] = value; // Object Attribute Memory (FEA0-FEFF unusable)
-                            this.Gpu.spriteCacheDirty = true;
+                            this.Gpu.SpriteCacheDirty = true;
                         }
 
                         break;
@@ -418,11 +418,11 @@
                         break;
 
                     case 0xFF42:
-                        this.Gpu.scrollY = value;
+                        this.Gpu.ScrollY = value;
                         break;
 
                     case 0xFF43:
-                        this.Gpu.scrollX = value;
+                        this.Gpu.ScrollX = value;
                         break;
 
                     case 0xFF44:
@@ -450,11 +450,11 @@
                         break;
 
                     case 0xFF4A:
-                        this.Gpu.winY = value;
+                        this.Gpu.WinY = value;
                         break;
 
                     case 0xFF4B:
-                        this.Gpu.winX = value;
+                        this.Gpu.WinX = value;
                         break;
 
                     case >= 0xFF4C and <= 0xFF4F:

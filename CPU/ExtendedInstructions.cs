@@ -1,4 +1,4 @@
-﻿namespace GusBoy
+﻿namespace Gusboy
 {
     /// <summary>
     /// Implementations of all dual-byte opcodes.

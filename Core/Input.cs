@@ -1,4 +1,4 @@
-﻿namespace GusBoy
+﻿namespace Gusboy
 {
     public class Input
     {

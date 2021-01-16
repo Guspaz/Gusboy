@@ -1,78 +1,85 @@
-﻿namespace GusBoy
+﻿namespace Gusboy
 {
     public class NoiseChannel
     {
+        private readonly int[] divisor = { 8, 16, 32, 48, 64, 80, 96, 112 };
+
+        private int volumeTimer;
+        private int lengthTimer;
+        private int volume;
+        private int rLFSR;
+        private int frequencyTimer;
+
         public int LengthLoad
         {
-            set => this.LengthTimer = 64 - value;
+            set => this.lengthTimer = 64 - value;
         }
 
-        public bool DacEnable;
+        public bool DacEnable { get; set; }
 
-        public int LengthTimer;
-        public bool LengthStatus;
-        public bool LengthEnable;
+        public bool ChannelEnable { get; set; }
 
-        public int Volume;
-        public int InitialVolume;
-        public int InitialVolumeTimer;
-        public int VolumeTimer;
-        public bool EnvelopeAddMode;
+        public bool LengthEnable { get; set; }
 
-        public float OutputLeft => (this.LengthStatus && this.LeftEnable) ? ((~this.LFSR & 0b1) * this.Volume) / 100f : 0;
+        public int InitialVolume { get; set; }
 
-        public float OutputRight => (this.LengthStatus && this.RightEnable) ? ((~this.LFSR & 0b1) * this.Volume) / 100f : 0;
+        public int InitialVolumeTimer { get; set; }
 
-        public bool LeftEnable;
-        public bool RightEnable;
+        public bool EnvelopeAddMode { get; set; }
 
-        private int LFSR;
-        public bool WidthMode;
+        public float OutputLeft => (this.ChannelEnable && this.LeftEnable) ? ((~this.rLFSR & 0b1) * this.volume) / 100f : 0;
 
-        public int DivisorCode;
-        private readonly int[] divisor = { 8, 16, 32, 48, 64, 80, 96, 112 };
-        public int ClockShift;
-        public int FrequencyTimer;
+        public float OutputRight => (this.ChannelEnable && this.RightEnable) ? ((~this.rLFSR & 0b1) * this.volume) / 100f : 0;
+
+        public bool LeftEnable { get; set; }
+
+        public bool RightEnable { get; set; }
+
+        public bool WidthMode { get; set; }
+
+        public int DivisorCode { get; set; }
+
+        public int ClockShift { get; set; }
 
         public void Trigger()
         {
-            this.LengthStatus = this.DacEnable;
+            this.ChannelEnable = this.DacEnable;
 
-            if (this.LengthTimer == 0)
+            if (this.lengthTimer == 0)
             {
-                this.LengthTimer = 64;
+                this.lengthTimer = 64;
             }
 
-            this.FrequencyTimer = this.divisor[this.DivisorCode] << this.ClockShift;
+            this.frequencyTimer = this.divisor[this.DivisorCode] << this.ClockShift;
 
             // Volume/sweep timer treat a period of 0 as 8
-            this.VolumeTimer = this.InitialVolumeTimer == 0 ? 8 : this.InitialVolumeTimer;
+            this.volumeTimer = this.InitialVolumeTimer == 0 ? 8 : this.InitialVolumeTimer;
 
-            this.Volume = this.InitialVolume;
+            this.volume = this.InitialVolume;
 
-            this.LFSR = 0b0111_1111_1111_1111;
+            this.rLFSR = 0b0111_1111_1111_1111;
         }
 
         public void ClockTick()
         {
-            if (this.FrequencyTimer > 0)
+            if (this.frequencyTimer > 0)
             {
-                this.FrequencyTimer--;
+                this.frequencyTimer--;
             }
 
             // Using a noise channel clock shift of 14 or 15 results in the LFSR receiving no clocks.
-            if (this.FrequencyTimer == 0 && this.ClockShift <= 15)
+            if (this.frequencyTimer == 0 && this.ClockShift <= 15)
             {
-                this.FrequencyTimer = this.divisor[this.DivisorCode] << this.ClockShift;
+                this.frequencyTimer = this.divisor[this.DivisorCode] << this.ClockShift;
 
-                int newHighBit = (this.LFSR & 0b01) ^ ((this.LFSR >> 1) & 0b01);
+                int newHighBit = (this.rLFSR & 0b01) ^ ((this.rLFSR >> 1) & 0b01);
 
-                this.LFSR = (this.LFSR >> 1) | (newHighBit << 14);
+                this.rLFSR = (this.rLFSR >> 1) | (newHighBit << 14);
 
                 if (this.WidthMode)
                 {
                     // Should I discard everything above bit 6?
-                    this.LFSR = (this.LFSR & 0b0111_1111_1011_1111) | newHighBit << 6;
+                    this.rLFSR = (this.rLFSR & 0b0111_1111_1011_1111) | newHighBit << 6;
                 }
             }
         }
@@ -81,14 +88,14 @@
         {
             if (this.LengthEnable)
             {
-                if (this.LengthTimer > 0)
+                if (this.lengthTimer > 0)
                 {
-                    this.LengthTimer--;
+                    this.lengthTimer--;
                 }
 
-                if (this.LengthTimer == 0)
+                if (this.lengthTimer == 0)
                 {
-                    this.LengthStatus = false;
+                    this.ChannelEnable = false;
                 }
             }
         }
@@ -97,24 +104,24 @@
         {
             if (this.InitialVolumeTimer > 0)
             {
-                if (this.VolumeTimer > 0)
+                if (this.volumeTimer > 0)
                 {
-                    this.VolumeTimer--;
+                    this.volumeTimer--;
                 }
 
-                if (this.VolumeTimer == 0)
+                if (this.volumeTimer == 0)
                 {
-                    if (this.Volume < 15 && this.EnvelopeAddMode)
+                    if (this.volume < 15 && this.EnvelopeAddMode)
                     {
-                        this.Volume++;
+                        this.volume++;
                     }
-                    else if (this.Volume > 0 && !this.EnvelopeAddMode)
+                    else if (this.volume > 0 && !this.EnvelopeAddMode)
                     {
-                        this.Volume--;
+                        this.volume--;
                     }
 
                     // Volume/sweep timer treat a period of 0 as 8
-                    this.VolumeTimer = this.InitialVolumeTimer == 0 ? 8 : this.InitialVolumeTimer;
+                    this.volumeTimer = this.InitialVolumeTimer == 0 ? 8 : this.InitialVolumeTimer;
                 }
             }
         }

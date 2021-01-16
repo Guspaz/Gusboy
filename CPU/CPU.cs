@@ -1,6 +1,6 @@
 ﻿// #define ENABLE_TRACING
 
-namespace GusBoy
+namespace Gusboy
 {
     /// <summary>
     /// Main CPU emulation.

@@ -1,4 +1,4 @@
-﻿namespace GusBoy
+﻿namespace Gusboy
 {
     /// <summary>
     /// General registers that don't belong in another category.

@@ -1,4 +1,4 @@
-﻿namespace GusBoy
+﻿namespace Gusboy
 {
     /// <summary>
     /// Basically just a ushort with access to the hi and lo bytes and some extra implicit conversions.

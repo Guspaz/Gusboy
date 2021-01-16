@@ -1,4 +1,4 @@
-﻿namespace GusBoy
+﻿namespace Gusboy
 {
     using System.Runtime.InteropServices;
     using System.Windows.Forms;

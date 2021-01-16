@@ -1,4 +1,4 @@
-﻿namespace GusBoy
+﻿namespace Gusboy
 {
     partial class Gusboy
     {
@@ -69,7 +69,7 @@
             this.toolStripStatusLabel.Name = "toolStripStatusLabel";
             this.toolStripStatusLabel.Size = new System.Drawing.Size(0, 17);
             // 
-            // GusBoy
+            // Gusboy
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -80,14 +80,14 @@
             this.KeyPreview = true;
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.MaximizeBox = false;
-            this.Name = "GusBoy";
+            this.Name = "Gusboy";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Gusboy";
-            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.GusBoy_FormClosed);
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Gusboy_FormClosed);
             this.Shown += new System.EventHandler(this.Gusboy_Shown);
-            this.Paint += new System.Windows.Forms.PaintEventHandler(this.GusBoy_Paint);
-            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.GusBoy_KeyDown);
-            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.GusBoy_KeyUp);
+            this.Paint += new System.Windows.Forms.PaintEventHandler(this.Gusboy_Paint);
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Gusboy_KeyDown);
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Gusboy_KeyUp);
             this.statusStrip.ResumeLayout(false);
             this.statusStrip.PerformLayout();
             this.ResumeLayout(false);

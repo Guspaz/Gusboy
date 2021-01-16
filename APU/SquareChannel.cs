@@ -1,60 +1,7 @@
-﻿namespace GusBoy
+﻿namespace Gusboy
 {
     public class SquareChannel
     {
-        public int LengthLoad
-        {
-            set => this.LengthTimer = 64 - value;
-        }
-
-        public bool DacEnable;
-
-        public int LengthTimer;
-
-        public bool LengthStatus;
-
-        public bool LengthEnable;
-
-        public int Volume;
-
-        public int InitialVolume;
-
-        public int InitialVolumeTimer;
-
-        public int VolumeTimer;
-
-        public bool EnvelopeAddMode;
-
-        public int Frequency;
-
-        public int FrequencyTimer;
-
-        public int Duty;
-
-        public int DutyStep;
-
-        public float OutputLeft => (this.LengthStatus && this.LeftEnable) ? (this.squareDuty[this.Duty, this.DutyStep] * this.Volume) / 100f : 0;
-
-        public float OutputRight => (this.LengthStatus && this.RightEnable) ? (this.squareDuty[this.Duty, this.DutyStep] * this.Volume) / 100f : 0;
-
-        public bool LeftEnable;
-
-        public bool RightEnable;
-
-        public int InitialSweepTimer;
-
-        public int SweepTimer;
-
-        public int SweepFrequency;
-
-        public bool SweepEnabled;
-
-        public bool SweepNegate;
-
-        public int SweepShift;
-
-        public bool NegateDirty = false;
-
         private readonly byte[,] squareDuty = new byte[,]
         {
             { 0, 0, 0, 0, 0, 0, 0, 1 },
@@ -63,27 +10,74 @@
             { 0, 1, 1, 1, 1, 1, 1, 0 },
         };
 
+        private int lengthTimer;
+        private int volume;
+        private int volumeTimer;
+        private int frequencyTimer;
+        private int sweepTimer;
+        private int sweepFrequency;
+        private bool sweepEnabled;
+
+        public int LengthLoad
+        {
+            set => this.lengthTimer = 64 - value;
+        }
+
+        public bool DacEnable { get; set; }
+
+        public bool LengthStatus { get; set; }
+
+        public bool LengthEnable { get; set; }
+
+        public int InitialVolume { get; set; }
+
+        public int InitialVolumeTimer { get; set; }
+
+        public bool EnvelopeAddMode { get; set; }
+
+        public int Frequency { get; set; }
+
+        public int Duty { get; set; }
+
+        public int DutyStep { get; set; }
+
+        public float OutputLeft => (this.LengthStatus && this.LeftEnable) ? (this.squareDuty[this.Duty, this.DutyStep] * this.volume) / 100f : 0;
+
+        public float OutputRight => (this.LengthStatus && this.RightEnable) ? (this.squareDuty[this.Duty, this.DutyStep] * this.volume) / 100f : 0;
+
+        public bool LeftEnable { get; set; }
+
+        public bool RightEnable { get; set; }
+
+        public int InitialSweepTimer { get; set; }
+
+        public bool SweepNegate { get; set; }
+
+        public int SweepShift { get; set; }
+
+        public bool NegateDirty { get; set; } = false;
+
         public void Trigger()
         {
             this.LengthStatus = this.DacEnable;
 
-            if (this.LengthTimer == 0)
+            if (this.lengthTimer == 0)
             {
-                this.LengthTimer = 64;
+                this.lengthTimer = 64;
             }
 
             // When triggering a square channel, the low two bits of the frequency timer are NOT modified.
-            this.FrequencyTimer = (this.FrequencyTimer & 0b11) | (((2048 - this.Frequency) * 4) & ~0b11);
+            this.frequencyTimer = (this.frequencyTimer & 0b11) | (((2048 - this.Frequency) * 4) & ~0b11);
 
             // Volume/sweep timer treat a period of 0 as 8
-            this.VolumeTimer = this.InitialVolumeTimer == 0 ? 8 : this.InitialVolumeTimer;
-            this.SweepTimer = this.InitialSweepTimer == 0 ? 8 : this.InitialSweepTimer;
+            this.volumeTimer = this.InitialVolumeTimer == 0 ? 8 : this.InitialVolumeTimer;
+            this.sweepTimer = this.InitialSweepTimer == 0 ? 8 : this.InitialSweepTimer;
 
-            this.Volume = this.InitialVolume;
+            this.volume = this.InitialVolume;
 
-            this.SweepFrequency = this.Frequency;
+            this.sweepFrequency = this.Frequency;
 
-            this.SweepEnabled = this.InitialSweepTimer != 0 || this.SweepShift != 0;
+            this.sweepEnabled = this.InitialSweepTimer != 0 || this.SweepShift != 0;
 
             this.NegateDirty = false;
 
@@ -95,14 +89,14 @@
 
         public void ClockTick()
         {
-            if (this.FrequencyTimer > 0)
+            if (this.frequencyTimer > 0)
             {
-                this.FrequencyTimer--;
+                this.frequencyTimer--;
             }
 
-            if (this.FrequencyTimer == 0)
+            if (this.frequencyTimer == 0)
             {
-                this.FrequencyTimer = (2048 - this.Frequency) * 4;
+                this.frequencyTimer = (2048 - this.Frequency) * 4;
 
                 if (++this.DutyStep > 7)
                 {
@@ -115,12 +109,12 @@
         {
             if (this.LengthEnable)
             {
-                if (this.LengthTimer > 0)
+                if (this.lengthTimer > 0)
                 {
-                    this.LengthTimer--;
+                    this.lengthTimer--;
                 }
 
-                if (this.LengthTimer == 0)
+                if (this.lengthTimer == 0)
                 {
                     this.LengthStatus = false;
                 }
@@ -131,44 +125,44 @@
         {
             if (this.InitialVolumeTimer > 0)
             {
-                if (this.VolumeTimer > 0)
+                if (this.volumeTimer > 0)
                 {
-                    this.VolumeTimer--;
+                    this.volumeTimer--;
                 }
 
-                if (this.VolumeTimer == 0)
+                if (this.volumeTimer == 0)
                 {
-                    if (this.Volume < 15 && this.EnvelopeAddMode)
+                    if (this.volume < 15 && this.EnvelopeAddMode)
                     {
-                        this.Volume++;
+                        this.volume++;
                     }
-                    else if (this.Volume > 0 && !this.EnvelopeAddMode)
+                    else if (this.volume > 0 && !this.EnvelopeAddMode)
                     {
-                        this.Volume--;
+                        this.volume--;
                     }
 
                     // Volume/sweep timer treat a period of 0 as 8
-                    this.VolumeTimer = this.InitialVolumeTimer == 0 ? 8 : this.InitialVolumeTimer;
+                    this.volumeTimer = this.InitialVolumeTimer == 0 ? 8 : this.InitialVolumeTimer;
                 }
             }
         }
 
         public void SweepTick()
         {
-            if (this.SweepTimer > 0)
+            if (this.sweepTimer > 0)
             {
-                this.SweepTimer--;
+                this.sweepTimer--;
             }
 
-            if (this.SweepTimer == 0)
+            if (this.sweepTimer == 0)
             {
-                if (this.SweepEnabled && this.InitialSweepTimer != 0)
+                if (this.sweepEnabled && this.InitialSweepTimer != 0)
                 {
                     int newFrequency = this.SweepCalculation();
 
                     if (newFrequency <= 2047 && this.SweepShift != 0)
                     {
-                        this.SweepFrequency = newFrequency;
+                        this.sweepFrequency = newFrequency;
                         this.Frequency = newFrequency;
 
                         this.SweepCalculation();
@@ -176,13 +170,13 @@
                 }
 
                 // Volume/sweep timer treat a period of 0 as 8
-                this.SweepTimer = this.InitialSweepTimer == 0 ? 8 : this.InitialSweepTimer;
+                this.sweepTimer = this.InitialSweepTimer == 0 ? 8 : this.InitialSweepTimer;
             }
         }
 
         public int SweepCalculation()
         {
-            int newFrequency = this.SweepFrequency + ((this.SweepFrequency >> this.SweepShift) * (this.SweepNegate ? -1 : 1));
+            int newFrequency = this.sweepFrequency + ((this.sweepFrequency >> this.SweepShift) * (this.SweepNegate ? -1 : 1));
 
             if (this.SweepNegate)
             {

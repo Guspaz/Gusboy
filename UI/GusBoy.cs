@@ -1,6 +1,6 @@
 ﻿[assembly: System.Resources.NeutralResourcesLanguageAttribute("en")]
 
-namespace GusBoy
+namespace Gusboy
 {
     using System;
     using System.Collections.Generic;
@@ -30,12 +30,13 @@ namespace GusBoy
 
         private readonly BufferedWaveProvider audioBuffer = new BufferedWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(48000, 2)) { DiscardOnBufferOverflow = true };
         private readonly WaveOutEvent outputDevice = new WaveOutEvent() { DesiredLatency = 50, NumberOfBuffers = 10 };
+        private readonly DirectBitmap framebuffer = new DirectBitmap(160, 144);
 
         private readonly Gameboy gb;
+
         private long frames = -1;
         private long cpuTicks = 0;
         private long clockTicks = 0;
-        private readonly DirectBitmap framebuffer = new DirectBitmap(160, 144);
 
         public Gusboy()
         {
@@ -116,7 +117,7 @@ namespace GusBoy
             emuWorker.RunWorkerAsync();
         }
 
-        private void GusBoy_Paint(object sender, PaintEventArgs e)
+        private void Gusboy_Paint(object sender, PaintEventArgs e)
         {
             if (this.framebuffer != null)
             {
@@ -128,7 +129,7 @@ namespace GusBoy
             }
         }
 
-        private void GusBoy_KeyDown(object sender, KeyEventArgs e)
+        private void Gusboy_KeyDown(object sender, KeyEventArgs e)
         {
             // This event-based input is laggy. Should probably switch to polling using the WinInput class.
             if (this.keymap.ContainsKey(e.KeyCode))
@@ -139,7 +140,7 @@ namespace GusBoy
             e.Handled = true;
         }
 
-        private void GusBoy_KeyUp(object sender, KeyEventArgs e)
+        private void Gusboy_KeyUp(object sender, KeyEventArgs e)
         {
             if (this.keymap.ContainsKey(e.KeyCode))
             {
@@ -149,7 +150,7 @@ namespace GusBoy
             e.Handled = true;
         }
 
-        private void GusBoy_FormClosed(object sender, FormClosedEventArgs e) => this.gb.Rom.SaveSRAM();
+        private void Gusboy_FormClosed(object sender, FormClosedEventArgs e) => this.gb.Rom.SaveSRAM();
 
         public class DirectBitmap : IDisposable
         {

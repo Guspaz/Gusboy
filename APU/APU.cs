@@ -1,4 +1,4 @@
-﻿namespace GusBoy
+﻿namespace Gusboy
 {
     using System;
     using System.Collections.Generic;
@@ -379,7 +379,7 @@
                 if ((value & 0b1111_1000) == 0)
                 {
                     // Disable DAC
-                    this.channel4.LengthStatus = false;
+                    this.channel4.ChannelEnable = false;
                     this.channel4.DacEnable = false;
                 }
                 else
@@ -503,7 +503,7 @@
             get
             {
                 int power = (Convert.ToInt32(this.apuPower) << 7) & 0b1000_0000;
-                int l4 = (Convert.ToInt32(this.channel4.LengthStatus) << 3) & 0b0000_1000;
+                int l4 = (Convert.ToInt32(this.channel4.ChannelEnable) << 3) & 0b0000_1000;
                 int l3 = (Convert.ToInt32(this.channel3.LengthStatus) << 2) & 0b0000_0100;
                 int l2 = (Convert.ToInt32(this.channel2.LengthStatus) << 1) & 0b0000_0010;
                 int l1 = (Convert.ToInt32(this.channel1.LengthStatus) << 0) & 0b0000_0001;
@@ -522,7 +522,7 @@
                     this.frameSequencerStep = 0;
                     this.channel1.DutyStep = 0;
                     this.channel2.DutyStep = 0;
-                    this.channel3.sampleBuffer = 0;
+                    this.channel3.SampleBuffer = 0;
                 }
                 else if (initialPower && !newPower)
                 {
@@ -553,7 +553,7 @@
                     this.channel1.LengthStatus = false;
                     this.channel2.LengthStatus = false;
                     this.channel3.LengthStatus = false;
-                    this.channel4.LengthStatus = false;
+                    this.channel4.ChannelEnable = false;
                 }
 
                 this.apuPower = newPower;

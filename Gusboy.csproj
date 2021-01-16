@@ -6,14 +6,15 @@
 		<UseWindowsForms>true</UseWindowsForms>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 
-		<RootNamespace>GusBoy</RootNamespace>
-		<AssemblyName>GusBoy</AssemblyName>
-		<StartupObject>GusBoy.Program</StartupObject>
+		<RootNamespace>Gusboy</RootNamespace>
+		<AssemblyName>Gusboy</AssemblyName>
+		<StartupObject>Gusboy.Program</StartupObject>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 	  <PlatformTarget>x64</PlatformTarget>
 	  <Optimize>false</Optimize>
+	  <DocumentationFile></DocumentationFile>
 	</PropertyGroup>
 
 	<ItemGroup>

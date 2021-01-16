@@ -1,4 +1,4 @@
-﻿namespace GusBoy
+﻿namespace Gusboy
 {
     /// <summary>
     /// Implemented from reference doc at https://hacktix.github.io/GBEDG/timers/
