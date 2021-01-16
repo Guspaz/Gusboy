@@ -4,7 +4,7 @@
     {
         // Implemented from reference doc at https://hacktix.github.io/GBEDG/timers/
 
-        public gshort rDIV = 0;
+        public Gshort rDIV = 0;
         public byte rTIMA = 0;
         public byte rTMA = 0;
         public byte rTAC = 0;

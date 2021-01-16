@@ -3,14 +3,15 @@
     public partial class CPU
     {
         // 16-bit registers
-        public gshort rAF = 0x01B0;
-        public gshort rBC = 0x0013;
-        public gshort rDE = 0x00D8;
-        public gshort rHL = 0x014D;
-        public gshort rSP = 0xFFFE;
-        public gshort rPC = 0x0000;
+        public Gshort rAF = 0x01B0;
+        public Gshort rBC = 0x0013;
+        public Gshort rDE = 0x00D8;
+        public Gshort rHL = 0x014D;
+        public Gshort rSP = 0xFFFE;
+        public Gshort rPC = 0x0000;
 
         // 8-bit registers
+#pragma warning disable IDE1006 // Naming Styles
         public byte rA
         {
             get => this.rAF.Hi;
@@ -86,5 +87,6 @@
 
         public bool fHalt = false;
         public bool fStop = false;
+#pragma warning restore IDE1006 // Naming Styles
     }
 }

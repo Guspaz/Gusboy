@@ -66,8 +66,7 @@
 
                 int newHighBit = (this.LFSR & 0b01) ^ ((this.LFSR >> 1) & 0b01);
 
-                this.LFSR = this.LFSR >> 1;
-                this.LFSR = this.LFSR | (newHighBit << 14);
+                this.LFSR = (this.LFSR >> 1) | (newHighBit << 14);
 
                 if ( this.WidthMode )
                 {

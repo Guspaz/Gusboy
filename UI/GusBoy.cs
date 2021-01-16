@@ -125,7 +125,7 @@ namespace GusBoy
                     }
                 }
             }
-            catch ( gbException ex )
+            catch ( GbException ex )
             {
                 this.AddMessage(ex.Message);
             }

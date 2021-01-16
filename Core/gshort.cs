@@ -4,13 +4,13 @@
     /// Basically just a ushort with access to the hi and lo bytes and some extra implicit conversions
     /// Changed to treat it more like int because .NET insists on converting everything to int when you do operations on stuff
     /// </summary>
-    public struct gshort //: IFormattable, IConvertible, IComparable<UInt16>, IEquatable<UInt16>
+    public struct Gshort //: IFormattable, IConvertible, IComparable<UInt16>, IEquatable<UInt16>
     {
         // TODO: Add direct operators to maybe be faster than the automatic int conversions
 
         private ushort var;
 
-        public gshort(int u)
+        public Gshort(int u)
         {
             this.var = (ushort)u;
         }
@@ -43,12 +43,12 @@
             }
         }
 
-        public static implicit operator gshort(int i)
+        public static implicit operator Gshort(int i)
         {
-            return new gshort(i);
+            return new Gshort(i);
         }
 
-        public static implicit operator int(gshort g)
+        public static implicit operator int(Gshort g)
         {
             return g.var;
         }

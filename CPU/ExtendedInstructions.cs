@@ -2,6 +2,7 @@
 {
     public partial class CPU
     {
+#pragma warning disable IDE1006 // Naming Styles
         private int swap_a()
         {
             this.rA = (byte)(((this.rA & 0xF0) >> 4) | ((this.rA & 0x0F) << 4));
@@ -81,8 +82,8 @@
 
         private int swap_phl()
         {
-            this.ram[this.rHL] = (byte)(((this.ram[this.rHL] & 0xF0) >> 4) | ((this.ram[this.rHL] & 0x0F) << 4));
-            this.fZ = this.ram[this.rHL] == 0;
+            this.Ram[this.rHL] = (byte)(((this.Ram[this.rHL] & 0xF0) >> 4) | ((this.Ram[this.rHL] & 0x0F) << 4));
+            this.fZ = this.Ram[this.rHL] == 0;
             this.fN = false;
             this.fH = false;
             this.fC = false;
@@ -134,7 +135,7 @@
 
         private int res_0_phl()
         {
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] & ~(1 << 0));
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] & ~(1 << 0));
             return 16;
         }
 
@@ -183,7 +184,7 @@
 
         private int res_1_phl()
         {
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] & ~(1 << 1));
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] & ~(1 << 1));
             return 16;
         }
 
@@ -232,7 +233,7 @@
 
         private int res_2_phl()
         {
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] & ~(1 << 2));
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] & ~(1 << 2));
             return 16;
         }
 
@@ -281,7 +282,7 @@
 
         private int res_3_phl()
         {
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] & ~(1 << 3));
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] & ~(1 << 3));
             return 16;
         }
 
@@ -330,7 +331,7 @@
 
         private int res_4_phl()
         {
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] & ~(1 << 4));
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] & ~(1 << 4));
             return 16;
         }
 
@@ -379,7 +380,7 @@
 
         private int res_5_phl()
         {
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] & ~(1 << 5));
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] & ~(1 << 5));
             return 16;
         }
 
@@ -428,7 +429,7 @@
 
         private int res_6_phl()
         {
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] & ~(1 << 6));
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] & ~(1 << 6));
             return 16;
         }
 
@@ -477,7 +478,7 @@
 
         private int res_7_phl()
         {
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] & ~(1 << 7));
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] & ~(1 << 7));
             return 16;
         }
 
@@ -527,7 +528,7 @@
 
         private int set_0_phl()
         {
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] | (1 << 0));
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] | (1 << 0));
             return 16;
         }
 
@@ -576,7 +577,7 @@
 
         private int set_1_phl()
         {
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] | (1 << 1));
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] | (1 << 1));
             return 16;
         }
 
@@ -625,7 +626,7 @@
 
         private int set_2_phl()
         {
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] | (1 << 2));
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] | (1 << 2));
             return 16;
         }
 
@@ -674,7 +675,7 @@
 
         private int set_3_phl()
         {
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] | (1 << 3));
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] | (1 << 3));
             return 16;
         }
 
@@ -723,7 +724,7 @@
 
         private int set_4_phl()
         {
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] | (1 << 4));
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] | (1 << 4));
             return 16;
         }
 
@@ -772,7 +773,7 @@
 
         private int set_5_phl()
         {
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] | (1 << 5));
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] | (1 << 5));
             return 16;
         }
 
@@ -821,7 +822,7 @@
 
         private int set_6_phl()
         {
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] | (1 << 6));
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] | (1 << 6));
             return 16;
         }
 
@@ -870,7 +871,7 @@
 
         private int set_7_phl()
         {
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] | (1 << 7));
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] | (1 << 7));
             return 16;
         }
 
@@ -967,11 +968,11 @@
 
         private int sla_phl()
         {
-            this.fC = (this.ram[this.rHL] & 0x80) == 0x80;
+            this.fC = (this.Ram[this.rHL] & 0x80) == 0x80;
 
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] << 1);
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] << 1);
 
-            this.fZ = this.ram[this.rHL] == 0;
+            this.fZ = this.Ram[this.rHL] == 0;
             this.fN = false;
             this.fH = false;
 
@@ -1099,15 +1100,15 @@
 
         private int sra_phl()
         {
-            this.fC = (this.ram[this.rHL] & 0x01) == 0x01;
+            this.fC = (this.Ram[this.rHL] & 0x01) == 0x01;
 
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] >> 1);
-            if ( (this.ram[this.rHL] & 0x40) == 0x40 )
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] >> 1);
+            if ( (this.Ram[this.rHL] & 0x40) == 0x40 )
             {
-                this.ram[this.rHL] |= 0x80;
+                this.Ram[this.rHL] |= 0x80;
             }
 
-            this.fZ = this.ram[this.rHL] == 0;
+            this.fZ = this.Ram[this.rHL] == 0;
             this.fN = false;
             this.fH = false;
 
@@ -1244,14 +1245,14 @@
         {
             bool oldFC = this.fC;
 
-            this.fC = (this.ram[this.rHL] & 0x01) == 0x01;
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] >> 1);
+            this.fC = (this.Ram[this.rHL] & 0x01) == 0x01;
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] >> 1);
             if ( oldFC )
             {
-                this.ram[this.rHL] |= 0x80;
+                this.Ram[this.rHL] |= 0x80;
             }
 
-            this.fZ = this.ram[this.rHL] == 0;
+            this.fZ = this.Ram[this.rHL] == 0;
             this.fN = false;
             this.fH = false;
 
@@ -1388,14 +1389,14 @@
         {
             bool oldFC = this.fC;
 
-            this.fC = (this.ram[this.rHL] & 0x80) == 0x80;
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] << 1);
+            this.fC = (this.Ram[this.rHL] & 0x80) == 0x80;
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] << 1);
             if ( oldFC )
             {
-                this.ram[this.rHL] |= 0x01;
+                this.Ram[this.rHL] |= 0x01;
             }
 
-            this.fZ = this.ram[this.rHL] == 0;
+            this.fZ = this.Ram[this.rHL] == 0;
             this.fN = false;
             this.fH = false;
 
@@ -1495,11 +1496,11 @@
 
         private int srl_phl()
         {
-            this.fC = (this.ram[this.rHL] & 0x01) == 0x01;
+            this.fC = (this.Ram[this.rHL] & 0x01) == 0x01;
 
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] >> 1);
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] >> 1);
 
-            this.fZ = this.ram[this.rHL] == 0;
+            this.fZ = this.Ram[this.rHL] == 0;
             this.fN = false;
             this.fH = false;
 
@@ -1627,15 +1628,15 @@
 
         private int rlc_phl()
         {
-            this.fC = (this.ram[this.rHL] & 0x80) == 0x80;
+            this.fC = (this.Ram[this.rHL] & 0x80) == 0x80;
 
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] << 1);
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] << 1);
             if ( this.fC )
             {
-                this.ram[this.rHL] |= 0x01;
+                this.Ram[this.rHL] |= 0x01;
             }
 
-            this.fZ = this.ram[this.rHL] == 0;
+            this.fZ = this.Ram[this.rHL] == 0;
             this.fN = false;
             this.fH = false;
 
@@ -1763,15 +1764,15 @@
 
         private int rrc_phl()
         {
-            this.fC = (this.ram[this.rHL] & 0x01) == 0x01;
+            this.fC = (this.Ram[this.rHL] & 0x01) == 0x01;
 
-            this.ram[this.rHL] = (byte)(this.ram[this.rHL] >> 1);
+            this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] >> 1);
             if ( this.fC )
             {
-                this.ram[this.rHL] |= 0x80;
+                this.Ram[this.rHL] |= 0x80;
             }
 
-            this.fZ = this.ram[this.rHL] == 0;
+            this.fZ = this.Ram[this.rHL] == 0;
             this.fN = false;
             this.fH = false;
 
@@ -1836,7 +1837,7 @@
 
         private int bit_0_phl()
         {
-            this.fZ = (this.ram[this.rHL] & (1 << 0)) == 0;
+            this.fZ = (this.Ram[this.rHL] & (1 << 0)) == 0;
             this.fN = false;
             this.fH = true;
             return 12;
@@ -1901,7 +1902,7 @@
 
         private int bit_1_phl()
         {
-            this.fZ = (this.ram[this.rHL] & (1 << 1)) == 0;
+            this.fZ = (this.Ram[this.rHL] & (1 << 1)) == 0;
             this.fN = false;
             this.fH = true;
             return 12;
@@ -1966,7 +1967,7 @@
 
         private int bit_2_phl()
         {
-            this.fZ = (this.ram[this.rHL] & (1 << 2)) == 0;
+            this.fZ = (this.Ram[this.rHL] & (1 << 2)) == 0;
             this.fN = false;
             this.fH = true;
             return 12;
@@ -2031,7 +2032,7 @@
 
         private int bit_3_phl()
         {
-            this.fZ = (this.ram[this.rHL] & (1 << 3)) == 0;
+            this.fZ = (this.Ram[this.rHL] & (1 << 3)) == 0;
             this.fN = false;
             this.fH = true;
             return 12;
@@ -2096,7 +2097,7 @@
 
         private int bit_4_phl()
         {
-            this.fZ = (this.ram[this.rHL] & (1 << 4)) == 0;
+            this.fZ = (this.Ram[this.rHL] & (1 << 4)) == 0;
             this.fN = false;
             this.fH = true;
             return 12;
@@ -2161,7 +2162,7 @@
 
         private int bit_5_phl()
         {
-            this.fZ = (this.ram[this.rHL] & (1 << 5)) == 0;
+            this.fZ = (this.Ram[this.rHL] & (1 << 5)) == 0;
             this.fN = false;
             this.fH = true;
             return 12;
@@ -2226,7 +2227,7 @@
 
         private int bit_6_phl()
         {
-            this.fZ = (this.ram[this.rHL] & (1 << 6)) == 0;
+            this.fZ = (this.Ram[this.rHL] & (1 << 6)) == 0;
             this.fN = false;
             this.fH = true;
             return 12;
@@ -2291,10 +2292,11 @@
 
         private int bit_7_phl()
         {
-            this.fZ = (this.ram[this.rHL] & (1 << 7)) == 0;
+            this.fZ = (this.Ram[this.rHL] & (1 << 7)) == 0;
             this.fN = false;
             this.fH = true;
             return 12;
         }
+#pragma warning restore IDE1006 // Naming Styles
     }
 }

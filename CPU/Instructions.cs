@@ -2,23 +2,26 @@
 {
     public partial class CPU
     {
-        private bool halfCarrySub(byte target, byte value, int carry = 0) => (((target & 0xF) - (value & 0xF) - carry) < 0);
+        private static bool HalfCarrySub(byte target, byte value, int carry = 0) => (((target & 0xF) - (value & 0xF) - carry) < 0);
 
-        private bool halfCarryAdd(byte target, byte value, int carry = 0) => ((target & 0xF) + (value & 0xF) + carry) > 0xF;
+        private static bool HalfCarryAdd(byte target, byte value, int carry = 0) => ((target & 0xF) + (value & 0xF) + carry) > 0xF;
 
-        private bool halfCarryAdd(gshort target, gshort value) => ((target & 0xFFF) + (value & 0xFFF)) > 0xFFF;
+        private static bool HalfCarryAdd(Gshort target, Gshort value) => ((target & 0xFFF) + (value & 0xFFF)) > 0xFFF;
 
-        private int ext(gshort operand) => this.extendedOpcodes[operand.Lo].func();
+        private int Crash(Gshort operand) => throw new GbException($"Executed illegal instruction at address 0x{rPC:X4}");
 
-        private int nop(gshort operand) => 4;
+#pragma warning disable IDE1006 // Naming Styles
+        private int ext(Gshort operand) => this.extendedOpcodes[operand.Lo].func();
 
-        private int jp_nn(gshort operand)
+        private int nop(Gshort operand) => 4;
+
+        private int jp_nn(Gshort operand)
         {
             this.rPC = operand;
             return 16;
         }
 
-        private int jp_nz_nn(gshort operand)
+        private int jp_nz_nn(Gshort operand)
         {
             if ( !this.fZ )
             {
@@ -31,7 +34,7 @@
             }
         }
 
-        private int jp_z_nn(gshort operand)
+        private int jp_z_nn(Gshort operand)
         {
             if ( this.fZ )
             {
@@ -44,7 +47,7 @@
             }
         }
 
-        private int jp_nc_nn(gshort operand)
+        private int jp_nc_nn(Gshort operand)
         {
             if ( !this.fC )
             {
@@ -57,7 +60,7 @@
             }
         }
 
-        private int jp_c_nn(gshort operand)
+        private int jp_c_nn(Gshort operand)
         {
             if ( this.fC )
             {
@@ -70,19 +73,19 @@
             }
         }
 
-        private int call_nn(gshort operand)
+        private int call_nn(Gshort operand)
         {
-            this.ram.SetShort(this.rSP - 2, this.rPC);
+            this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = operand;
             this.rSP -= 2;
             return 24;
         }
 
-        private int call_nz_nn(gshort operand)
+        private int call_nz_nn(Gshort operand)
         {
             if ( !this.fZ )
             {
-                this.ram.SetShort(this.rSP - 2, this.rPC);
+                this.Ram.SetShort(this.rSP - 2, this.rPC);
                 this.rPC = operand;
                 this.rSP -= 2;
                 return 24;
@@ -93,11 +96,11 @@
             }
         }
 
-        private int call_z_nn(gshort operand)
+        private int call_z_nn(Gshort operand)
         {
             if ( this.fZ )
             {
-                this.ram.SetShort(this.rSP - 2, this.rPC);
+                this.Ram.SetShort(this.rSP - 2, this.rPC);
                 this.rPC = operand;
                 this.rSP -= 2;
                 return 24;
@@ -108,11 +111,11 @@
             }
         }
 
-        private int call_nc_nn(gshort operand)
+        private int call_nc_nn(Gshort operand)
         {
             if ( !this.fC )
             {
-                this.ram.SetShort(this.rSP - 2, this.rPC);
+                this.Ram.SetShort(this.rSP - 2, this.rPC);
                 this.rPC = operand;
                 this.rSP -= 2;
                 return 24;
@@ -123,11 +126,11 @@
             }
         }
 
-        private int call_c_nn(gshort operand)
+        private int call_c_nn(Gshort operand)
         {
             if ( this.fC )
             {
-                this.ram.SetShort(this.rSP - 2, this.rPC);
+                this.Ram.SetShort(this.rSP - 2, this.rPC);
                 this.rPC = operand;
                 this.rSP -= 2;
                 return 24;
@@ -138,7 +141,7 @@
             }
         }
 
-        private int rl_a(gshort operand)
+        private int rl_a(Gshort operand)
         {
             bool oldFC = this.fC;
 
@@ -156,7 +159,7 @@
             return 4;
         }
 
-        private int rr_a(gshort operand)
+        private int rr_a(Gshort operand)
         {
             bool oldFC = this.fC;
 
@@ -174,7 +177,7 @@
             return 4;
         }
 
-        private int scf(gshort operand)
+        private int scf(Gshort operand)
         {
             this.fN = false;
             this.fH = false;
@@ -183,7 +186,7 @@
             return 4;
         }
 
-        private int ccf(gshort operand)
+        private int ccf(Gshort operand)
         {
             this.fN = false;
             this.fH = false;
@@ -192,26 +195,26 @@
             return 4;
         }
 
-        private int ret(gshort operand)
+        private int ret(Gshort operand)
         {
-            this.rPC = this.ram.GetShort(this.rSP);
+            this.rPC = this.Ram.GetShort(this.rSP);
             this.rSP += 2;
             return 16;
         }
 
-        private int reti(gshort operand)
+        private int reti(Gshort operand)
         {
-            this.rPC = this.ram.GetShort(this.rSP);
+            this.rPC = this.Ram.GetShort(this.rSP);
             this.rSP += 2;
             this.fInterruptMasterEnable = true;
             return 16;
         }
 
-        private int ret_nz(gshort operand)
+        private int ret_nz(Gshort operand)
         {
             if ( !this.fZ )
             {
-                this.rPC = this.ram.GetShort(this.rSP);
+                this.rPC = this.Ram.GetShort(this.rSP);
                 this.rSP += 2;
                 return 20;
             }
@@ -221,11 +224,11 @@
             }
         }
 
-        private int ret_z(gshort operand)
+        private int ret_z(Gshort operand)
         {
             if ( this.fZ )
             {
-                this.rPC = this.ram.GetShort(this.rSP);
+                this.rPC = this.Ram.GetShort(this.rSP);
                 this.rSP += 2;
                 return 20;
             }
@@ -235,11 +238,11 @@
             }
         }
 
-        private int ret_nc(gshort operand)
+        private int ret_nc(Gshort operand)
         {
             if ( !this.fC )
             {
-                this.rPC = this.ram.GetShort(this.rSP);
+                this.rPC = this.Ram.GetShort(this.rSP);
                 this.rSP += 2;
                 return 20;
             }
@@ -249,11 +252,11 @@
             }
         }
 
-        private int ret_c(gshort operand)
+        private int ret_c(Gshort operand)
         {
             if ( this.fC )
             {
-                this.rPC = this.ram.GetShort(this.rSP);
+                this.rPC = this.Ram.GetShort(this.rSP);
                 this.rSP += 2;
                 return 20;
             }
@@ -263,7 +266,7 @@
             }
         }
 
-        private int xor_a(gshort operand)
+        private int xor_a(Gshort operand)
         {
             this.rA ^= this.rA;
             this.fZ = this.rA == 0;
@@ -274,7 +277,7 @@
             return 4;
         }
 
-        private int xor_b(gshort operand)
+        private int xor_b(Gshort operand)
         {
             this.rA ^= this.rB;
             this.fZ = this.rA == 0;
@@ -285,7 +288,7 @@
             return 4;
         }
 
-        private int xor_c(gshort operand)
+        private int xor_c(Gshort operand)
         {
             this.rA ^= this.rC;
             this.fZ = this.rA == 0;
@@ -296,7 +299,7 @@
             return 4;
         }
 
-        private int xor_d(gshort operand)
+        private int xor_d(Gshort operand)
         {
             this.rA ^= this.rD;
             this.fZ = this.rA == 0;
@@ -307,7 +310,7 @@
             return 4;
         }
 
-        private int xor_e(gshort operand)
+        private int xor_e(Gshort operand)
         {
             this.rA ^= this.rE;
             this.fZ = this.rA == 0;
@@ -318,7 +321,7 @@
             return 4;
         }
 
-        private int xor_h(gshort operand)
+        private int xor_h(Gshort operand)
         {
             this.rA ^= this.rH;
             this.fZ = this.rA == 0;
@@ -329,7 +332,7 @@
             return 4;
         }
 
-        private int xor_l(gshort operand)
+        private int xor_l(Gshort operand)
         {
             this.rA ^= this.rL;
             this.fZ = this.rA == 0;
@@ -340,9 +343,9 @@
             return 4;
         }
 
-        private int xor_phl(gshort operand)
+        private int xor_phl(Gshort operand)
         {
-            this.rA ^= this.ram[this.rHL];
+            this.rA ^= this.Ram[this.rHL];
             this.fZ = this.rA == 0;
             this.fN = false;
             this.fH = false;
@@ -351,119 +354,119 @@
             return 8;
         }
 
-        private int ld_bc_nn(gshort operand)
+        private int ld_bc_nn(Gshort operand)
         {
             this.rBC = (ushort)operand;
             return 12;
         }
 
-        private int ld_de_nn(gshort operand)
+        private int ld_de_nn(Gshort operand)
         {
             this.rDE = (ushort)operand;
             return 12;
         }
 
-        private int ld_hl_nn(gshort operand)
+        private int ld_hl_nn(Gshort operand)
         {
             this.rHL = (ushort)operand;
             return 12;
         }
 
-        private int ld_sp_nn(gshort operand)
+        private int ld_sp_nn(Gshort operand)
         {
             this.rSP = (ushort)operand;
             return 12;
         }
 
-        private int ld_pnn_sp(gshort operand)
+        private int ld_pnn_sp(Gshort operand)
         {
-            this.ram.SetShort(operand, this.rSP); // TODO: Check that SetShort works here
+            this.Ram.SetShort(operand, this.rSP); // TODO: Check that SetShort works here
             return 20;
         }
 
-        private int ld_sp_hl(gshort operand)
+        private int ld_sp_hl(Gshort operand)
         {
             this.rSP = (ushort)this.rHL;
             return 8;
         }
 
-        private int ld_a_pnn(gshort operand)
+        private int ld_a_pnn(Gshort operand)
         {
-            this.rA = this.ram[operand];
+            this.rA = this.Ram[operand];
             return 16;
         }
 
-        private int ldd_phl_a(gshort operand)
+        private int ldd_phl_a(Gshort operand)
         {
-            this.ram[this.rHL] = this.rA;
+            this.Ram[this.rHL] = this.rA;
             this.rHL--;
             return 8;
         }
 
-        private int ldd_a_phl(gshort operand)
+        private int ldd_a_phl(Gshort operand)
         {
-            this.rA = this.ram[this.rHL];
+            this.rA = this.Ram[this.rHL];
             this.rHL--;
             return 8;
         }
 
-        private int ld_pbc_a(gshort operand)
+        private int ld_pbc_a(Gshort operand)
         {
-            this.ram[this.rBC] = this.rA;
+            this.Ram[this.rBC] = this.rA;
             return 8;
         }
 
-        private int ld_pde_a(gshort operand)
+        private int ld_pde_a(Gshort operand)
         {
-            this.ram[this.rDE] = this.rA;
+            this.Ram[this.rDE] = this.rA;
             return 8;
         }
 
-        private int ld_phl_a(gshort operand)
+        private int ld_phl_a(Gshort operand)
         {
-            this.ram[this.rHL] = this.rA;
+            this.Ram[this.rHL] = this.rA;
             return 8;
         }
 
-        private int ld_phl_b(gshort operand)
+        private int ld_phl_b(Gshort operand)
         {
-            this.ram[this.rHL] = this.rB;
+            this.Ram[this.rHL] = this.rB;
             return 8;
         }
 
-        private int ld_phl_c(gshort operand)
+        private int ld_phl_c(Gshort operand)
         {
-            this.ram[this.rHL] = this.rC;
+            this.Ram[this.rHL] = this.rC;
             return 8;
         }
 
-        private int ld_phl_d(gshort operand)
+        private int ld_phl_d(Gshort operand)
         {
-            this.ram[this.rHL] = this.rD;
+            this.Ram[this.rHL] = this.rD;
             return 8;
         }
 
-        private int ld_phl_e(gshort operand)
+        private int ld_phl_e(Gshort operand)
         {
-            this.ram[this.rHL] = this.rE;
+            this.Ram[this.rHL] = this.rE;
             return 8;
         }
 
-        private int ld_phl_h(gshort operand)
+        private int ld_phl_h(Gshort operand)
         {
-            this.ram[this.rHL] = this.rH;
+            this.Ram[this.rHL] = this.rH;
             return 8;
         }
 
-        private int ld_phl_l(gshort operand)
+        private int ld_phl_l(Gshort operand)
         {
-            this.ram[this.rHL] = this.rL;
+            this.Ram[this.rHL] = this.rL;
             return 8;
         }
 
-        private int dec_a(gshort operand)
+        private int dec_a(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.rA, 1);
+            this.fH = HalfCarrySub(this.rA, 1);
 
             this.rA--;
             this.fZ = this.rA == 0;
@@ -472,9 +475,9 @@
             return 4;
         }
 
-        private int dec_b(gshort operand)
+        private int dec_b(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.rB, 1);
+            this.fH = HalfCarrySub(this.rB, 1);
 
             this.rB--;
             this.fZ = this.rB == 0;
@@ -483,9 +486,9 @@
             return 4;
         }
 
-        private int dec_c(gshort operand)
+        private int dec_c(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.rC, 1);
+            this.fH = HalfCarrySub(this.rC, 1);
 
             this.rC--;
             this.fZ = this.rC == 0;
@@ -494,9 +497,9 @@
             return 4;
         }
 
-        private int dec_d(gshort operand)
+        private int dec_d(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.rD, 1);
+            this.fH = HalfCarrySub(this.rD, 1);
 
             this.rD--;
             this.fZ = this.rD == 0;
@@ -505,9 +508,9 @@
             return 4;
         }
 
-        private int dec_e(gshort operand)
+        private int dec_e(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.rE, 1);
+            this.fH = HalfCarrySub(this.rE, 1);
 
             this.rE--;
             this.fZ = this.rE == 0;
@@ -516,9 +519,9 @@
             return 4;
         }
 
-        private int dec_h(gshort operand)
+        private int dec_h(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.rH, 1);
+            this.fH = HalfCarrySub(this.rH, 1);
 
             this.rH--;
             this.fZ = this.rH == 0;
@@ -527,9 +530,9 @@
             return 4;
         }
 
-        private int dec_l(gshort operand)
+        private int dec_l(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.rL, 1);
+            this.fH = HalfCarrySub(this.rL, 1);
 
             this.rL--;
             this.fZ = this.rL == 0;
@@ -538,20 +541,20 @@
             return 4;
         }
 
-        private int dec_phl(gshort operand)
+        private int dec_phl(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.ram[this.rHL], 1);
+            this.fH = HalfCarrySub(this.Ram[this.rHL], 1);
 
-            this.ram[this.rHL]--;
-            this.fZ = this.ram[this.rHL] == 0;
+            this.Ram[this.rHL]--;
+            this.fZ = this.Ram[this.rHL] == 0;
             this.fN = true;
 
             return 12;
         }
 
-        private int sub_a_a(gshort operand)
+        private int sub_a_a(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.rA, this.rA);
+            this.fH = HalfCarrySub(this.rA, this.rA);
             this.fC = this.rA > this.rA;
 
             this.rA -= this.rA;
@@ -562,9 +565,9 @@
             return 4;
         }
 
-        private int sub_a_b(gshort operand)
+        private int sub_a_b(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.rA, this.rB);
+            this.fH = HalfCarrySub(this.rA, this.rB);
             this.fC = this.rB > this.rA;
 
             this.rA -= this.rB;
@@ -575,9 +578,9 @@
             return 4;
         }
 
-        private int sub_a_c(gshort operand)
+        private int sub_a_c(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.rA, this.rC);
+            this.fH = HalfCarrySub(this.rA, this.rC);
             this.fC = this.rC > this.rA;
 
             this.rA -= this.rC;
@@ -588,9 +591,9 @@
             return 4;
         }
 
-        private int sub_a_d(gshort operand)
+        private int sub_a_d(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.rA, this.rD);
+            this.fH = HalfCarrySub(this.rA, this.rD);
             this.fC = this.rD > this.rA;
 
             this.rA -= this.rD;
@@ -601,9 +604,9 @@
             return 4;
         }
 
-        private int sub_a_e(gshort operand)
+        private int sub_a_e(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.rA, this.rE);
+            this.fH = HalfCarrySub(this.rA, this.rE);
             this.fC = this.rE > this.rA;
 
             this.rA -= this.rE;
@@ -614,9 +617,9 @@
             return 4;
         }
 
-        private int sub_a_h(gshort operand)
+        private int sub_a_h(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.rA, this.rH);
+            this.fH = HalfCarrySub(this.rA, this.rH);
             this.fC = this.rH > this.rA;
 
             this.rA -= this.rH;
@@ -627,9 +630,9 @@
             return 4;
         }
 
-        private int sub_a_l(gshort operand)
+        private int sub_a_l(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.rA, this.rL);
+            this.fH = HalfCarrySub(this.rA, this.rL);
             this.fC = this.rL > this.rA;
 
             this.rA -= this.rL;
@@ -640,12 +643,12 @@
             return 4;
         }
 
-        private int sub_a_phl(gshort operand)
+        private int sub_a_phl(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.rA, this.ram[this.rHL]);
-            this.fC = this.ram[this.rHL] > this.rA;
+            this.fH = HalfCarrySub(this.rA, this.Ram[this.rHL]);
+            this.fC = this.Ram[this.rHL] > this.rA;
 
-            this.rA -= this.ram[this.rHL];
+            this.rA -= this.Ram[this.rHL];
 
             this.fZ = this.rA == 0;
             this.fN = true;
@@ -653,9 +656,9 @@
             return 8;
         }
 
-        private int sub_a_n(gshort operand)
+        private int sub_a_n(Gshort operand)
         {
-            this.fH = this.halfCarrySub(this.rA, operand.Lo);
+            this.fH = HalfCarrySub(this.rA, operand.Lo);
             this.fC = operand.Lo > this.rA;
 
             this.rA -= operand.Lo;
@@ -666,10 +669,10 @@
             return 8;
         }
 
-        private int sbc_a_a(gshort operand)
+        private int sbc_a_a(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarrySub(this.rA, this.rA, carry);
+            this.fH = HalfCarrySub(this.rA, this.rA, carry);
             this.fC = this.rA - this.rA - carry < 0;
 
             this.rA -= (byte)(this.rA + carry);
@@ -680,10 +683,10 @@
             return 4;
         }
 
-        private int sbc_a_b(gshort operand)
+        private int sbc_a_b(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarrySub(this.rA, this.rB, carry);
+            this.fH = HalfCarrySub(this.rA, this.rB, carry);
             this.fC = this.rA - this.rB - carry < 0;
 
             this.rA -= (byte)(this.rB + carry);
@@ -694,10 +697,10 @@
             return 4;
         }
 
-        private int sbc_a_c(gshort operand)
+        private int sbc_a_c(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarrySub(this.rA, this.rC, carry);
+            this.fH = HalfCarrySub(this.rA, this.rC, carry);
             this.fC = this.rA - this.rC - carry < 0;
 
             this.rA -= (byte)(this.rC + carry);
@@ -708,10 +711,10 @@
             return 4;
         }
 
-        private int sbc_a_d(gshort operand)
+        private int sbc_a_d(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarrySub(this.rA, this.rD, carry);
+            this.fH = HalfCarrySub(this.rA, this.rD, carry);
             this.fC = this.rA - this.rD - carry < 0;
 
             this.rA -= (byte)(this.rD + carry);
@@ -722,10 +725,10 @@
             return 4;
         }
 
-        private int sbc_a_e(gshort operand)
+        private int sbc_a_e(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarrySub(this.rA, this.rE, carry);
+            this.fH = HalfCarrySub(this.rA, this.rE, carry);
             this.fC = this.rA - this.rE - carry < 0;
 
             this.rA -= (byte)(this.rE + carry);
@@ -736,10 +739,10 @@
             return 4;
         }
 
-        private int sbc_a_h(gshort operand)
+        private int sbc_a_h(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarrySub(this.rA, this.rH, carry);
+            this.fH = HalfCarrySub(this.rA, this.rH, carry);
             this.fC = this.rA - this.rH - carry < 0;
 
             this.rA -= (byte)(this.rH + carry);
@@ -750,10 +753,10 @@
             return 4;
         }
 
-        private int sbc_a_l(gshort operand)
+        private int sbc_a_l(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarrySub(this.rA, this.rL, carry);
+            this.fH = HalfCarrySub(this.rA, this.rL, carry);
             this.fC = this.rA - this.rL - carry < 0;
 
             this.rA -= (byte)(this.rL + carry);
@@ -764,10 +767,10 @@
             return 4;
         }
 
-        private int sbc_a_n(gshort operand)
+        private int sbc_a_n(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarrySub(this.rA, operand.Lo, carry);
+            this.fH = HalfCarrySub(this.rA, operand.Lo, carry);
             this.fC = this.rA - operand.Lo - carry < 0;
 
             this.rA -= (byte)(operand.Lo + carry);
@@ -778,13 +781,13 @@
             return 8; // WAS 4
         }
 
-        private int sbc_a_phl(gshort operand)
+        private int sbc_a_phl(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarrySub(this.rA, this.ram[this.rHL], carry);
-            this.fC = this.rA - this.ram[this.rHL] - carry < 0;
+            this.fH = HalfCarrySub(this.rA, this.Ram[this.rHL], carry);
+            this.fC = this.rA - this.Ram[this.rHL] - carry < 0;
 
-            this.rA -= (byte)(this.ram[this.rHL] + carry);
+            this.rA -= (byte)(this.Ram[this.rHL] + carry);
 
             this.fZ = this.rA == 0;
             this.fN = true;
@@ -792,123 +795,123 @@
             return 8; // WAS 4
         }
 
-        private int cp_a(gshort operand)
+        private int cp_a(Gshort operand)
         {
             this.fZ = this.rA == this.rA;
             this.fN = true;
-            this.fH = this.halfCarrySub(this.rA, this.rA);
+            this.fH = HalfCarrySub(this.rA, this.rA);
             this.fC = this.rA < this.rA;
 
             return 4;
         }
 
-        private int cp_b(gshort operand)
+        private int cp_b(Gshort operand)
         {
             this.fZ = this.rA == this.rB;
             this.fN = true;
-            this.fH = this.halfCarrySub(this.rA, this.rB);
+            this.fH = HalfCarrySub(this.rA, this.rB);
             this.fC = this.rA < this.rB;
 
             return 4;
         }
 
-        private int cp_c(gshort operand)
+        private int cp_c(Gshort operand)
         {
             this.fZ = this.rA == this.rC;
             this.fN = true;
-            this.fH = this.halfCarrySub(this.rA, this.rC);
+            this.fH = HalfCarrySub(this.rA, this.rC);
             this.fC = this.rA < this.rC;
 
             return 4;
         }
 
-        private int cp_d(gshort operand)
+        private int cp_d(Gshort operand)
         {
             this.fZ = this.rA == this.rD;
             this.fN = true;
-            this.fH = this.halfCarrySub(this.rA, this.rD);
+            this.fH = HalfCarrySub(this.rA, this.rD);
             this.fC = this.rA < this.rD;
 
             return 4;
         }
 
-        private int cp_e(gshort operand)
+        private int cp_e(Gshort operand)
         {
             this.fZ = this.rA == this.rE;
             this.fN = true;
-            this.fH = this.halfCarrySub(this.rA, this.rE);
+            this.fH = HalfCarrySub(this.rA, this.rE);
             this.fC = this.rA < this.rE;
 
             return 4;
         }
 
-        private int cp_h(gshort operand)
+        private int cp_h(Gshort operand)
         {
             this.fZ = this.rA == this.rH;
             this.fN = true;
-            this.fH = this.halfCarrySub(this.rA, this.rH);
+            this.fH = HalfCarrySub(this.rA, this.rH);
             this.fC = this.rA < this.rH;
 
             return 4;
         }
 
-        private int cp_l(gshort operand)
+        private int cp_l(Gshort operand)
         {
             this.fZ = this.rA == this.rL;
             this.fN = true;
-            this.fH = this.halfCarrySub(this.rA, this.rL);
+            this.fH = HalfCarrySub(this.rA, this.rL);
             this.fC = this.rA < this.rL;
 
             return 4;
         }
 
-        private int cp_phl(gshort operand)
+        private int cp_phl(Gshort operand)
         {
-            this.fZ = this.rA == this.ram[this.rHL];
+            this.fZ = this.rA == this.Ram[this.rHL];
             this.fN = true;
-            this.fH = this.halfCarrySub(this.rA, this.ram[this.rHL]);
-            this.fC = this.rA < this.ram[this.rHL];
+            this.fH = HalfCarrySub(this.rA, this.Ram[this.rHL]);
+            this.fC = this.rA < this.Ram[this.rHL];
 
             return 8;
         }
 
-        private int cp_n(gshort operand)
+        private int cp_n(Gshort operand)
         {
             this.fZ = this.rA == operand.Lo;
             this.fN = true;
-            this.fH = this.halfCarrySub(this.rA, operand.Lo);
+            this.fH = HalfCarrySub(this.rA, operand.Lo);
             this.fC = this.rA < operand.Lo;
 
             return 8;
         }
 
-        private int dec_bc(gshort operand)
+        private int dec_bc(Gshort operand)
         {
             this.rBC--;
             return 8;
         }
 
-        private int dec_de(gshort operand)
+        private int dec_de(Gshort operand)
         {
             this.rDE--;
             return 8;
         }
 
-        private int dec_hl(gshort operand)
+        private int dec_hl(Gshort operand)
         {
             this.rHL--;
             return 8;
         }
 
-        private int dec_sp(gshort operand)
+        private int dec_sp(Gshort operand)
         {
             this.rSP--;
             return 8;
         }
 
-        private int inc_a(gshort operand)
+        private int inc_a(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rA, 1);
+            this.fH = HalfCarryAdd(this.rA, 1);
 
             this.rA++;
             this.fZ = this.rA == 0;
@@ -917,9 +920,9 @@
             return 4;
         }
 
-        private int inc_b(gshort operand)
+        private int inc_b(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rB, 1);
+            this.fH = HalfCarryAdd(this.rB, 1);
 
             this.rB++;
             this.fZ = this.rB == 0;
@@ -928,9 +931,9 @@
             return 4;
         }
 
-        private int inc_c(gshort operand)
+        private int inc_c(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rC, 1);
+            this.fH = HalfCarryAdd(this.rC, 1);
 
             this.rC++;
             this.fZ = this.rC == 0;
@@ -939,9 +942,9 @@
             return 4;
         }
 
-        private int inc_d(gshort operand)
+        private int inc_d(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rD, 1);
+            this.fH = HalfCarryAdd(this.rD, 1);
 
             this.rD++;
             this.fZ = this.rD == 0;
@@ -950,9 +953,9 @@
             return 4;
         }
 
-        private int inc_e(gshort operand)
+        private int inc_e(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rE, 1);
+            this.fH = HalfCarryAdd(this.rE, 1);
 
             this.rE++;
             this.fZ = this.rE == 0;
@@ -961,9 +964,9 @@
             return 4;
         }
 
-        private int inc_h(gshort operand)
+        private int inc_h(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rH, 1);
+            this.fH = HalfCarryAdd(this.rH, 1);
 
             this.rH++;
             this.fZ = this.rH == 0;
@@ -972,9 +975,9 @@
             return 4;
         }
 
-        private int inc_l(gshort operand)
+        private int inc_l(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rL, 1);
+            this.fH = HalfCarryAdd(this.rL, 1);
 
             this.rL++;
             this.fZ = this.rL == 0;
@@ -983,39 +986,39 @@
             return 4;
         }
 
-        private int inc_phl(gshort operand)
+        private int inc_phl(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.ram[this.rHL], 1);
+            this.fH = HalfCarryAdd(this.Ram[this.rHL], 1);
 
-            this.ram[this.rHL]++;
-            this.fZ = this.ram[this.rHL] == 0;
+            this.Ram[this.rHL]++;
+            this.fZ = this.Ram[this.rHL] == 0;
             this.fN = false;
 
             return 12;
         }
 
-        private int inc_bc(gshort operand)
+        private int inc_bc(Gshort operand)
         {
             this.rBC++;
             return 8;
         }
-        private int inc_de(gshort operand)
+        private int inc_de(Gshort operand)
         {
             this.rDE++;
             return 8;
         }
-        private int inc_hl(gshort operand)
+        private int inc_hl(Gshort operand)
         {
             this.rHL++;
             return 8;
         }
-        private int inc_sp(gshort operand)
+        private int inc_sp(Gshort operand)
         {
             this.rSP++;
             return 8;
         }
 
-        private int jr_nz_dn(gshort operand)
+        private int jr_nz_dn(Gshort operand)
         {
             if ( !this.fZ )
             {
@@ -1028,7 +1031,7 @@
             }
         }
 
-        private int jr_z_dn(gshort operand)
+        private int jr_z_dn(Gshort operand)
         {
             if ( this.fZ )
             {
@@ -1041,7 +1044,7 @@
             }
         }
 
-        private int jr_nc_dn(gshort operand)
+        private int jr_nc_dn(Gshort operand)
         {
             if ( !this.fC )
             {
@@ -1054,7 +1057,7 @@
             }
         }
 
-        private int jr_c_dn(gshort operand)
+        private int jr_c_dn(Gshort operand)
         {
             if ( this.fC )
             {
@@ -1067,437 +1070,437 @@
             }
         }
 
-        private int jr_dn(gshort operand)
+        private int jr_dn(Gshort operand)
         {
             this.rPC += (sbyte)operand.Lo;
             return 12;
         }
 
-        private int di(gshort operand)
+        private int di(Gshort operand)
         {
             this.fInterruptMasterEnable = false;
             return 4;
         }
 
-        private int ei(gshort operand)
+        private int ei(Gshort operand)
         {
             this.fInterruptMasterEnable = true;
             return 4;
         }
 
-        private int ldh_pn_a(gshort operand)
+        private int ldh_pn_a(Gshort operand)
         {
-            this.ram[0xFF00 + operand] = this.rA;
+            this.Ram[0xFF00 + operand] = this.rA;
             return 12;
         }
 
-        private int ldh_a_pn(gshort operand)
+        private int ldh_a_pn(Gshort operand)
         {
-            this.rA = this.ram[0xFF00 + operand];
+            this.rA = this.Ram[0xFF00 + operand];
             return 12;
         }
 
-        private int ld_a_n(gshort operand)
+        private int ld_a_n(Gshort operand)
         {
             this.rA = operand.Lo;
             return 8;
         }
 
-        private int ld_b_n(gshort operand)
+        private int ld_b_n(Gshort operand)
         {
             this.rB = operand.Lo;
             return 8;
         }
 
-        private int ld_c_n(gshort operand)
+        private int ld_c_n(Gshort operand)
         {
             this.rC = operand.Lo;
             return 8;
         }
 
-        private int ld_d_n(gshort operand)
+        private int ld_d_n(Gshort operand)
         {
             this.rD = operand.Lo;
             return 8;
         }
 
-        private int ld_e_n(gshort operand)
+        private int ld_e_n(Gshort operand)
         {
             this.rE = operand.Lo;
             return 8;
         }
 
-        private int ld_h_n(gshort operand)
+        private int ld_h_n(Gshort operand)
         {
             this.rH = operand.Lo;
             return 8;
         }
 
-        private int ld_l_n(gshort operand)
+        private int ld_l_n(Gshort operand)
         {
             this.rL = operand.Lo;
             return 8;
         }
 
-        private int ld_phl_n(gshort operand)
+        private int ld_phl_n(Gshort operand)
         {
-            this.ram[this.rHL] = operand.Lo;
+            this.Ram[this.rHL] = operand.Lo;
 
             return 12;
         }
 
-        private int ld_pnn_a(gshort operand)
+        private int ld_pnn_a(Gshort operand)
         {
-            this.ram[operand] = this.rA;
+            this.Ram[operand] = this.rA;
 
             return 16;
         }
 
-        private int ldi_a_phl(gshort operand)
+        private int ldi_a_phl(Gshort operand)
         {
-            this.rA = this.ram[this.rHL];
+            this.rA = this.Ram[this.rHL];
             this.rHL++;
 
             return 8;
         }
 
-        private int ldi_phl_a(gshort operand)
+        private int ldi_phl_a(Gshort operand)
         {
-            this.ram[this.rHL] = this.rA;
+            this.Ram[this.rHL] = this.rA;
             this.rHL++;
 
             return 8;
         }
 
-        private int ld_pc_a(gshort operand)
+        private int ld_pc_a(Gshort operand)
         {
-            this.ram[0xFF00 + this.rC] = this.rA;
+            this.Ram[0xFF00 + this.rC] = this.rA;
 
             return 8; // TODO: Was 12? "ld   (FF00+C),A"
         }
 
-        private int ld_a_pc(gshort operand)
+        private int ld_a_pc(Gshort operand)
         {
-            this.rA = this.ram[0xFF00 + this.rC];
+            this.rA = this.Ram[0xFF00 + this.rC];
 
             return 8; // TODO: Was 12? "ld   A,(FF00+C)"
         }
 
         // Register copies
-        private int ld_a_b(gshort operand)
+        private int ld_a_b(Gshort operand)
         {
             this.rA = this.rB;
             return 4;
         }
 
-        private int ld_a_c(gshort operand)
+        private int ld_a_c(Gshort operand)
         {
             this.rA = this.rC;
             return 4;
         }
 
-        private int ld_a_d(gshort operand)
+        private int ld_a_d(Gshort operand)
         {
             this.rA = this.rD;
             return 4;
         }
 
-        private int ld_a_e(gshort operand)
+        private int ld_a_e(Gshort operand)
         {
             this.rA = this.rE;
             return 4;
         }
 
-        private int ld_a_h(gshort operand)
+        private int ld_a_h(Gshort operand)
         {
             this.rA = this.rH;
             return 4;
         }
 
-        private int ld_a_l(gshort operand)
+        private int ld_a_l(Gshort operand)
         {
             this.rA = this.rL;
             return 4;
         }
 
-        private int ld_a_phl(gshort operand)
+        private int ld_a_phl(Gshort operand)
         {
-            this.rA = this.ram[this.rHL];
+            this.rA = this.Ram[this.rHL];
             return 8;
         }
 
-        private int ld_a_pbc(gshort operand)
+        private int ld_a_pbc(Gshort operand)
         {
-            this.rA = this.ram[this.rBC];
+            this.rA = this.Ram[this.rBC];
             return 8;
         }
 
-        private int ld_a_pde(gshort operand)
+        private int ld_a_pde(Gshort operand)
         {
-            this.rA = this.ram[this.rDE];
+            this.rA = this.Ram[this.rDE];
             return 8;
         }
 
 
-        private int ld_b_a(gshort operand)
+        private int ld_b_a(Gshort operand)
         {
             this.rB = this.rA;
             return 4;
         }
 
-        private int ld_b_c(gshort operand)
+        private int ld_b_c(Gshort operand)
         {
             this.rB = this.rC;
             return 4;
         }
 
-        private int ld_b_d(gshort operand)
+        private int ld_b_d(Gshort operand)
         {
             this.rB = this.rD;
             return 4;
         }
 
-        private int ld_b_e(gshort operand)
+        private int ld_b_e(Gshort operand)
         {
             this.rB = this.rE;
             return 4;
         }
 
-        private int ld_b_h(gshort operand)
+        private int ld_b_h(Gshort operand)
         {
             this.rB = this.rH;
             return 4;
         }
 
-        private int ld_b_l(gshort operand)
+        private int ld_b_l(Gshort operand)
         {
             this.rB = this.rL;
             return 4;
         }
 
-        private int ld_b_phl(gshort operand)
+        private int ld_b_phl(Gshort operand)
         {
-            this.rB = this.ram[this.rHL];
+            this.rB = this.Ram[this.rHL];
             return 8;
         }
 
 
-        private int ld_c_a(gshort operand)
+        private int ld_c_a(Gshort operand)
         {
             this.rC = this.rA;
             return 4;
         }
 
-        private int ld_c_b(gshort operand)
+        private int ld_c_b(Gshort operand)
         {
             this.rC = this.rB;
             return 4;
         }
 
-        private int ld_c_d(gshort operand)
+        private int ld_c_d(Gshort operand)
         {
             this.rC = this.rD;
             return 4;
         }
 
-        private int ld_c_e(gshort operand)
+        private int ld_c_e(Gshort operand)
         {
             this.rC = this.rE;
             return 4;
         }
 
-        private int ld_c_h(gshort operand)
+        private int ld_c_h(Gshort operand)
         {
             this.rC = this.rH;
             return 4;
         }
 
-        private int ld_c_l(gshort operand)
+        private int ld_c_l(Gshort operand)
         {
             this.rC = this.rL;
             return 4;
         }
 
-        private int ld_c_phl(gshort operand)
+        private int ld_c_phl(Gshort operand)
         {
-            this.rC = this.ram[this.rHL];
+            this.rC = this.Ram[this.rHL];
             return 8;
         }
 
 
-        private int ld_d_a(gshort operand)
+        private int ld_d_a(Gshort operand)
         {
             this.rD = this.rA;
             return 4;
         }
 
-        private int ld_d_b(gshort operand)
+        private int ld_d_b(Gshort operand)
         {
             this.rD = this.rB;
             return 4;
         }
 
-        private int ld_d_c(gshort operand)
+        private int ld_d_c(Gshort operand)
         {
             this.rD = this.rC;
             return 4;
         }
 
-        private int ld_d_e(gshort operand)
+        private int ld_d_e(Gshort operand)
         {
             this.rD = this.rE;
             return 4;
         }
 
-        private int ld_d_h(gshort operand)
+        private int ld_d_h(Gshort operand)
         {
             this.rD = this.rH;
             return 4;
         }
 
-        private int ld_d_l(gshort operand)
+        private int ld_d_l(Gshort operand)
         {
             this.rD = this.rL;
             return 4;
         }
 
-        private int ld_d_phl(gshort operand)
+        private int ld_d_phl(Gshort operand)
         {
-            this.rD = this.ram[this.rHL];
+            this.rD = this.Ram[this.rHL];
             return 8;
         }
 
 
-        private int ld_e_a(gshort operand)
+        private int ld_e_a(Gshort operand)
         {
             this.rE = this.rA;
             return 4;
         }
 
-        private int ld_e_b(gshort operand)
+        private int ld_e_b(Gshort operand)
         {
             this.rE = this.rB;
             return 4;
         }
 
-        private int ld_e_c(gshort operand)
+        private int ld_e_c(Gshort operand)
         {
             this.rE = this.rC;
             return 4;
         }
 
-        private int ld_e_d(gshort operand)
+        private int ld_e_d(Gshort operand)
         {
             this.rE = this.rD;
             return 4;
         }
 
-        private int ld_e_h(gshort operand)
+        private int ld_e_h(Gshort operand)
         {
             this.rE = this.rH;
             return 4;
         }
 
-        private int ld_e_l(gshort operand)
+        private int ld_e_l(Gshort operand)
         {
             this.rE = this.rL;
             return 4;
         }
 
-        private int ld_e_phl(gshort operand)
+        private int ld_e_phl(Gshort operand)
         {
-            this.rE = this.ram[this.rHL];
+            this.rE = this.Ram[this.rHL];
             return 8;
         }
 
 
-        private int ld_h_a(gshort operand)
+        private int ld_h_a(Gshort operand)
         {
             this.rH = this.rA;
             return 4;
         }
 
-        private int ld_h_b(gshort operand)
+        private int ld_h_b(Gshort operand)
         {
             this.rH = this.rB;
             return 4;
         }
 
-        private int ld_h_c(gshort operand)
+        private int ld_h_c(Gshort operand)
         {
             this.rH = this.rC;
             return 4;
         }
 
-        private int ld_h_d(gshort operand)
+        private int ld_h_d(Gshort operand)
         {
             this.rH = this.rD;
             return 4;
         }
 
-        private int ld_h_e(gshort operand)
+        private int ld_h_e(Gshort operand)
         {
             this.rH = this.rE;
             return 4;
         }
 
-        private int ld_h_l(gshort operand)
+        private int ld_h_l(Gshort operand)
         {
             this.rH = this.rL;
             return 4;
         }
 
-        private int ld_h_phl(gshort operand)
+        private int ld_h_phl(Gshort operand)
         {
-            this.rH = this.ram[this.rHL];
+            this.rH = this.Ram[this.rHL];
             return 8;
         }
 
 
-        private int ld_l_a(gshort operand)
+        private int ld_l_a(Gshort operand)
         {
             this.rL = this.rA;
             return 4;
         }
 
-        private int ld_l_b(gshort operand)
+        private int ld_l_b(Gshort operand)
         {
             this.rL = this.rB;
             return 4;
         }
 
-        private int ld_l_c(gshort operand)
+        private int ld_l_c(Gshort operand)
         {
             this.rL = this.rC;
             return 4;
         }
 
-        private int ld_l_d(gshort operand)
+        private int ld_l_d(Gshort operand)
         {
             this.rL = this.rD;
             return 4;
         }
 
-        private int ld_l_e(gshort operand)
+        private int ld_l_e(Gshort operand)
         {
             this.rL = this.rE;
             return 4;
         }
 
-        private int ld_l_h(gshort operand)
+        private int ld_l_h(Gshort operand)
         {
             this.rL = this.rH;
             return 4;
         }
 
-        private int ld_l_phl(gshort operand)
+        private int ld_l_phl(Gshort operand)
         {
-            this.rL = this.ram[this.rHL];
+            this.rL = this.Ram[this.rHL];
             return 8;
         }
 
 
-        private int or_a(gshort operand)
+        private int or_a(Gshort operand)
         {
             this.rA |= this.rA;
             this.fZ = this.rA == 0;
@@ -1508,7 +1511,7 @@
             return 4;
         }
 
-        private int or_b(gshort operand)
+        private int or_b(Gshort operand)
         {
             this.rA |= this.rB;
             this.fZ = this.rA == 0;
@@ -1519,7 +1522,7 @@
             return 4;
         }
 
-        private int or_c(gshort operand)
+        private int or_c(Gshort operand)
         {
             this.rA |= this.rC;
             this.fZ = this.rA == 0;
@@ -1530,7 +1533,7 @@
             return 4;
         }
 
-        private int or_d(gshort operand)
+        private int or_d(Gshort operand)
         {
             this.rA |= this.rD;
             this.fZ = this.rA == 0;
@@ -1541,7 +1544,7 @@
             return 4;
         }
 
-        private int or_e(gshort operand)
+        private int or_e(Gshort operand)
         {
             this.rA |= this.rE;
             this.fZ = this.rA == 0;
@@ -1552,7 +1555,7 @@
             return 4;
         }
 
-        private int or_h(gshort operand)
+        private int or_h(Gshort operand)
         {
             this.rA |= this.rH;
             this.fZ = this.rA == 0;
@@ -1563,7 +1566,7 @@
             return 4;
         }
 
-        private int or_l(gshort operand)
+        private int or_l(Gshort operand)
         {
             this.rA |= this.rL;
             this.fZ = this.rA == 0;
@@ -1574,9 +1577,9 @@
             return 4;
         }
 
-        private int or_phl(gshort operand)
+        private int or_phl(Gshort operand)
         {
-            this.rA |= this.ram[this.rHL];
+            this.rA |= this.Ram[this.rHL];
             this.fZ = this.rA == 0;
             this.fN = false;
             this.fH = false;
@@ -1585,7 +1588,7 @@
             return 8;
         }
 
-        private int cpl(gshort operand)
+        private int cpl(Gshort operand)
         {
             this.rA = (byte)(~this.rA);
             this.fN = true;
@@ -1594,10 +1597,10 @@
             return 4;
         }
 
-        private int add_sp_dn(gshort operand)
+        private int add_sp_dn(Gshort operand)
         {
             // Weird instruction. Flags based on *unsigned* math, results based on *signed* math.
-            this.fH = this.halfCarryAdd(this.rSP.Lo, operand.Lo);
+            this.fH = HalfCarryAdd(this.rSP.Lo, operand.Lo);
             this.fC = ((this.rSP.Lo + operand.Lo) & 0x100) == 0x100;
 
             this.rSP += (sbyte)operand.Lo;
@@ -1608,10 +1611,10 @@
             return 16;
         }
 
-        private int ldhl_spdn(gshort operand)
+        private int ldhl_spdn(Gshort operand)
         {
             // Weird instruction. Flags based on *unsigned* math, results based on *signed* math.
-            this.fH = this.halfCarryAdd(this.rSP.Lo, operand.Lo);
+            this.fH = HalfCarryAdd(this.rSP.Lo, operand.Lo);
             this.fC = ((this.rSP.Lo + operand.Lo) & 0x100) == 0x100;
 
             this.rHL = this.rSP + (sbyte)operand.Lo;
@@ -1622,7 +1625,7 @@
             return 12;
         }
 
-        private int and_a(gshort operand)
+        private int and_a(Gshort operand)
         {
             this.rA &= this.rA;
             this.fZ = this.rA == 0;
@@ -1633,7 +1636,7 @@
             return 4;
         }
 
-        private int and_b(gshort operand)
+        private int and_b(Gshort operand)
         {
             this.rA &= this.rB;
             this.fZ = this.rA == 0;
@@ -1644,7 +1647,7 @@
             return 4;
         }
 
-        private int and_c(gshort operand)
+        private int and_c(Gshort operand)
         {
             this.rA &= this.rC;
             this.fZ = this.rA == 0;
@@ -1655,7 +1658,7 @@
             return 4;
         }
 
-        private int and_d(gshort operand)
+        private int and_d(Gshort operand)
         {
             this.rA &= this.rD;
             this.fZ = this.rA == 0;
@@ -1666,7 +1669,7 @@
             return 4;
         }
 
-        private int and_e(gshort operand)
+        private int and_e(Gshort operand)
         {
             this.rA &= this.rE;
             this.fZ = this.rA == 0;
@@ -1677,7 +1680,7 @@
             return 4;
         }
 
-        private int and_h(gshort operand)
+        private int and_h(Gshort operand)
         {
             this.rA &= this.rH;
             this.fZ = this.rA == 0;
@@ -1688,7 +1691,7 @@
             return 4;
         }
 
-        private int and_l(gshort operand)
+        private int and_l(Gshort operand)
         {
             this.rA &= this.rL;
             this.fZ = this.rA == 0;
@@ -1699,9 +1702,9 @@
             return 4;
         }
 
-        private int and_phl(gshort operand)
+        private int and_phl(Gshort operand)
         {
-            this.rA &= this.ram[this.rHL];
+            this.rA &= this.Ram[this.rHL];
             this.fZ = this.rA == 0;
             this.fN = false;
             this.fH = true;
@@ -1710,7 +1713,7 @@
             return 8;
         }
 
-        private int and_n(gshort operand)
+        private int and_n(Gshort operand)
         {
             this.rA &= operand.Lo;
             this.fZ = this.rA == 0;
@@ -1721,7 +1724,7 @@
             return 8;
         }
 
-        private int xor_n(gshort operand)
+        private int xor_n(Gshort operand)
         {
             this.rA ^= operand.Lo;
             this.fZ = this.rA == 0;
@@ -1732,7 +1735,7 @@
             return 8;
         }
 
-        private int or_n(gshort operand)
+        private int or_n(Gshort operand)
         {
             this.rA |= operand.Lo;
             this.fZ = this.rA == 0;
@@ -1743,73 +1746,73 @@
             return 8;
         }
 
-        private int rst_0(gshort operand)
+        private int rst_0(Gshort operand)
         {
-            this.ram.SetShort(this.rSP - 2, this.rPC);
+            this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = 0x00;
             this.rSP -= 2;
             return 16;
         }
 
-        private int rst_8(gshort operand)
+        private int rst_8(Gshort operand)
         {
-            this.ram.SetShort(this.rSP - 2, this.rPC);
+            this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = 0x08;
             this.rSP -= 2;
             return 16;
         }
 
-        private int rst_10(gshort operand)
+        private int rst_10(Gshort operand)
         {
-            this.ram.SetShort(this.rSP - 2, this.rPC);
+            this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = 0x10;
             this.rSP -= 2;
             return 16;
         }
 
-        private int rst_18(gshort operand)
+        private int rst_18(Gshort operand)
         {
-            this.ram.SetShort(this.rSP - 2, this.rPC);
+            this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = 0x18;
             this.rSP -= 2;
             return 16;
         }
 
-        private int rst_20(gshort operand)
+        private int rst_20(Gshort operand)
         {
-            this.ram.SetShort(this.rSP - 2, this.rPC);
+            this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = 0x20;
             this.rSP -= 2;
             return 16;
         }
 
-        private int rst_28(gshort operand)
+        private int rst_28(Gshort operand)
         {
-            this.ram.SetShort(this.rSP - 2, this.rPC);
+            this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = 0x28;
             this.rSP -= 2;
             return 16;
         }
 
-        private int rst_30(gshort operand)
+        private int rst_30(Gshort operand)
         {
-            this.ram.SetShort(this.rSP - 2, this.rPC);
+            this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = 0x30;
             this.rSP -= 2;
             return 16;
         }
 
-        private int rst_38(gshort operand)
+        private int rst_38(Gshort operand)
         {
-            this.ram.SetShort(this.rSP - 2, this.rPC);
+            this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = 0x38;
             this.rSP -= 2;
             return 16;
         }
 
-        private int add_a_a(gshort operand)
+        private int add_a_a(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rA, this.rA);
+            this.fH = HalfCarryAdd(this.rA, this.rA);
 
             int result = this.rA + this.rA;
             this.rA = (byte)result;
@@ -1820,9 +1823,9 @@
             return 4;
         }
 
-        private int add_a_b(gshort operand)
+        private int add_a_b(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rA, this.rB);
+            this.fH = HalfCarryAdd(this.rA, this.rB);
 
             int result = this.rA + this.rB;
             this.rA = (byte)result;
@@ -1833,9 +1836,9 @@
             return 4;
         }
 
-        private int add_a_c(gshort operand)
+        private int add_a_c(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rA, this.rC);
+            this.fH = HalfCarryAdd(this.rA, this.rC);
 
             int result = this.rA + this.rC;
             this.rA = (byte)result;
@@ -1846,9 +1849,9 @@
             return 4;
         }
 
-        private int add_a_d(gshort operand)
+        private int add_a_d(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rA, this.rD);
+            this.fH = HalfCarryAdd(this.rA, this.rD);
 
             int result = this.rA + this.rD;
             this.rA = (byte)result;
@@ -1859,9 +1862,9 @@
             return 4;
         }
 
-        private int add_a_e(gshort operand)
+        private int add_a_e(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rA, this.rE);
+            this.fH = HalfCarryAdd(this.rA, this.rE);
 
             int result = this.rA + this.rE;
             this.rA = (byte)result;
@@ -1872,9 +1875,9 @@
             return 4;
         }
 
-        private int add_a_h(gshort operand)
+        private int add_a_h(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rA, this.rH);
+            this.fH = HalfCarryAdd(this.rA, this.rH);
 
             int result = this.rA + this.rH;
             this.rA = (byte)result;
@@ -1885,9 +1888,9 @@
             return 4;
         }
 
-        private int add_a_l(gshort operand)
+        private int add_a_l(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rA, this.rL);
+            this.fH = HalfCarryAdd(this.rA, this.rL);
 
             int result = this.rA + this.rL;
             this.rA = (byte)result;
@@ -1898,11 +1901,11 @@
             return 4;
         }
 
-        private int add_a_phl(gshort operand)
+        private int add_a_phl(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rA, this.ram[this.rHL]);
+            this.fH = HalfCarryAdd(this.rA, this.Ram[this.rHL]);
 
-            int result = this.rA + this.ram[this.rHL];
+            int result = this.rA + this.Ram[this.rHL];
             this.rA = (byte)result;
             this.fZ = this.rA == 0;
             this.fN = false;
@@ -1911,9 +1914,9 @@
             return 8;
         }
 
-        private int add_a_n(gshort operand)
+        private int add_a_n(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rA, operand.Lo);
+            this.fH = HalfCarryAdd(this.rA, operand.Lo);
 
             int result = this.rA + operand.Lo;
             this.rA = (byte)result;
@@ -1924,10 +1927,10 @@
             return 8;
         }
 
-        private int adc_a_a(gshort operand)
+        private int adc_a_a(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarryAdd(this.rA, this.rA, carry);
+            this.fH = HalfCarryAdd(this.rA, this.rA, carry);
 
             int result = this.rA + this.rA + carry;
             this.rA = (byte)result;
@@ -1938,10 +1941,10 @@
             return 4;
         }
 
-        private int adc_a_b(gshort operand)
+        private int adc_a_b(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarryAdd(this.rA, this.rB, carry);
+            this.fH = HalfCarryAdd(this.rA, this.rB, carry);
 
             int result = this.rA + this.rB + carry;
             this.rA = (byte)result;
@@ -1952,10 +1955,10 @@
             return 4;
         }
 
-        private int adc_a_c(gshort operand)
+        private int adc_a_c(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarryAdd(this.rA, this.rC, carry);
+            this.fH = HalfCarryAdd(this.rA, this.rC, carry);
 
             int result = this.rA + this.rC + carry;
             this.rA = (byte)result;
@@ -1966,10 +1969,10 @@
             return 4;
         }
 
-        private int adc_a_d(gshort operand)
+        private int adc_a_d(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarryAdd(this.rA, this.rD, carry);
+            this.fH = HalfCarryAdd(this.rA, this.rD, carry);
 
             int result = this.rA + this.rD + carry;
             this.rA = (byte)result;
@@ -1980,10 +1983,10 @@
             return 4;
         }
 
-        private int adc_a_e(gshort operand)
+        private int adc_a_e(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarryAdd(this.rA, this.rE, carry);
+            this.fH = HalfCarryAdd(this.rA, this.rE, carry);
 
             int result = this.rA + this.rE + carry;
             this.rA = (byte)result;
@@ -1994,10 +1997,10 @@
             return 4;
         }
 
-        private int adc_a_h(gshort operand)
+        private int adc_a_h(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarryAdd(this.rA, this.rH, carry);
+            this.fH = HalfCarryAdd(this.rA, this.rH, carry);
 
             int result = this.rA + this.rH + carry;
             this.rA = (byte)result;
@@ -2008,10 +2011,10 @@
             return 4;
         }
 
-        private int adc_a_l(gshort operand)
+        private int adc_a_l(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarryAdd(this.rA, this.rL, carry);
+            this.fH = HalfCarryAdd(this.rA, this.rL, carry);
 
             int result = this.rA + this.rL + carry;
             this.rA = (byte)result;
@@ -2022,10 +2025,10 @@
             return 4;
         }
 
-        private int adc_a_n(gshort operand)
+        private int adc_a_n(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarryAdd(this.rA, operand.Lo, carry);
+            this.fH = HalfCarryAdd(this.rA, operand.Lo, carry);
 
             int result = this.rA + operand.Lo + carry;
             this.rA = (byte)result;
@@ -2036,12 +2039,12 @@
             return 8;
         }
 
-        private int adc_a_phl(gshort operand)
+        private int adc_a_phl(Gshort operand)
         {
             int carry = this.fC ? 1 : 0;
-            this.fH = this.halfCarryAdd(this.rA, this.ram[this.rHL], carry);
+            this.fH = HalfCarryAdd(this.rA, this.Ram[this.rHL], carry);
 
-            int result = this.rA + this.ram[this.rHL] + carry;
+            int result = this.rA + this.Ram[this.rHL] + carry;
             this.rA = (byte)result;
             this.fZ = this.rA == 0;
             this.fN = false;
@@ -2050,67 +2053,67 @@
             return 8;
         }
 
-        private int push_bc(gshort operand)
+        private int push_bc(Gshort operand)
         {
-            this.ram.SetShort(this.rSP - 2, this.rBC);
+            this.Ram.SetShort(this.rSP - 2, this.rBC);
             this.rSP -= 2;
             return 16;
         }
 
-        private int push_de(gshort operand)
+        private int push_de(Gshort operand)
         {
-            this.ram.SetShort(this.rSP - 2, this.rDE);
+            this.Ram.SetShort(this.rSP - 2, this.rDE);
             this.rSP -= 2;
             return 16;
         }
 
-        private int push_hl(gshort operand)
+        private int push_hl(Gshort operand)
         {
-            this.ram.SetShort(this.rSP - 2, this.rHL);
+            this.Ram.SetShort(this.rSP - 2, this.rHL);
             this.rSP -= 2;
             return 16;
         }
 
-        private int push_af(gshort operand)
+        private int push_af(Gshort operand)
         {
-            this.ram.SetShort(this.rSP - 2, this.rAF);
+            this.Ram.SetShort(this.rSP - 2, this.rAF);
             this.rSP -= 2;
             return 16;
         }
 
-        private int pop_bc(gshort operand)
+        private int pop_bc(Gshort operand)
         {
-            this.rBC = (ushort)this.ram.GetShort(this.rSP);
+            this.rBC = (ushort)this.Ram.GetShort(this.rSP);
             this.rSP += 2;
             return 12;
         }
 
-        private int pop_de(gshort operand)
+        private int pop_de(Gshort operand)
         {
-            this.rDE = (ushort)this.ram.GetShort(this.rSP);
+            this.rDE = (ushort)this.Ram.GetShort(this.rSP);
             this.rSP += 2;
             return 12;
         }
 
-        private int pop_hl(gshort operand)
+        private int pop_hl(Gshort operand)
         {
-            this.rHL = (ushort)this.ram.GetShort(this.rSP);
+            this.rHL = (ushort)this.Ram.GetShort(this.rSP);
             this.rSP += 2;
             return 12;
         }
 
-        private int pop_af(gshort operand)
+        private int pop_af(Gshort operand)
         {
             // Special case, lower four bits of F are always 0
-            this.rAF = this.ram.GetShort(this.rSP) & 0xFFF0;
+            this.rAF = this.Ram.GetShort(this.rSP) & 0xFFF0;
 
             this.rSP += 2;
             return 12;
         }
 
-        private int add_hl_bc(gshort operand)
+        private int add_hl_bc(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rHL, this.rBC);
+            this.fH = HalfCarryAdd(this.rHL, this.rBC);
 
             int result = this.rHL + this.rBC;
             this.rHL = result;
@@ -2120,9 +2123,9 @@
             return 8;
         }
 
-        private int add_hl_de(gshort operand)
+        private int add_hl_de(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rHL, this.rDE);
+            this.fH = HalfCarryAdd(this.rHL, this.rDE);
 
             int result = this.rHL + this.rDE;
             this.rHL = result;
@@ -2132,9 +2135,9 @@
             return 8;
         }
 
-        private int add_hl_hl(gshort operand)
+        private int add_hl_hl(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rHL, this.rHL);
+            this.fH = HalfCarryAdd(this.rHL, this.rHL);
 
             int result = this.rHL + this.rHL;
             this.rHL = result;
@@ -2144,9 +2147,9 @@
             return 8;
         }
 
-        private int add_hl_sp(gshort operand)
+        private int add_hl_sp(Gshort operand)
         {
-            this.fH = this.halfCarryAdd(this.rHL, this.rSP);
+            this.fH = HalfCarryAdd(this.rHL, this.rSP);
             //fH = ((rHL & 0xFFF) + (rSP & 0xFFF)) > 0xFFF;
 
             int result = this.rHL + this.rSP;
@@ -2157,13 +2160,13 @@
             return 8;
         }
 
-        private int jp_hl(gshort operand)
+        private int jp_hl(Gshort operand)
         {
             this.rPC = (ushort)this.rHL;
             return 4;
         }
 
-        private int rlc_a(gshort operand)
+        private int rlc_a(Gshort operand)
         {
             this.fC = (this.rA & 0x80) == 0x80;
 
@@ -2180,7 +2183,7 @@
             return 4;
         }
 
-        private int rrc_a(gshort operand)
+        private int rrc_a(Gshort operand)
         {
             this.fC = (this.rA & 0x01) == 0x01;
 
@@ -2197,7 +2200,7 @@
             return 4;
         }
 
-        private int stop(gshort operand)
+        private int stop(Gshort operand)
         {
             this.fStop = true;
 
@@ -2210,7 +2213,7 @@
             return 0; // WAS 4
         }
 
-        private int halt(gshort operand)
+        private int halt(Gshort operand)
         {
             this.fHalt = true;
 
@@ -2229,9 +2232,9 @@
             return 0; // WAS 4
         }
 
-        private int daa(gshort operand)
+        private int daa(Gshort operand)
         {
-            gshort a = this.rA;
+            Gshort a = this.rA;
 
             if ( !this.fN )
             {
@@ -2274,7 +2277,6 @@
 
             return 4;
         }
-
-        private int crash(gshort operand) => throw new gbException($"Executed illegal instruction at address 0x{rPC:X4}");
+#pragma warning restore IDE1006 // Naming Styles
     }
 }

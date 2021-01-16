@@ -2,9 +2,9 @@
 
 namespace GusBoy
 {
-    public class gbException : Exception
+    public class GbException : Exception
     {
-        public gbException(string message) : base(message)
+        public GbException(string message) : base(message)
         {
         }
     }
@@ -17,14 +17,14 @@ namespace GusBoy
         public GPU gpu;
         public APU apu;
         public ROM rom;
-        public gRAM ram;
+        public RAM ram;
         public Input input;
 
         public Gameboy(Func<string, bool> messageCallback, Func<bool> drawFramebuffer, int[] framebuffer, int sampleRate)
         {
             this.messageCallback = messageCallback;
 
-            this.ram = new gRAM(this);
+            this.ram = new RAM(this);
             this.cpu = new CPU(this);
             this.gpu = new GPU(this, drawFramebuffer, framebuffer);
             this.apu = new APU(this, sampleRate);

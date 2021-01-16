@@ -74,7 +74,7 @@
             // Disable interrupts
             this.fInterruptMasterEnable = false;
 
-            this.ram.SetShort(this.rSP - 2, this.rPC);
+            this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = address;
             this.rSP -= 2;
 

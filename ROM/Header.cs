@@ -293,18 +293,12 @@ namespace GusBoy
         {
             this.hTitle = Encoding.ASCII.GetString(romFile[OFFSET_TITLE..(OFFSET_TITLE + 16)].TakeWhile(b => b != 0x80 && b != 0xC0 && b != 0x00).ToArray());
 
-            switch ( romFile[OFFSET_CGB] )
+            this.hCGB = (romFile[OFFSET_CGB]) switch
             {
-                case (byte)CGBType.Both:
-                    this.hCGB = CGBType.Both;
-                    break;
-                case (byte)CGBType.Yes:
-                    this.hCGB = CGBType.Yes;
-                    break;
-                default:
-                    this.hCGB = CGBType.No;
-                    break;
-            }
+                (byte)CGBType.Both => CGBType.Both,
+                (byte)CGBType.Yes => CGBType.Yes,
+                _ => CGBType.No,
+            };
 
             if ( romFile[OFFSET_OLD_LICENSEE_CODE] == 0x33 )
             {

@@ -22,7 +22,7 @@ namespace GusBoy
 
             if ( romFile.Length != this.hRomSize )
             {
-                throw new gbException($"ROM file size did not match header ROM size: {romFile.Length} != {this.hRomSize}");
+                throw new GbException($"ROM file size did not match header ROM size: {romFile.Length} != {this.hRomSize}");
             }
 
             byte[] sram = new byte[this.hRamSize];
@@ -31,33 +31,26 @@ namespace GusBoy
 
             this.Bootstrap(useBios);
 
-            switch ( this.hType )
+            this.mapper = this.hType switch
             {
-                case CartridgeType.ROM_ONLY:
-                    this.mapper = new DirectRom(romFile);
-                    break;
-                case CartridgeType.MBC1:
-                case CartridgeType.MBC1_RAM:
-                case CartridgeType.MBC1_RAM_BATTERY:
-                    this.mapper = new MBC1(romFile, sram, ramPath);
-                    break;
+                CartridgeType.ROM_ONLY => new DirectRom(romFile),
+                CartridgeType.MBC1 or
+                CartridgeType.MBC1_RAM or
+                CartridgeType.MBC1_RAM_BATTERY => new MBC1(romFile, sram, ramPath),
                 // Treat MBC3 as MBC5 for now
-                case CartridgeType.MBC3:
-                case CartridgeType.MBC3_RAM:
-                case CartridgeType.MBC3_RAM_BATTERY:
-                case CartridgeType.MBC3_TIMER_BATTERY:
-                case CartridgeType.MBC3_TIMER_RAM_BATTERY:
-                case CartridgeType.MBC5:
-                case CartridgeType.MBC5_RAM:
-                case CartridgeType.MBC5_RAM_BATTERY:
-                case CartridgeType.MBC5_RUMBLE:
-                case CartridgeType.MBC5_RUMBLE_RAM:
-                case CartridgeType.MBC5_RUMBLE_RAM_BATTERY:
-                    this.mapper = new MBC5(romFile, sram, ramPath);
-                    break;
-                default:
-                    throw new gbException("Unsupported mapper type: " + this.hType.ToString());
-            }
+                CartridgeType.MBC3 or
+                CartridgeType.MBC3_RAM or
+                CartridgeType.MBC3_RAM_BATTERY or
+                CartridgeType.MBC3_TIMER_BATTERY or
+                CartridgeType.MBC3_TIMER_RAM_BATTERY or
+                CartridgeType.MBC5 or
+                CartridgeType.MBC5_RAM or
+                CartridgeType.MBC5_RAM_BATTERY or
+                CartridgeType.MBC5_RUMBLE or
+                CartridgeType.MBC5_RUMBLE_RAM or
+                CartridgeType.MBC5_RUMBLE_RAM_BATTERY => new MBC5(romFile, sram, ramPath),
+                _ => throw new GbException("Unsupported mapper type: " + this.hType.ToString()),
+            };
 
             this.PrintInfo();
         }
@@ -71,7 +64,7 @@ namespace GusBoy
             this.gb.messageCallback($"ROM Size: {this.hRomSize / 1024} KiB");
             this.gb.messageCallback($"RAM Size: {this.hRamSize / 1024} KiB");
             this.gb.messageCallback($"Mapper:   {this.hType}");
-            this.gb.messageCallback($"Colour:   {this.hCGB.ToString()}");
+            this.gb.messageCallback($"Colour:   {this.hCGB}");
             this.gb.messageCallback($"SGB:      {(this.hSGB ? "Yes" : "No")}");
             this.gb.messageCallback($"Header #: 0x{this.hHeaderChecksum:X2}");
             this.gb.messageCallback($"Global #: 0x{this.hGlobalChecksum:X4}");

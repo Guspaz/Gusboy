@@ -622,8 +622,8 @@ namespace GusBoy
                 {
                     if ( this.NR52_Power )
                     {
-                        this.buffer.Add(this.high_pass((this.Channel1.OutputLeft + this.Channel2.OutputLeft + this.Channel3.OutputLeft + this.Channel4.OutputLeft) / 4 * (this.NR50_LeftVol + 1), 1));
-                        this.buffer.Add(this.high_pass((this.Channel1.OutputRight + this.Channel2.OutputRight + this.Channel3.OutputRight + this.Channel4.OutputRight) / 4 * (this.NR50_RightVol + 1), 2));
+                        this.buffer.Add(this.HighPass((this.Channel1.OutputLeft + this.Channel2.OutputLeft + this.Channel3.OutputLeft + this.Channel4.OutputLeft) / 4 * (this.NR50_LeftVol + 1), 1));
+                        this.buffer.Add(this.HighPass((this.Channel1.OutputRight + this.Channel2.OutputRight + this.Channel3.OutputRight + this.Channel4.OutputRight) / 4 * (this.NR50_RightVol + 1), 2));
                     }
                     else
                     {
@@ -640,7 +640,7 @@ namespace GusBoy
             }
         }
 
-        private float high_pass(float input, int channel, bool dacs_enabled = true)
+        private float HighPass(float input, int channel, bool dacs_enabled = true)
         {
             // TODO: Implement this flag
             if ( dacs_enabled )

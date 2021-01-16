@@ -9,9 +9,9 @@ namespace GusBoy
         private readonly Gameboy gb;
 
         // Accessors
-        private gRAM ram => this.gb.ram;
+        private RAM Ram => this.gb.ram;
 
-        public opcode instruction;
+        public Opcode instruction;
 
 #if ENABLE_TRACING
             private FileStream log;
@@ -38,20 +38,20 @@ namespace GusBoy
                 //sw.Write($"{ram.rom.bankNumber:X2} A:{rA:X2} F:{(fZ ? "Z" : "-")}{(fN ? "N" : "-")}{(fH ? "H" : "-")}{(fC ? "C" : "-")} BC:{rBC:X4} DE:{rDE:x4} HL:{rHL:x4} SP:{rSP:x4} PC:{rPC:x4} ");
 #endif
 
-            this.instruction = this.opcodes[this.ram[this.rPC++]];
+            this.instruction = this.opcodes[this.Ram[this.rPC++]];
 
-            gshort operand = 0;
+            Gshort operand = 0;
 
             if ( this.instruction.operandLength != 0 )
             {
                 if ( this.instruction.operandLength == 1 )
                 {
-                    operand = this.ram[this.rPC];
+                    operand = this.Ram[this.rPC];
                 }
                 else
                 {
                     // Assume operandLength == 2
-                    operand = this.ram.GetShort(this.rPC);
+                    operand = this.Ram.GetShort(this.rPC);
                 }
             }
 
