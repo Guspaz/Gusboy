@@ -1099,13 +1099,13 @@
 
         private int ldh_pn_a(Gshort operand)
         {
-            this.Ram[0xFF00 + operand] = this.rA;
+            this.Ram[operand + 0xFF00] = this.rA;
             return 12;
         }
 
         private int ldh_a_pn(Gshort operand)
         {
-            this.rA = this.Ram[0xFF00 + operand];
+            this.rA = this.Ram[operand + 0xFF00];
             return 12;
         }
 

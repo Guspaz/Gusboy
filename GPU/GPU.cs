@@ -1,4 +1,4 @@
-﻿#define FRAME_LIMITER
+﻿//#define FRAME_LIMITER
 
 namespace GusBoy
 {
@@ -46,7 +46,7 @@ namespace GusBoy
         // private int[] palOBJ = { 0xF8E0D0, 0xC08870, 0x683456, 0x18081A }; // red
         // private int[] palBG = { 0xFFFFFF, 0xAAAAAA, 0x555555, 0x000000 }; // grey
         // private int[] palOBJ = { 0xFFFFFF, 0xAAAAAA, 0x555555, 0x000000 }; // grey
-        private readonly System.Diagnostics.Stopwatch frameLimiterClock = new System.Diagnostics.Stopwatch();
+        //private readonly System.Diagnostics.Stopwatch frameLimiterClock = new System.Diagnostics.Stopwatch();
 
         // Colour transform for 5bpc GGB to 8bpc VGA
         // From https://byuu.net/video/color-emulation/
@@ -109,12 +109,6 @@ namespace GusBoy
         private long oldCpuTicks = 0;
 
         private readonly Gameboy gb;
-
-        // Accessors
-        private RAM Ram => this.gb.Ram;
-
-        private CPU Cpu => this.gb.Cpu;
-
         private byte _currentLine = 0;
         private readonly Sprite[] sprites = new Sprite[40];
         public bool spriteCacheDirty = false;
@@ -251,7 +245,7 @@ namespace GusBoy
 
                     int framebufferLine = this.CurrentLine * 160;
 
-                    int tileNum = this.Ram.Vram[offset + ((y >> 3) * TILE_MAP_WIDTH | (x >> 3))];
+                    int tileNum = this.gb.Ram.Vram[offset + ((y >> 3) * TILE_MAP_WIDTH | (x >> 3))];
                     if (!this.LCDCFlag(LCDC.BGWindowTileset))
                     {
                         tileNum = 256 + (sbyte)tileNum;
@@ -259,7 +253,7 @@ namespace GusBoy
 
                     int tileAddress = ((tileNum * TILE_HEIGHT) + (y & 7)) * TILE_ROW_BYTES;
                     byte shift = (byte)(7 - (x & 7));
-                    byte palIndex = (byte)((((this.Ram.Vram[tileAddress + 1] >> shift) & 1) << 1) | ((this.Ram.Vram[tileAddress] >> shift) & 1));
+                    byte palIndex = (byte)((((this.gb.Ram.Vram[tileAddress + 1] >> shift) & 1) << 1) | ((this.gb.Ram.Vram[tileAddress] >> shift) & 1));
 
                     bgIsTransparent[i] = palIndex == 0;
 
@@ -314,7 +308,7 @@ namespace GusBoy
 
                         byte shift = (byte)(7 - (spriteRelX & 7));
 
-                        byte palIndex = (byte)((((this.Ram.Vram[tileAddress + 1] >> shift) & 1) << 1) | ((this.Ram.Vram[tileAddress] >> shift) & 1));
+                        byte palIndex = (byte)((((this.gb.Ram.Vram[tileAddress + 1] >> shift) & 1) << 1) | ((this.gb.Ram.Vram[tileAddress] >> shift) & 1));
 
                         if (palIndex != 0 && (!currentSprite.priority || bgIsTransparent[(byte)(currentSprite.x + i)]) && (byte)(currentSprite.x + i) < 160)
                         {
@@ -329,13 +323,13 @@ namespace GusBoy
         {
             for (int n = 0; n < this.sprites.Length; n++)
             {
-                this.sprites[n].y = (byte)(this.Ram[0xFE00 + (n << 2) + 0] - 16); // Pre-offset the location
-                this.sprites[n].x = (byte)(this.Ram[0xFE00 + (n << 2) + 1] - 8); // Pre-offset the location
-                this.sprites[n].tileNum = this.Ram[0xFE00 + (n << 2) + 2];
-                this.sprites[n].priority = (this.Ram[0xFE00 + (n << 2) + 3] & (1 << 7)) != 0;
-                this.sprites[n].yFlip = (this.Ram[0xFE00 + (n << 2) + 3] & (1 << 6)) != 0;
-                this.sprites[n].xFlip = (this.Ram[0xFE00 + (n << 2) + 3] & (1 << 5)) != 0;
-                this.sprites[n].palette = (this.Ram[0xFE00 + (n << 2) + 3] & (1 << 4)) != 0 ? 1 : 0;
+                this.sprites[n].y = (byte)(this.gb.Ram[0xFE00 + (n << 2) + 0] - 16); // Pre-offset the location
+                this.sprites[n].x = (byte)(this.gb.Ram[0xFE00 + (n << 2) + 1] - 8); // Pre-offset the location
+                this.sprites[n].tileNum = this.gb.Ram[0xFE00 + (n << 2) + 2];
+                this.sprites[n].priority = (this.gb.Ram[0xFE00 + (n << 2) + 3] & (1 << 7)) != 0;
+                this.sprites[n].yFlip = (this.gb.Ram[0xFE00 + (n << 2) + 3] & (1 << 6)) != 0;
+                this.sprites[n].xFlip = (this.gb.Ram[0xFE00 + (n << 2) + 3] & (1 << 5)) != 0;
+                this.sprites[n].palette = (this.gb.Ram[0xFE00 + (n << 2) + 3] & (1 << 4)) != 0 ? 1 : 0;
             }
 
             this.spriteCacheDirty = false;
@@ -387,7 +381,7 @@ namespace GusBoy
             // In a real DMG this should happen bit by bit during normal execution, not all in one chunk
             for (int i = 0; i < 0xA0; i++)
             {
-                this.Ram[0xFE00 + i, isDma: true] = this.Ram[dmaAddress + i, isDma: true];
+                this.gb.Ram[0xFE00 + i, isDma: true] = this.gb.Ram[dmaAddress + i, isDma: true];
             }
 
             // TODO: Ideally we should keep this set to true until a timer elapses for how long DMA is supposed to take, so that memory access can be restricted to HRAM (FF80-FFFE) during that period.
@@ -398,12 +392,12 @@ namespace GusBoy
         {
             if (!this.LCDCFlag(LCDC.LCDPower))
             {
-                this.oldCpuTicks = this.Cpu.Ticks;
+                this.oldCpuTicks = this.gb.Cpu.Ticks;
                 return;
             }
 
-            this.gpuTicks += this.Cpu.Ticks - this.oldCpuTicks;
-            this.oldCpuTicks = this.Cpu.Ticks;
+            this.gpuTicks += this.gb.Cpu.Ticks - this.oldCpuTicks;
+            this.oldCpuTicks = this.gb.Cpu.Ticks;
 
             switch (this.mode)
             {
@@ -535,10 +529,10 @@ namespace GusBoy
             }
         }
 
-        private bool LCDCFlag(LCDC flag) => (this.control & (byte)flag) != 0;
-
         private static byte PackByte(int val0, int val1, int val2, int val3) => (byte)(((val0 & 3) << 0) | ((val1 & 3) << 2) | ((val2 & 3) << 4) | ((val3 & 3) << 6));
 
         private static int[] UnpackByte(byte value) => new int[] { (value >> 0) & 3, (value >> 2) & 3, (value >> 4) & 3, (value >> 6) & 3 };
+
+        private bool LCDCFlag(LCDC flag) => (this.control & (byte)flag) != 0;
     }
 }

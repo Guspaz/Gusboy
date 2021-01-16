@@ -4,6 +4,7 @@ namespace GusBoy
 {
     using System;
     using System.Collections.Generic;
+    using System.ComponentModel;
     using System.Drawing;
     using System.Drawing.Drawing2D;
     using System.Runtime.InteropServices;
@@ -27,15 +28,23 @@ namespace GusBoy
             { Keys.Right, Input.Keys.Right },
         };
 
-        private Gameboy gb;
+        private readonly BufferedWaveProvider audioBuffer = new BufferedWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(48000, 2)) { DiscardOnBufferOverflow = true };
+        private readonly WaveOutEvent outputDevice = new WaveOutEvent() { DesiredLatency = 50, NumberOfBuffers = 10 };
+
+        private readonly Gameboy gb;
         private long frames = -1;
         private long cpuTicks = 0;
         private long clockTicks = 0;
-        private DirectBitmap framebuffer;
+        private readonly DirectBitmap framebuffer = new DirectBitmap(160, 144);
 
         public Gusboy()
         {
             this.InitializeComponent();
+
+            this.outputDevice.Init(this.audioBuffer);
+            this.outputDevice.Play();
+
+            this.gb = new Gameboy(this.AddMessage, this.DrawFramebuffer, this.framebuffer.Bits, 48000);
         }
 
         public bool AddMessage(string message)
@@ -56,8 +65,6 @@ namespace GusBoy
 
             this.Invalidate(new Rectangle(0, 0, 160 * 2, 144 * 2), false);
 
-            Application.DoEvents();
-
             if (this.frames % 120 == 0)
             {
                 double timeElapsed = (double)(System.Diagnostics.Stopwatch.GetTimestamp() - this.clockTicks) / System.Diagnostics.Stopwatch.Frequency;
@@ -73,48 +80,40 @@ namespace GusBoy
             return true;
         }
 
+        private void EmuWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            while (!this.IsDisposed)
+            {
+                this.gb.Tick();
+
+                if (this.gb.Apu.Buffer.Count >= 100)
+                {
+                    float[] inBuffer = this.gb.Apu.Buffer.ToArray();
+                    byte[] outBuffer = new byte[inBuffer.Length * 4];
+                    Buffer.BlockCopy(inBuffer, 0, outBuffer, 0, outBuffer.Length);
+
+                    this.audioBuffer.AddSamples(outBuffer, 0, outBuffer.Length);
+                    this.gb.Apu.Buffer.Clear();
+
+                    // Drain the buffer
+                    while (this.audioBuffer.BufferedBytes > 4096)
+                    {
+                    }
+                }
+            }
+        }
+
         private void Gusboy_Shown(object sender, EventArgs e)
         {
             this.ClientSize = new Size(160 * 2, this.ClientSize.Height);
 
-            this.framebuffer = new DirectBitmap(160, 144);
-
             this.SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
 
-            this.gb = new Gameboy(this.AddMessage, this.DrawFramebuffer, this.framebuffer.Bits, 48000);
+            BackgroundWorker emuWorker = new BackgroundWorker();
 
-            var audioBuffer = new BufferedWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(48000, 2)) { DiscardOnBufferOverflow = true };
-            var outputDevice = new WaveOutEvent() { DesiredLatency = 50, NumberOfBuffers = 10 };
+            emuWorker.DoWork += this.EmuWorker_DoWork;
 
-            outputDevice.Init(audioBuffer);
-            outputDevice.Play();
-
-            try
-            {
-                while (!this.IsDisposed)
-                {
-                    this.gb.Tick();
-
-                    if (this.gb.Apu.Buffer.Count >= 100)
-                    {
-                        float[] inBuffer = this.gb.Apu.Buffer.ToArray();
-                        byte[] outBuffer = new byte[inBuffer.Length * 4];
-                        Buffer.BlockCopy(inBuffer, 0, outBuffer, 0, outBuffer.Length);
-
-                        audioBuffer.AddSamples(outBuffer, 0, outBuffer.Length);
-                        this.gb.Apu.Buffer.Clear();
-
-                        // Drain the buffer
-                        while (audioBuffer.BufferedBytes > 4096)
-                        {
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                this.AddMessage(ex.Message);
-            }
+            emuWorker.RunWorkerAsync();
         }
 
         private void GusBoy_Paint(object sender, PaintEventArgs e)

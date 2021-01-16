@@ -80,7 +80,7 @@
                         return RAM.Unsupported(0x00); // Serial data transfer registers
 
                     case 0xFF04:
-                        return this.Cpu.rDIV.Hi;
+                        return (byte)(this.Cpu.rDIV >> 8);
 
                     case 0xFF05:
                         return this.Cpu.rTIMA;

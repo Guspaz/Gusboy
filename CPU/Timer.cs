@@ -8,11 +8,10 @@
     {
         private long oldCpuTicks;
         private bool oldAndResult;
-        private long reloadTima;
 
 #pragma warning disable SA1300 // Element should begin with upper-case letter
 #pragma warning disable IDE1006 // Naming Styles
-        public Gshort rDIV { get; set; }
+        public int rDIV { get; set; }
 
         public byte rTIMA { get; set; }
 
@@ -26,14 +25,15 @@
 
         public void TimerTick()
         {
-            long newCpuTicks = this.Ticks - this.oldCpuTicks;
+            int newCpuTicks = (int)(this.Ticks - this.oldCpuTicks);
             this.oldCpuTicks = this.Ticks;
 
-            for (int i = 0; i < newCpuTicks; i++)
+            // It takes one full M-Cycle to reload TIMA so divide by 4
+            for (int i = 0; i < newCpuTicks / 4; i++)
             {
-                this.rDIV++;
+                this.rDIV += 4;
 
-                if (this.ReloadingTima && --this.reloadTima == 0)
+                if (this.ReloadingTima)
                 {
                     // Reload TIMA
                     this.rTIMA = this.rTMA;
@@ -43,7 +43,6 @@
 
                     // Reset the state
                     this.ReloadingTima = false;
-                    this.reloadTima = -1;
                 }
 
                 bool divBit = false;
@@ -74,7 +73,6 @@
                     {
                         // Overflow is about to happen
                         this.rTIMA = 0;
-                        this.reloadTima = 4;
                         this.ReloadingTima = true;
                     }
                     else

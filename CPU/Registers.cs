@@ -19,7 +19,7 @@
 
         public bool fStop { get; set; }
 
-        public Gshort rPC { get; set; }
+        public int rPC { get; set; }
 
         // 8-bit registers
         public byte rA

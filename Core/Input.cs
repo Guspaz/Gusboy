@@ -83,6 +83,7 @@
                 case Keys.Left:
                 case Keys.Up:
                 case Keys.Down:
+                    // TODO: Should proably put logic here to stop simultaneous left/right or up/down.
                     this.joy20State &= ((int)key) >> 4;
                     this.joy20State &= 0b1111;
                     break;

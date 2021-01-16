@@ -16,7 +16,7 @@
 
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\test roms\mooneye\acceptance\interrupts\ie_push.gb", false);
 
-            // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\cpu_instrs\cpu_instrs.gb", false); // PASS
+            // Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\cpu_instrs\cpu_instrs.gb", false); // PASS
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\instr_timing\instr_timing.gb", false); // PASS
 
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\dr_mario.gb", false);
@@ -45,6 +45,7 @@
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\test roms\blargg\interrupt_time.gb", false);
 
             // Gekkio tests
+            // Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\test roms\mooneye\acceptance\timer\tima_reload.gb", false);
             // rom = new ROM(ram, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\mooneye-gb_hwtests\emulator-only\mbc1\bits_bank1.gb", false);
             // rom = new ROM(ram, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\mooneye-gb_hwtests\emulator-only\mbc1\bits_bank2.gb", false);
             // rom = new ROM(ram, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\mooneye-gb_hwtests\emulator-only\mbc1\bits_mode.gb", false);
