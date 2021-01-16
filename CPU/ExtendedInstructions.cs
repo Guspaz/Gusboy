@@ -1,8 +1,13 @@
 ﻿namespace GusBoy
 {
+    /// <summary>
+    /// Implementations of all dual-byte opcodes.
+    /// </summary>
     public partial class CPU
     {
+#pragma warning disable SA1300 // Element should begin with upper-case letter
 #pragma warning disable IDE1006 // Naming Styles
+
         private int swap_a()
         {
             this.rA = (byte)(((this.rA & 0xF0) >> 4) | ((this.rA & 0x0F) << 4));
@@ -139,7 +144,6 @@
             return 16;
         }
 
-
         private int res_1_a()
         {
             this.rA = (byte)(this.rA & ~(1 << 1));
@@ -187,7 +191,6 @@
             this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] & ~(1 << 1));
             return 16;
         }
-
 
         private int res_2_a()
         {
@@ -237,7 +240,6 @@
             return 16;
         }
 
-
         private int res_3_a()
         {
             this.rA = (byte)(this.rA & ~(1 << 3));
@@ -285,7 +287,6 @@
             this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] & ~(1 << 3));
             return 16;
         }
-
 
         private int res_4_a()
         {
@@ -335,7 +336,6 @@
             return 16;
         }
 
-
         private int res_5_a()
         {
             this.rA = (byte)(this.rA & ~(1 << 5));
@@ -383,7 +383,6 @@
             this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] & ~(1 << 5));
             return 16;
         }
-
 
         private int res_6_a()
         {
@@ -433,7 +432,6 @@
             return 16;
         }
 
-
         private int res_7_a()
         {
             this.rA = (byte)(this.rA & ~(1 << 7));
@@ -481,8 +479,6 @@
             this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] & ~(1 << 7));
             return 16;
         }
-
-
 
         private int set_0_a()
         {
@@ -532,7 +528,6 @@
             return 16;
         }
 
-
         private int set_1_a()
         {
             this.rA = (byte)(this.rA | (1 << 1));
@@ -580,7 +575,6 @@
             this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] | (1 << 1));
             return 16;
         }
-
 
         private int set_2_a()
         {
@@ -630,7 +624,6 @@
             return 16;
         }
 
-
         private int set_3_a()
         {
             this.rA = (byte)(this.rA | (1 << 3));
@@ -678,7 +671,6 @@
             this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] | (1 << 3));
             return 16;
         }
-
 
         private int set_4_a()
         {
@@ -728,7 +720,6 @@
             return 16;
         }
 
-
         private int set_5_a()
         {
             this.rA = (byte)(this.rA | (1 << 5));
@@ -777,7 +768,6 @@
             return 16;
         }
 
-
         private int set_6_a()
         {
             this.rA = (byte)(this.rA | (1 << 6));
@@ -825,7 +815,6 @@
             this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] | (1 << 6));
             return 16;
         }
-
 
         private int set_7_a()
         {
@@ -984,7 +973,7 @@
             this.fC = (this.rA & 0x01) == 0x01;
 
             this.rA = (byte)(this.rA >> 1);
-            if ( (this.rA & 0x40) == 0x40 )
+            if ((this.rA & 0x40) == 0x40)
             {
                 this.rA |= 0x80;
             }
@@ -1001,7 +990,7 @@
             this.fC = (this.rB & 0x01) == 0x01;
 
             this.rB = (byte)(this.rB >> 1);
-            if ( (this.rB & 0x40) == 0x40 )
+            if ((this.rB & 0x40) == 0x40)
             {
                 this.rB |= 0x80;
             }
@@ -1018,7 +1007,7 @@
             this.fC = (this.rC & 0x01) == 0x01;
 
             this.rC = (byte)(this.rC >> 1);
-            if ( (this.rC & 0x40) == 0x40 )
+            if ((this.rC & 0x40) == 0x40)
             {
                 this.rC |= 0x80;
             }
@@ -1035,7 +1024,7 @@
             this.fC = (this.rD & 0x01) == 0x01;
 
             this.rD = (byte)(this.rD >> 1);
-            if ( (this.rD & 0x40) == 0x40 )
+            if ((this.rD & 0x40) == 0x40)
             {
                 this.rD |= 0x80;
             }
@@ -1052,7 +1041,7 @@
             this.fC = (this.rE & 0x01) == 0x01;
 
             this.rE = (byte)(this.rE >> 1);
-            if ( (this.rE & 0x40) == 0x40 )
+            if ((this.rE & 0x40) == 0x40)
             {
                 this.rE |= 0x80;
             }
@@ -1069,7 +1058,7 @@
             this.fC = (this.rH & 0x01) == 0x01;
 
             this.rH = (byte)(this.rH >> 1);
-            if ( (this.rH & 0x40) == 0x40 )
+            if ((this.rH & 0x40) == 0x40)
             {
                 this.rH |= 0x80;
             }
@@ -1086,7 +1075,7 @@
             this.fC = (this.rL & 0x01) == 0x01;
 
             this.rL = (byte)(this.rL >> 1);
-            if ( (this.rL & 0x40) == 0x40 )
+            if ((this.rL & 0x40) == 0x40)
             {
                 this.rL |= 0x80;
             }
@@ -1103,7 +1092,7 @@
             this.fC = (this.Ram[this.rHL] & 0x01) == 0x01;
 
             this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] >> 1);
-            if ( (this.Ram[this.rHL] & 0x40) == 0x40 )
+            if ((this.Ram[this.rHL] & 0x40) == 0x40)
             {
                 this.Ram[this.rHL] |= 0x80;
             }
@@ -1121,7 +1110,7 @@
 
             this.fC = (this.rA & 0x01) == 0x01;
             this.rA = (byte)(this.rA >> 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.rA |= 0x80;
             }
@@ -1139,7 +1128,7 @@
 
             this.fC = (this.rB & 0x01) == 0x01;
             this.rB = (byte)(this.rB >> 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.rB |= 0x80;
             }
@@ -1157,7 +1146,7 @@
 
             this.fC = (this.rC & 0x01) == 0x01;
             this.rC = (byte)(this.rC >> 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.rC |= 0x80;
             }
@@ -1175,7 +1164,7 @@
 
             this.fC = (this.rD & 0x01) == 0x01;
             this.rD = (byte)(this.rD >> 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.rD |= 0x80;
             }
@@ -1193,7 +1182,7 @@
 
             this.fC = (this.rE & 0x01) == 0x01;
             this.rE = (byte)(this.rE >> 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.rE |= 0x80;
             }
@@ -1211,7 +1200,7 @@
 
             this.fC = (this.rH & 0x01) == 0x01;
             this.rH = (byte)(this.rH >> 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.rH |= 0x80;
             }
@@ -1229,7 +1218,7 @@
 
             this.fC = (this.rL & 0x01) == 0x01;
             this.rL = (byte)(this.rL >> 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.rL |= 0x80;
             }
@@ -1247,7 +1236,7 @@
 
             this.fC = (this.Ram[this.rHL] & 0x01) == 0x01;
             this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] >> 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.Ram[this.rHL] |= 0x80;
             }
@@ -1265,7 +1254,7 @@
 
             this.fC = (this.rA & 0x80) == 0x80;
             this.rA = (byte)(this.rA << 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.rA |= 0x01;
             }
@@ -1283,7 +1272,7 @@
 
             this.fC = (this.rB & 0x80) == 0x80;
             this.rB = (byte)(this.rB << 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.rB |= 0x01;
             }
@@ -1301,7 +1290,7 @@
 
             this.fC = (this.rC & 0x80) == 0x80;
             this.rC = (byte)(this.rC << 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.rC |= 0x01;
             }
@@ -1319,7 +1308,7 @@
 
             this.fC = (this.rD & 0x80) == 0x80;
             this.rD = (byte)(this.rD << 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.rD |= 0x01;
             }
@@ -1337,7 +1326,7 @@
 
             this.fC = (this.rE & 0x80) == 0x80;
             this.rE = (byte)(this.rE << 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.rE |= 0x01;
             }
@@ -1355,7 +1344,7 @@
 
             this.fC = (this.rH & 0x80) == 0x80;
             this.rH = (byte)(this.rH << 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.rH |= 0x01;
             }
@@ -1373,7 +1362,7 @@
 
             this.fC = (this.rL & 0x80) == 0x80;
             this.rL = (byte)(this.rL << 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.rL |= 0x01;
             }
@@ -1391,7 +1380,7 @@
 
             this.fC = (this.Ram[this.rHL] & 0x80) == 0x80;
             this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] << 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.Ram[this.rHL] |= 0x01;
             }
@@ -1512,7 +1501,7 @@
             this.fC = (this.rA & 0x80) == 0x80;
 
             this.rA = (byte)(this.rA << 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rA |= 0x01;
             }
@@ -1529,7 +1518,7 @@
             this.fC = (this.rB & 0x80) == 0x80;
 
             this.rB = (byte)(this.rB << 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rB |= 0x01;
             }
@@ -1546,7 +1535,7 @@
             this.fC = (this.rC & 0x80) == 0x80;
 
             this.rC = (byte)(this.rC << 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rC |= 0x01;
             }
@@ -1563,7 +1552,7 @@
             this.fC = (this.rD & 0x80) == 0x80;
 
             this.rD = (byte)(this.rD << 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rD |= 0x01;
             }
@@ -1580,7 +1569,7 @@
             this.fC = (this.rE & 0x80) == 0x80;
 
             this.rE = (byte)(this.rE << 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rE |= 0x01;
             }
@@ -1597,7 +1586,7 @@
             this.fC = (this.rH & 0x80) == 0x80;
 
             this.rH = (byte)(this.rH << 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rH |= 0x01;
             }
@@ -1614,7 +1603,7 @@
             this.fC = (this.rL & 0x80) == 0x80;
 
             this.rL = (byte)(this.rL << 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rL |= 0x01;
             }
@@ -1631,7 +1620,7 @@
             this.fC = (this.Ram[this.rHL] & 0x80) == 0x80;
 
             this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] << 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.Ram[this.rHL] |= 0x01;
             }
@@ -1648,7 +1637,7 @@
             this.fC = (this.rA & 0x01) == 0x01;
 
             this.rA = (byte)(this.rA >> 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rA |= 0x80;
             }
@@ -1665,7 +1654,7 @@
             this.fC = (this.rB & 0x01) == 0x01;
 
             this.rB = (byte)(this.rB >> 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rB |= 0x80;
             }
@@ -1682,7 +1671,7 @@
             this.fC = (this.rC & 0x01) == 0x01;
 
             this.rC = (byte)(this.rC >> 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rC |= 0x80;
             }
@@ -1699,7 +1688,7 @@
             this.fC = (this.rD & 0x01) == 0x01;
 
             this.rD = (byte)(this.rD >> 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rD |= 0x80;
             }
@@ -1716,7 +1705,7 @@
             this.fC = (this.rE & 0x01) == 0x01;
 
             this.rE = (byte)(this.rE >> 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rE |= 0x80;
             }
@@ -1733,7 +1722,7 @@
             this.fC = (this.rH & 0x01) == 0x01;
 
             this.rH = (byte)(this.rH >> 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rH |= 0x80;
             }
@@ -1750,7 +1739,7 @@
             this.fC = (this.rL & 0x01) == 0x01;
 
             this.rL = (byte)(this.rL >> 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rL |= 0x80;
             }
@@ -1767,7 +1756,7 @@
             this.fC = (this.Ram[this.rHL] & 0x01) == 0x01;
 
             this.Ram[this.rHL] = (byte)(this.Ram[this.rHL] >> 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.Ram[this.rHL] |= 0x80;
             }
@@ -1843,7 +1832,6 @@
             return 12;
         }
 
-
         private int bit_1_a()
         {
             this.fZ = (this.rA & (1 << 1)) == 0;
@@ -1907,7 +1895,6 @@
             this.fH = true;
             return 12;
         }
-
 
         private int bit_2_a()
         {
@@ -1973,7 +1960,6 @@
             return 12;
         }
 
-
         private int bit_3_a()
         {
             this.fZ = (this.rA & (1 << 3)) == 0;
@@ -2037,7 +2023,6 @@
             this.fH = true;
             return 12;
         }
-
 
         private int bit_4_a()
         {
@@ -2103,7 +2088,6 @@
             return 12;
         }
 
-
         private int bit_5_a()
         {
             this.fZ = (this.rA & (1 << 5)) == 0;
@@ -2167,7 +2151,6 @@
             this.fH = true;
             return 12;
         }
-
 
         private int bit_6_a()
         {
@@ -2233,7 +2216,6 @@
             return 12;
         }
 
-
         private int bit_7_a()
         {
             this.fZ = (this.rA & (1 << 7)) == 0;
@@ -2298,5 +2280,6 @@
             return 12;
         }
 #pragma warning restore IDE1006 // Naming Styles
+#pragma warning restore SA1300 // Element should begin with upper-case letter
     }
 }

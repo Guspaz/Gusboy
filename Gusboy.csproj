@@ -17,6 +17,10 @@
 			<LastGenOutput>Settings.Designer.cs</LastGenOutput>
 		</None>
 		<PackageReference Include="NAudio" Version="1.10.0" />
+		<PackageReference Include="StyleCop.Analyzers.Unstable" Version="1.2.0.321">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 		<Compile Update="Properties\Settings.Designer.cs">
 			<AutoGen>True</AutoGen>
 			<DependentUpon>Settings.settings</DependentUpon>

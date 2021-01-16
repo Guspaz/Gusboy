@@ -7,11 +7,17 @@
 
         private readonly Gameboy gb;
 
-        private int Joy10State = 0b1111;
-        private int Joy20State = 0b1111;
-        private bool SelectJoy10;
-        private bool SelectJoy20;
+        private int joy10State = 0b1111;
+        private int joy20State = 0b1111;
+        private bool selectJoy10;
+        private bool selectJoy20;
 
+        public Input(Gameboy gameBoy)
+        {
+            this.gb = gameBoy;
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1602:Enumeration items should be documented", Justification = "Unecessary")]
         public enum Keys
         {
             A = 0b1110,
@@ -24,32 +30,27 @@
             Down = 0b0111 << 4,
         }
 
-        public Input(Gameboy gameBoy)
-        {
-            this.gb = gameBoy;
-        }
-
         public byte Read()
         {
             // This function is tediously written but I wanted to simplify the steps
             int result = 0b1111;
 
-            if ( this.SelectJoy10 )
+            if (this.selectJoy10)
             {
-                result &= this.Joy10State;
+                result &= this.joy10State;
             }
 
-            if ( this.SelectJoy20 )
+            if (this.selectJoy20)
             {
-                result &= this.Joy20State;
+                result &= this.joy20State;
             }
 
-            if ( this.SelectJoy10 )
+            if (this.selectJoy10)
             {
                 result |= JOY10MASK;
             }
 
-            if ( this.SelectJoy20 )
+            if (this.selectJoy20)
             {
                 result |= JOY20MASK;
             }
@@ -60,51 +61,51 @@
         public void Write(byte value)
         {
             // Possibly trigger an interrupt?
-            this.SelectJoy10 = (value & JOY10MASK) != 0;
-            this.SelectJoy20 = (value & JOY20MASK) != 0;
+            this.selectJoy10 = (value & JOY10MASK) != 0;
+            this.selectJoy20 = (value & JOY20MASK) != 0;
         }
 
         public void KeyDown(Keys key)
         {
             // Trigger CPU interrupt
-            this.gb.cpu.TriggerInterrupt(CPU.INT_JOYPAD);
+            this.gb.Cpu.TriggerInterrupt(CPU.INT_JOYPAD);
 
-            switch ( key )
+            switch (key)
             {
                 case Keys.A:
                 case Keys.B:
                 case Keys.Select:
                 case Keys.Start:
-                    this.Joy10State &= (int)key;
-                    this.Joy10State &= 0b1111;
+                    this.joy10State &= (int)key;
+                    this.joy10State &= 0b1111;
                     break;
                 case Keys.Right:
                 case Keys.Left:
                 case Keys.Up:
                 case Keys.Down:
-                    this.Joy20State &= ((int)key) >> 4;
-                    this.Joy20State &= 0b1111;
+                    this.joy20State &= ((int)key) >> 4;
+                    this.joy20State &= 0b1111;
                     break;
             }
         }
 
         public void KeyUp(Keys key)
         {
-            switch ( key )
+            switch (key)
             {
                 case Keys.A:
                 case Keys.B:
                 case Keys.Select:
                 case Keys.Start:
-                    this.Joy10State |= ~((int)key);
-                    this.Joy10State &= 0b1111;
+                    this.joy10State |= ~((int)key);
+                    this.joy10State &= 0b1111;
                     break;
                 case Keys.Right:
                 case Keys.Left:
                 case Keys.Up:
                 case Keys.Down:
-                    this.Joy20State |= ~((int)key) >> 4;
-                    this.Joy20State &= 0b1111;
+                    this.joy20State |= ~((int)key) >> 4;
+                    this.joy20State &= 0b1111;
                     break;
             }
         }

@@ -20,6 +20,7 @@
         public bool EnvelopeAddMode;
 
         public float OutputLeft => (this.LengthStatus && this.LeftEnable) ? ((~this.LFSR & 0b1) * this.Volume) / 100f : 0;
+
         public float OutputRight => (this.LengthStatus && this.RightEnable) ? ((~this.LFSR & 0b1) * this.Volume) / 100f : 0;
 
         public bool LeftEnable;
@@ -37,7 +38,7 @@
         {
             this.LengthStatus = this.DacEnable;
 
-            if ( this.LengthTimer == 0 )
+            if (this.LengthTimer == 0)
             {
                 this.LengthTimer = 64;
             }
@@ -54,21 +55,21 @@
 
         public void ClockTick()
         {
-            if ( this.FrequencyTimer > 0 )
+            if (this.FrequencyTimer > 0)
             {
                 this.FrequencyTimer--;
             }
 
             // Using a noise channel clock shift of 14 or 15 results in the LFSR receiving no clocks.
-            if ( this.FrequencyTimer == 0 && this.ClockShift <= 15 )
+            if (this.FrequencyTimer == 0 && this.ClockShift <= 15)
             {
-                this.FrequencyTimer = this.divisor[this.DivisorCode] << (this.ClockShift);
+                this.FrequencyTimer = this.divisor[this.DivisorCode] << this.ClockShift;
 
                 int newHighBit = (this.LFSR & 0b01) ^ ((this.LFSR >> 1) & 0b01);
 
                 this.LFSR = (this.LFSR >> 1) | (newHighBit << 14);
 
-                if ( this.WidthMode )
+                if (this.WidthMode)
                 {
                     // Should I discard everything above bit 6?
                     this.LFSR = (this.LFSR & 0b0111_1111_1011_1111) | newHighBit << 6;
@@ -78,14 +79,14 @@
 
         public void LengthTimerTick()
         {
-            if ( this.LengthEnable )
+            if (this.LengthEnable)
             {
-                if ( this.LengthTimer > 0 )
+                if (this.LengthTimer > 0)
                 {
                     this.LengthTimer--;
                 }
 
-                if ( this.LengthTimer == 0 )
+                if (this.LengthTimer == 0)
                 {
                     this.LengthStatus = false;
                 }
@@ -94,20 +95,20 @@
 
         public void VolumeEnvelopeTick()
         {
-            if ( this.InitialVolumeTimer > 0 )
+            if (this.InitialVolumeTimer > 0)
             {
-                if ( this.VolumeTimer > 0 )
+                if (this.VolumeTimer > 0)
                 {
                     this.VolumeTimer--;
                 }
 
-                if ( this.VolumeTimer == 0 )
+                if (this.VolumeTimer == 0)
                 {
-                    if ( this.Volume < 15 && this.EnvelopeAddMode )
+                    if (this.Volume < 15 && this.EnvelopeAddMode)
                     {
                         this.Volume++;
                     }
-                    else if ( this.Volume > 0 && !this.EnvelopeAddMode )
+                    else if (this.Volume > 0 && !this.EnvelopeAddMode)
                     {
                         this.Volume--;
                     }

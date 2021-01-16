@@ -1,25 +1,46 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Runtime.InteropServices;
-using System.Windows.Forms;
-using NAudio.Wave;
+﻿[assembly: System.Resources.NeutralResourcesLanguageAttribute("en")]
 
 namespace GusBoy
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Drawing;
+    using System.Drawing.Drawing2D;
+    using System.Runtime.InteropServices;
+    using System.Windows.Forms;
+    using NAudio.Wave;
+
+    /// <summary>
+    /// Main form for the application.
+    /// </summary>
     public partial class Gusboy : Form
     {
+        private readonly Dictionary<Keys, Input.Keys> keymap = new Dictionary<Keys, Input.Keys>
+        {
+            { Keys.A, Input.Keys.A },
+            { Keys.B, Input.Keys.B },
+            { Keys.Space, Input.Keys.Select },
+            { Keys.Enter, Input.Keys.Start },
+            { Keys.Up, Input.Keys.Up },
+            { Keys.Down, Input.Keys.Down },
+            { Keys.Left, Input.Keys.Left },
+            { Keys.Right, Input.Keys.Right },
+        };
+
+        private Gameboy gb;
+        private long frames = -1;
+        private long cpuTicks = 0;
+        private long clockTicks = 0;
+        private DirectBitmap framebuffer;
+
         public Gusboy()
         {
             this.InitializeComponent();
         }
 
-        private Gameboy gb;
-
         public bool AddMessage(string message)
         {
-            if ( !this.txt_messages.IsDisposed )
+            if (!this.txt_messages.IsDisposed)
             {
                 this.txt_messages.AppendText(message + "\r\n");
             }
@@ -27,9 +48,7 @@ namespace GusBoy
             return true;
         }
 
-        private long frames = -1;
-        private long cpuTicks = 0;
-        private long clockTicks = 0;
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData) => false;
 
         private bool DrawFramebuffer()
         {
@@ -39,56 +58,22 @@ namespace GusBoy
 
             Application.DoEvents();
 
-            if ( this.frames % 120 == 0 )
+            if (this.frames % 120 == 0)
             {
                 double timeElapsed = (double)(System.Diagnostics.Stopwatch.GetTimestamp() - this.clockTicks) / System.Diagnostics.Stopwatch.Frequency;
                 double framerate = 120 / timeElapsed;
-                double clockspeed = (this.gb.cpu.ticks - this.cpuTicks) / 1000000.0 / timeElapsed;
+                double clockspeed = (this.gb.Cpu.Ticks - this.cpuTicks) / 1000000.0 / timeElapsed;
 
                 this.statusStrip.Items[0].Text = $"Clockspeed: {clockspeed,5:N} MHz  Framerate: {framerate,2:N} Hz";
 
-                this.cpuTicks = this.gb.cpu.ticks;
+                this.cpuTicks = this.gb.Cpu.Ticks;
                 this.clockTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             }
 
             return true;
         }
 
-        public class DirectBitmap : IDisposable
-        {
-            public Bitmap Bitmap { get; private set; }
-            public int[] Bits { get; private set; }
-            public bool Disposed { get; private set; }
-            public int Height { get; private set; }
-            public int Width { get; private set; }
-
-            protected GCHandle BitsHandle { get; private set; }
-
-            public DirectBitmap(int width, int height)
-            {
-                this.Width = width;
-                this.Height = height;
-                this.Bits = new int[width * height];
-                this.BitsHandle = GCHandle.Alloc(this.Bits, GCHandleType.Pinned);
-                this.Bitmap = new Bitmap(width, height, width * 4, System.Drawing.Imaging.PixelFormat.Format32bppPArgb, this.BitsHandle.AddrOfPinnedObject());
-            }
-
-            public void Dispose()
-            {
-                if ( this.Disposed )
-                {
-                    return;
-                }
-
-                this.Disposed = true;
-                this.Bitmap.Dispose();
-                this.BitsHandle.Free();
-            }
-        }
-
-        private DirectBitmap framebuffer;
-
-        private void Form1_Shown(object sender, EventArgs e)
+        private void Gusboy_Shown(object sender, EventArgs e)
         {
             this.ClientSize = new Size(160 * 2, this.ClientSize.Height);
 
@@ -106,26 +91,27 @@ namespace GusBoy
 
             try
             {
-
-                while ( !this.IsDisposed )
+                while (!this.IsDisposed)
                 {
                     this.gb.Tick();
 
-                    if ( this.gb.apu.buffer.Count >= 100 )
+                    if (this.gb.Apu.Buffer.Count >= 100)
                     {
-                        float[] inBuffer = this.gb.apu.buffer.ToArray();
+                        float[] inBuffer = this.gb.Apu.Buffer.ToArray();
                         byte[] outBuffer = new byte[inBuffer.Length * 4];
                         Buffer.BlockCopy(inBuffer, 0, outBuffer, 0, outBuffer.Length);
 
                         audioBuffer.AddSamples(outBuffer, 0, outBuffer.Length);
-                        this.gb.apu.buffer.Clear();
+                        this.gb.Apu.Buffer.Clear();
 
                         // Drain the buffer
-                        while ( audioBuffer.BufferedBytes > 4096 ) { }
+                        while (audioBuffer.BufferedBytes > 4096)
+                        {
+                        }
                     }
                 }
             }
-            catch ( GbException ex )
+            catch (Exception ex)
             {
                 this.AddMessage(ex.Message);
             }
@@ -133,7 +119,7 @@ namespace GusBoy
 
         private void GusBoy_Paint(object sender, PaintEventArgs e)
         {
-            if ( this.framebuffer != null )
+            if (this.framebuffer != null)
             {
                 e.Graphics.CompositingMode = CompositingMode.SourceCopy;
                 e.Graphics.CompositingQuality = CompositingQuality.HighSpeed;
@@ -143,24 +129,12 @@ namespace GusBoy
             }
         }
 
-        private readonly Dictionary<Keys, Input.Keys> keymap = new Dictionary<Keys, Input.Keys>
-        {
-            { Keys.A, Input.Keys.A },
-            { Keys.B, Input.Keys.B },
-            { Keys.Space, Input.Keys.Select },
-            { Keys.Enter, Input.Keys.Start },
-            { Keys.Up, Input.Keys.Up },
-            { Keys.Down, Input.Keys.Down },
-            { Keys.Left, Input.Keys.Left },
-            { Keys.Right, Input.Keys.Right },
-        };
-
         private void GusBoy_KeyDown(object sender, KeyEventArgs e)
         {
             // This event-based input is laggy. Should probably switch to polling using the WinInput class.
-            if ( this.keymap.ContainsKey(e.KeyCode) )
+            if (this.keymap.ContainsKey(e.KeyCode))
             {
-                this.gb.input.KeyDown(this.keymap[e.KeyCode]);
+                this.gb.Input.KeyDown(this.keymap[e.KeyCode]);
             }
 
             e.Handled = true;
@@ -168,16 +142,46 @@ namespace GusBoy
 
         private void GusBoy_KeyUp(object sender, KeyEventArgs e)
         {
-            if ( this.keymap.ContainsKey(e.KeyCode) )
+            if (this.keymap.ContainsKey(e.KeyCode))
             {
-                this.gb.input.KeyUp(this.keymap[e.KeyCode]);
+                this.gb.Input.KeyUp(this.keymap[e.KeyCode]);
             }
 
             e.Handled = true;
         }
 
-        protected override bool ProcessCmdKey(ref Message msg, Keys keyData) => false;
+        private void GusBoy_FormClosed(object sender, FormClosedEventArgs e) => this.gb.Rom.SaveSRAM();
 
-        private void GusBoy_FormClosed(object sender, FormClosedEventArgs e) => this.gb.rom.SaveSRAM();
+        public class DirectBitmap : IDisposable
+        {
+            public DirectBitmap(int width, int height)
+            {
+                this.Bits = new int[width * height];
+                this.BitsHandle = GCHandle.Alloc(this.Bits, GCHandleType.Pinned);
+                this.Bitmap = new Bitmap(width, height, width * 4, System.Drawing.Imaging.PixelFormat.Format32bppPArgb, this.BitsHandle.AddrOfPinnedObject());
+            }
+
+            public Bitmap Bitmap { get; private set; }
+
+            public int[] Bits { get; private set; }
+
+            public bool Disposed { get; private set; }
+
+            protected GCHandle BitsHandle { get; private set; }
+
+            public void Dispose()
+            {
+                if (this.Disposed)
+                {
+                    return;
+                }
+
+                this.Disposed = true;
+                this.Bitmap.Dispose();
+                this.BitsHandle.Free();
+
+                GC.SuppressFinalize(this);
+            }
+        }
     }
 }

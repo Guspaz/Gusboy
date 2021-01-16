@@ -1,13 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace GusBoy
+﻿namespace GusBoy
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+
+    /// <summary>
+    /// Everything related to parsing ROM headers.
+    /// </summary>
     public partial class ROM
     {
-        private readonly int[] RamSizeTable = { 0x00, 0x800, 0x2000, 0x8000, 0x20000, 0x10000 };
         private const int OFFSET_TITLE = 0x134;
         private const int OFFSET_TYPE = 0x147;
         private const int OFFSET_ROM_SIZE = 0x148;
@@ -21,60 +23,9 @@ namespace GusBoy
         private const int OFFSET_HEADER_CHECKSUM = 0x14D;
         private const int OFFSET_GLOBAL_CHECKSUM = 0x14E;
 
-        public CartridgeType hType;
-        public int hRomSize;
-        public int hRamSize;
-        public CGBType hCGB;
-        public string hLicensee;
-        public bool hSGB;
-        public bool hDestination;
-        public byte hMaskRomVersion;
-        public byte hHeaderChecksum;
-        public ushort hGlobalChecksum;
+        private readonly int[] ramSizeTable = { 0x00, 0x800, 0x2000, 0x8000, 0x20000, 0x10000 };
 
-        public enum CGBType
-        {
-            No = 0x00,
-            Both = 0x80,
-            Yes = 0xC0
-        }
-
-        public enum CartridgeType
-        {
-            ROM_ONLY = 0x00,
-            MBC1 = 0x01,
-            MBC1_RAM = 0x02,
-            MBC1_RAM_BATTERY = 0x03,
-            MBC2 = 0x05,
-            MBC2_BATTERY = 0x06,
-            ROM_RAM = 0x08,
-            ROM_RAM_BATTERY = 0x09,
-            MMM01 = 0x0B,
-            MMM01_RAM = 0x0C,
-            MMM01_RAM_BATTERY = 0x0D,
-            MBC3_TIMER_BATTERY = 0x0F,
-            MBC3_TIMER_RAM_BATTERY = 0x10,
-            MBC3 = 0x11,
-            MBC3_RAM = 0x12,
-            MBC3_RAM_BATTERY = 0x13,
-            MBC4 = 0x15,
-            MBC4_RAM = 0x16,
-            MBC4_RAM_BATTERY = 0x17,
-            MBC5 = 0x19,
-            MBC5_RAM = 0x1A,
-            MBC5_RAM_BATTERY = 0x1B,
-            MBC5_RUMBLE = 0x1C,
-            MBC5_RUMBLE_RAM = 0x1D,
-            MBC5_RUMBLE_RAM_BATTERY = 0x1E,
-            MBC6 = 0x20,
-            MBC7_SENSOR_RUMBLE_RAM_BATTERY = 0x22,
-            POCKET_CAMERA = 0xFC,
-            BANDAI_TAMAS = 0xFD,
-            HUC3 = 0xFE,
-            HUC1_RAM_BATTERY = 0xFF
-        }
-
-        public readonly Dictionary<int, string> NewLicensee = new Dictionary<int, string>
+        private readonly Dictionary<int, string> newLicensee = new Dictionary<int, string>
         {
             { 0x00, "None" },
             { 0x01, "Nintendo R&D1" },
@@ -135,10 +86,10 @@ namespace GusBoy
             { 0x96, "Yonezawa/s'pal" },
             { 0x97, "Kaneko" },
             { 0x99, "Pack in soft" },
-            { 0xA4, "Konami (Yu-Gi-Oh!)" }
+            { 0xA4, "Konami (Yu-Gi-Oh!)" },
         };
 
-        public readonly Dictionary<int, string> OldLicensee = new Dictionary<int, string>
+        private readonly Dictionary<int, string> oldLicensee = new Dictionary<int, string>
         {
             { 0x00, "None" },
             { 0x01, "Nintendo" },
@@ -286,31 +237,101 @@ namespace GusBoy
             { 0xEE, "IGS" },
             { 0xF0, "A Wave" },
             { 0xF3, "Extreme Entertainment" },
-            { 0xFF, "LJN" }
+            { 0xFF, "LJN" },
         };
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1602:Enumeration items should be documented", Justification = "Unecessary")]
+        public enum CGBType
+        {
+            No = 0x00,
+            Both = 0x80,
+            Yes = 0xC0,
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1602:Enumeration items should be documented", Justification = "Unecessary")]
+        public enum CartridgeType
+        {
+            ROM_ONLY = 0x00,
+            MBC1 = 0x01,
+            MBC1_RAM = 0x02,
+            MBC1_RAM_BATTERY = 0x03,
+            MBC2 = 0x05,
+            MBC2_BATTERY = 0x06,
+            ROM_RAM = 0x08,
+            ROM_RAM_BATTERY = 0x09,
+            MMM01 = 0x0B,
+            MMM01_RAM = 0x0C,
+            MMM01_RAM_BATTERY = 0x0D,
+            MBC3_TIMER_BATTERY = 0x0F,
+            MBC3_TIMER_RAM_BATTERY = 0x10,
+            MBC3 = 0x11,
+            MBC3_RAM = 0x12,
+            MBC3_RAM_BATTERY = 0x13,
+            MBC4 = 0x15,
+            MBC4_RAM = 0x16,
+            MBC4_RAM_BATTERY = 0x17,
+            MBC5 = 0x19,
+            MBC5_RAM = 0x1A,
+            MBC5_RAM_BATTERY = 0x1B,
+            MBC5_RUMBLE = 0x1C,
+            MBC5_RUMBLE_RAM = 0x1D,
+            MBC5_RUMBLE_RAM_BATTERY = 0x1E,
+            MBC6 = 0x20,
+            MBC7_SENSOR_RUMBLE_RAM_BATTERY = 0x22,
+            POCKET_CAMERA = 0xFC,
+            BANDAI_TAMAS = 0xFD,
+            HUC3 = 0xFE,
+            HUC1_RAM_BATTERY = 0xFF,
+        }
+
+#pragma warning disable SA1300 // Element should begin with upper-case letter
+#pragma warning disable IDE1006 // Naming Styles
+        public string hTitle { get; set; }
+
+        public CartridgeType hType { get; set; }
+
+        public int hRomSize { get; set; }
+
+        public int hRamSize { get; set; }
+
+        public CGBType hCGB { get; set; }
+
+        public string hLicensee { get; set; }
+
+        public bool hSGB { get; set; }
+
+        public bool hDestination { get; set; }
+
+        public byte hMaskRomVersion { get; set; }
+
+        public byte hHeaderChecksum { get; set; }
+
+        public ushort hGlobalChecksum { get; set; }
+#pragma warning restore IDE1006 // Naming Styles
+#pragma warning restore SA1300 // Element should begin with upper-case letter
 
         public void ReadHeader(byte[] romFile)
         {
             this.hTitle = Encoding.ASCII.GetString(romFile[OFFSET_TITLE..(OFFSET_TITLE + 16)].TakeWhile(b => b != 0x80 && b != 0xC0 && b != 0x00).ToArray());
 
-            this.hCGB = (romFile[OFFSET_CGB]) switch
+            this.hCGB = romFile[OFFSET_CGB] switch
             {
                 (byte)CGBType.Both => CGBType.Both,
                 (byte)CGBType.Yes => CGBType.Yes,
                 _ => CGBType.No,
             };
 
-            if ( romFile[OFFSET_OLD_LICENSEE_CODE] == 0x33 )
+            if (romFile[OFFSET_OLD_LICENSEE_CODE] == 0x33)
             {
                 int licenseeNumber = ((romFile[OFFSET_NEW_LICENSEE_CODE] & 0b1111) << 4) | romFile[OFFSET_NEW_LICENSEE_CODE + 1] & 0b1111;
 
-                this.hLicensee = this.NewLicensee.ContainsKey(licenseeNumber) ? this.NewLicensee[licenseeNumber] : $"Unknown (0x{licenseeNumber:X2})";
+                this.hLicensee = this.newLicensee.ContainsKey(licenseeNumber) ? this.newLicensee[licenseeNumber] : $"Unknown (0x{licenseeNumber:X2})";
             }
             else
             {
                 int licenseeNumber = romFile[OFFSET_OLD_LICENSEE_CODE];
 
-                this.hLicensee = this.OldLicensee.ContainsKey(licenseeNumber) ? this.OldLicensee[licenseeNumber] : $"Unknown (0x{licenseeNumber:X2})";
+                this.hLicensee = this.oldLicensee.ContainsKey(licenseeNumber) ? this.oldLicensee[licenseeNumber] : $"Unknown (0x{licenseeNumber:X2})";
             }
 
             this.hSGB = romFile[OFFSET_SGB] == 0x03;
@@ -320,12 +341,12 @@ namespace GusBoy
             this.hRomSize = 0x8000 << romFile[OFFSET_ROM_SIZE];
 
             // Override for bad ROMs that say they have no RAM, but actually do
-            if ( this.hRamSize == 0 && Enum.GetName(typeof(CartridgeType), this.hType).Contains("_RAM") )
+            if (this.hRamSize == 0 && Enum.GetName(typeof(CartridgeType), this.hType).Contains("_RAM"))
             {
                 this.hRamSize = 0x8000;
             }
 
-            this.hRamSize = (this.hType == CartridgeType.MBC2 || this.hType == CartridgeType.MBC2_BATTERY) ? 0x100 : this.RamSizeTable[romFile[OFFSET_RAM_SIZE]];
+            this.hRamSize = (this.hType == CartridgeType.MBC2 || this.hType == CartridgeType.MBC2_BATTERY) ? 0x100 : this.ramSizeTable[romFile[OFFSET_RAM_SIZE]];
 
             this.hDestination = romFile[OFFSET_DESTINATION_CODE] == 0x01;
 

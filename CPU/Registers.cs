@@ -1,17 +1,27 @@
 ﻿namespace GusBoy
 {
+    /// <summary>
+    /// General registers that don't belong in another category.
+    /// </summary>
     public partial class CPU
     {
+#pragma warning disable SA1300 // Element should begin with upper-case letter
+#pragma warning disable IDE1006 // Naming Styles
+
         // 16-bit registers
-        public Gshort rAF = 0x01B0;
-        public Gshort rBC = 0x0013;
-        public Gshort rDE = 0x00D8;
-        public Gshort rHL = 0x014D;
-        public Gshort rSP = 0xFFFE;
-        public Gshort rPC = 0x0000;
+        private Gshort rAF = 0x01B0;
+        private Gshort rBC = 0x0013;
+        private Gshort rDE = 0x00D8;
+        private Gshort rHL = 0x014D;
+        private Gshort rSP = 0xFFFE;
+
+        public bool fHalt { get; set; }
+
+        public bool fStop { get; set; }
+
+        public Gshort rPC { get; set; }
 
         // 8-bit registers
-#pragma warning disable IDE1006 // Naming Styles
         public byte rA
         {
             get => this.rAF.Hi;
@@ -84,9 +94,7 @@
             get => this.rAF[4];
             set => this.rAF[4] = value;
         }
-
-        public bool fHalt = false;
-        public bool fStop = false;
 #pragma warning restore IDE1006 // Naming Styles
+#pragma warning restore SA1300 // Element should begin with upper-case letter
     }
 }

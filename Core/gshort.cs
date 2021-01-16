@@ -1,13 +1,12 @@
 ﻿namespace GusBoy
 {
     /// <summary>
-    /// Basically just a ushort with access to the hi and lo bytes and some extra implicit conversions
-    /// Changed to treat it more like int because .NET insists on converting everything to int when you do operations on stuff
+    /// Basically just a ushort with access to the hi and lo bytes and some extra implicit conversions.
+    /// Changed to treat it more like int because .NET insists on converting everything to int when you do operations on stuff.
     /// </summary>
-    public struct Gshort //: IFormattable, IConvertible, IComparable<UInt16>, IEquatable<UInt16>
+    public struct Gshort // : IFormattable, IConvertible, IComparable<UInt16>, IEquatable<UInt16>
     {
         // TODO: Add direct operators to maybe be faster than the automatic int conversions
-
         private ushort var;
 
         public Gshort(int u)
@@ -32,7 +31,7 @@
             get => (this.var & (1 << i)) != 0;
             set
             {
-                if ( value )
+                if (value)
                 {
                     this.var = (ushort)(this.var | (1 << i));
                 }
@@ -53,10 +52,11 @@
             return g.var;
         }
 
-        //public static implicit operator gshort(ushort u)
-        //{
+        /*
+        // public static implicit operator gshort(ushort u)
+        // {
         //    return new gshort(u);
-        //}
+        // }
 
         //public static explicit operator sbyte (gshort g)
         //{
@@ -182,5 +182,6 @@
         //{
         //    return var.Equals(other);
         //}
+        */
     }
 }

@@ -1,31 +1,39 @@
 ﻿namespace GusBoy
 {
+    /// <summary>
+    /// Implemented from reference doc at https://hacktix.github.io/GBEDG/timers/
+    /// Implements the CPU timer.
+    /// </summary>
     public partial class CPU
     {
-        // Implemented from reference doc at https://hacktix.github.io/GBEDG/timers/
-
-        public Gshort rDIV = 0;
-        public byte rTIMA = 0;
-        public byte rTMA = 0;
-        public byte rTAC = 0;
-
-        public bool reloadingTima;
-
         private long oldCpuTicks;
         private bool oldAndResult;
-
         private long reloadTima;
+
+#pragma warning disable SA1300 // Element should begin with upper-case letter
+#pragma warning disable IDE1006 // Naming Styles
+        public Gshort rDIV { get; set; }
+
+        public byte rTIMA { get; set; }
+
+        public byte rTMA { get; set; }
+
+        public byte rTAC { get; set; }
+#pragma warning restore IDE1006 // Naming Styles
+#pragma warning restore SA1300 // Element should begin with upper-case letter
+
+        public bool ReloadingTima { get; set; }
 
         public void TimerTick()
         {
-            long newCpuTicks = this.ticks - this.oldCpuTicks;
-            this.oldCpuTicks = this.ticks;
+            long newCpuTicks = this.Ticks - this.oldCpuTicks;
+            this.oldCpuTicks = this.Ticks;
 
-            for ( int i = 0; i < newCpuTicks; i++ )
+            for (int i = 0; i < newCpuTicks; i++)
             {
                 this.rDIV++;
 
-                if ( this.reloadingTima && --this.reloadTima == 0 )
+                if (this.ReloadingTima && --this.reloadTima == 0)
                 {
                     // Reload TIMA
                     this.rTIMA = this.rTMA;
@@ -34,13 +42,13 @@
                     this.TriggerInterrupt(INT_TIMER);
 
                     // Reset the state
-                    this.reloadingTima = false;
+                    this.ReloadingTima = false;
                     this.reloadTima = -1;
                 }
 
                 bool divBit = false;
 
-                switch ( this.rTAC & 0b011 )
+                switch (this.rTAC & 0b011)
                 {
                     case 0b00:
                         divBit = (this.rDIV & 0b10_0000_0000) != 0;
@@ -60,14 +68,14 @@
 
                 bool andResult = divBit && timerEnableBit;
 
-                if ( this.oldAndResult && !andResult )
+                if (this.oldAndResult && !andResult)
                 {
-                    if ( this.rTIMA == 255 )
+                    if (this.rTIMA == 255)
                     {
                         // Overflow is about to happen
                         this.rTIMA = 0;
                         this.reloadTima = 4;
-                        this.reloadingTima = true;
+                        this.ReloadingTima = true;
                     }
                     else
                     {

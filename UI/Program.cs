@@ -1,8 +1,8 @@
-﻿using System;
-using System.Windows.Forms;
-
-namespace GusBoy
+﻿namespace GusBoy
 {
+    using System;
+    using System.Windows.Forms;
+
     internal static class Program
     {
         /// <summary>

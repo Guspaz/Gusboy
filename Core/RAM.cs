@@ -2,46 +2,46 @@
 {
     public class RAM
     {
-        public byte[] sram = new byte[0x2000];
-        public byte[] vram = new byte[0x2000];
-        public byte[] oam = new byte[0x100];
-        public byte[] wram = new byte[0x2000];
-        public byte[] hram = new byte[0x80];
-
         private readonly Gameboy gb;
 
-        private CPU Cpu => this.gb.cpu;
-        private APU Apu => this.gb.apu;
-        private GPU Gpu => this.gb.gpu;
-        private ROM Rom => this.gb.rom;
+        private readonly byte[] oam = new byte[0x100];
+        private readonly byte[] wram = new byte[0x2000];
+        private readonly byte[] hram = new byte[0x80];
 
         public RAM(Gameboy gameBoy)
         {
             this.gb = gameBoy;
         }
 
-        // This exists mainly to make it easy to print debug statements if required.
-        private static byte Unsupported(byte value) => value;
+        public byte[] Vram { get; set; } = new byte[0x2000];
+
+        private CPU Cpu => this.gb.Cpu;
+
+        private APU Apu => this.gb.Apu;
+
+        private GPU Gpu => this.gb.Gpu;
+
+        private ROM Rom => this.gb.Rom;
 
         public byte this[int i, bool isDma = false]
         {
             get
             {
                 // Block access to everything but HRAM during DMA, unless it's the DMA itself.
-                if ( this.Gpu.IsDmaActive && !isDma && (i < 0xFF80 || i > 0xFFFE) )
+                if (this.Gpu.IsDmaActive && !isDma && (i < 0xFF80 || i > 0xFFFE))
                 {
                     return 0xFF;
                 }
 
-                switch ( i )
+                switch (i)
                 {
                     case <= 0x7FFF:
                         return this.Rom[i]; // Cartridge ROM
 
                     case >= 0x8000 and <= 0x9FFF:
-                        if ( this.Gpu.CanAccessVRAM(isDma) )
+                        if (this.Gpu.CanAccessVRAM(isDma))
                         {
-                            return this.vram[i - 0x8000]; // VRAM
+                            return this.Vram[i - 0x8000]; // VRAM
                         }
                         else
                         {
@@ -58,9 +58,9 @@
                         return this.wram[i - 0xE000]; // System RAM (mirror)
 
                     case >= 0xFE00 and <= 0xFEFF:
-                        if ( this.Gpu.CanAccessOAM(isDma) )
+                        if (this.Gpu.CanAccessOAM(isDma))
                         {
-                            return this.oam[i - 0xFE00]; //Object Attribute Memory (FEA0-FEFF unusable)
+                            return this.oam[i - 0xFE00]; // Object Attribute Memory (FEA0-FEFF unusable)
                         }
                         else
                         {
@@ -68,8 +68,7 @@
                         }
 
                     case 0xFF00:
-                        return this.gb.input.Read();
-                    //return GetJoypadState(); // Joystick register
+                        return this.gb.Input.Read();
 
                     case 0xFF01:
                         return RAM.Unsupported(0x00); // SB (Serial data transfer)
@@ -78,7 +77,7 @@
                         return RAM.Unsupported(0x7E); // SC (serial data transfer)
 
                     case 0xFF03:
-                        return RAM.Unsupported(0x00); // Serial data transfer registers 
+                        return RAM.Unsupported(0x00); // Serial data transfer registers
 
                     case 0xFF04:
                         return this.Cpu.rDIV.Hi;
@@ -171,7 +170,7 @@
                         return 0xFF; // Unused sound bytes
 
                     case >= 0xFF30 and <= 0xFF3F:
-                        if ( this.Apu.Channel3.LengthStatus )
+                        if (this.Apu.WaveEnabled)
                         {
                             return 0xFF;
                         }
@@ -223,31 +222,33 @@
                         return this.hram[i - 0xFF80]; // High RAM
 
                     case 0xFFFF:
-                        return this.Cpu.rInterruptEnable; //(byte)(cpu.interruptEnable | 0b1110_0000);
+                        return this.Cpu.rInterruptEnable; // (byte)(cpu.interruptEnable | 0b1110_0000);
 
                     default:
                         return 0xFF;
                 }
             }
+
             set
             {
                 // Block access to everything but HRAM during DMA, unless it's the DMA itself.
-                if ( this.Gpu.IsDmaActive && !isDma && (i < 0xFF80 || i > 0xFFFE) )
+                if (this.Gpu.IsDmaActive && !isDma && (i < 0xFF80 || i > 0xFFFE))
                 {
                     return;
                 }
 
-                switch ( i )
+                switch (i)
                 {
                     case >= 0x0000 and <= 0x7FFF:
                         this.Rom[i] = value; // Cartridge ROM
                         break;
 
                     case >= 0x8000 and <= 0x9FFF:
-                        if ( this.Gpu.CanAccessVRAM(isDma) )
+                        if (this.Gpu.CanAccessVRAM(isDma))
                         {
-                            this.vram[i - 0x8000] = value; // VRAM
+                            this.Vram[i - 0x8000] = value; // VRAM
                         }
+
                         break;
 
                     case >= 0xA000 and <= 0xBFFF:
@@ -263,19 +264,20 @@
                         break;
 
                     case >= 0xFE00 and <= 0xFEFF:
-                        if ( this.Gpu.CanAccessOAM(isDma) )
+                        if (this.Gpu.CanAccessOAM(isDma))
                         {
-                            this.oam[i - 0xFE00] = value; //Object Attribute Memory (FEA0-FEFF unusable)
+                            this.oam[i - 0xFE00] = value; // Object Attribute Memory (FEA0-FEFF unusable)
                             this.Gpu.spriteCacheDirty = true;
                         }
+
                         break;
 
                     case 0xFF00:
-                        this.gb.input.Write(value); // Joystick register
+                        this.gb.Input.Write(value); // Joystick register
                         break;
 
                     case >= 0xFF01 and <= 0xFF03:
-                        RAM.Unsupported(0x00); // Serial data transfer registers 
+                        RAM.Unsupported(0x00); // Serial data transfer registers
                         break;
 
                     case 0xFF04:
@@ -284,7 +286,7 @@
 
                     case 0xFF05:
                         this.Cpu.rTIMA = value;
-                        this.Cpu.reloadingTima = false;
+                        this.Cpu.ReloadingTima = false;
                         break;
 
                     case 0xFF06:
@@ -293,7 +295,6 @@
 
                     case 0xFF07:
                         this.Cpu.rTAC = value;
-                        //cpu.UpdateTAC(value);
                         break;
 
                     case >= 0xFF08 and <= 0xFF0E:
@@ -401,10 +402,11 @@
                         break;
 
                     case >= 0xFF30 and <= 0xFF3F:
-                        if ( !this.Apu.Channel3.LengthStatus )
+                        if (!this.Apu.WaveEnabled)
                         {
                             this.Apu.WaveTable[i - 0xFF30] = value;
                         }
+
                         break;
 
                     case 0xFF40:
@@ -485,5 +487,8 @@
         }
 
         public Gshort GetShort(int address) => (ushort)((this[address + 1] << 8) + this[address]);
+
+        // This exists mainly to make it easy to print debug statements if required.
+        private static byte Unsupported(byte value) => value;
     }
 }

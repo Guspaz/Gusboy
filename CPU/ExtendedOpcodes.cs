@@ -1,20 +1,12 @@
-﻿using System;
-namespace GusBoy
+﻿namespace GusBoy
 {
+    using System;
+
+    /// <summary>
+    /// Definitions for two-byte opcodes.
+    /// </summary>
     public partial class CPU
     {
-        private struct ExtOpcode
-        {
-            public string mnemonic;
-            public Func<int> func;
-
-            public ExtOpcode(string name, Func<int> func)
-            {
-                this.mnemonic = name;
-                this.func = func;
-            }
-        }
-
         private readonly ExtOpcode[] extendedOpcodes;
 
         private ExtOpcode[] GenerateExtendedOpcodes() => new ExtOpcode[]
@@ -86,7 +78,7 @@ namespace GusBoy
                 /* 0x3D */ new ExtOpcode("SRL L", this.srl_l),
                 /* 0x3E */ new ExtOpcode("SRL (HL)", this.srl_phl),
                 /* 0x3F */ new ExtOpcode("SRL A", this.srl_a),
-                
+
                 /* 0x40 */ new ExtOpcode("BIT 0, B", this.bit_0_b),
                 /* 0x41 */ new ExtOpcode("BIT 0, C", this.bit_0_c),
                 /* 0x42 */ new ExtOpcode("BIT 0, D", this.bit_0_d),
@@ -291,5 +283,17 @@ namespace GusBoy
                 /* 0xFE */ new ExtOpcode("SET 7, (HL)", this.set_7_phl),
                 /* 0xFF */ new ExtOpcode("SET 7, A", this.set_7_a),
             };
+
+        private struct ExtOpcode
+        {
+            public readonly string Mnemonic;
+            public readonly Func<int> Func;
+
+            public ExtOpcode(string name, Func<int> func)
+            {
+                this.Mnemonic = name;
+                this.Func = func;
+            }
+        }
     }
 }

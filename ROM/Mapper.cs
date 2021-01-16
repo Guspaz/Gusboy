@@ -1,62 +1,64 @@
-﻿using System.IO;
-
-namespace GusBoy
+﻿namespace GusBoy
 {
+    using System.IO;
+
     public abstract class Mapper
     {
-        protected int romAddressMask;
-        protected int ramAddressMask;
-
-        protected byte[] romFile;
-        protected byte[] sram;
-
         private readonly string ramPath;
-
-        protected bool RAMG
-        {
-            get => this._RAMG;
-
-            set
-            {
-                if ( !value & this._RAMG )
-                {
-                    // RAM access was enabled and is being disabled, dump the RAM to disk
-                    this.SaveSRAM();
-                }
-
-                this._RAMG = value;
-            }
-        }
-
-        private bool _RAMG;
+        private bool ramg;
 
         public Mapper(byte[] romFile, byte[] sram, string ramPath)
         {
-            this.romFile = romFile;
-            this.sram = sram;
+            this.RomFile = romFile;
+            this.Sram = sram;
             this.ramPath = ramPath;
 
-            if ( sram.Length > 0 )
+            if (sram.Length > 0)
             {
-                if ( File.Exists(ramPath) )
+                if (File.Exists(ramPath))
                 {
                     sram = File.ReadAllBytes(ramPath);
                 }
             }
 
-            this.romAddressMask = romFile.Length - 1;
-            this.ramAddressMask = sram.Length - 1;
+            this.RomAddressMask = romFile.Length - 1;
+            this.RamAddressMask = sram.Length - 1;
+        }
+
+        protected int RomAddressMask { get; }
+
+        protected int RamAddressMask { get; }
+
+        protected byte[] RomFile { get; }
+
+        protected byte[] Sram { get; }
+
+        protected bool RAMG
+        {
+            get => this.ramg;
+
+            set
+            {
+                if (!value & this.ramg)
+                {
+                    // RAM access was enabled and is being disabled, dump the RAM to disk
+                    this.SaveSRAM();
+                }
+
+                this.ramg = value;
+            }
         }
 
         public abstract byte Read(int address);
+
         public abstract void Write(int address, byte value);
 
         public void SaveSRAM()
         {
-            if ( this.sram?.Length > 0 )
+            if (this.Sram?.Length > 0)
             {
                 // RAM access was enabled and is being disabled, dump the RAM to disk
-                File.WriteAllBytes(this.ramPath, this.sram);
+                File.WriteAllBytes(this.ramPath, this.Sram);
             }
         }
     }

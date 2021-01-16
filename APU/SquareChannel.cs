@@ -10,47 +10,64 @@
         public bool DacEnable;
 
         public int LengthTimer;
+
         public bool LengthStatus;
+
         public bool LengthEnable;
 
         public int Volume;
+
         public int InitialVolume;
+
         public int InitialVolumeTimer;
+
         public int VolumeTimer;
+
         public bool EnvelopeAddMode;
 
         public int Frequency;
+
         public int FrequencyTimer;
 
         public int Duty;
+
         public int DutyStep;
 
-        public float OutputLeft => (this.LengthStatus && this.LeftEnable) ? (this.SquareDuty[this.Duty, this.DutyStep] * this.Volume) / 100f : 0;
-        public float OutputRight => (this.LengthStatus && this.RightEnable) ? (this.SquareDuty[this.Duty, this.DutyStep] * this.Volume) / 100f : 0;
+        public float OutputLeft => (this.LengthStatus && this.LeftEnable) ? (this.squareDuty[this.Duty, this.DutyStep] * this.Volume) / 100f : 0;
+
+        public float OutputRight => (this.LengthStatus && this.RightEnable) ? (this.squareDuty[this.Duty, this.DutyStep] * this.Volume) / 100f : 0;
 
         public bool LeftEnable;
+
         public bool RightEnable;
 
         public int InitialSweepTimer;
+
         public int SweepTimer;
+
         public int SweepFrequency;
+
         public bool SweepEnabled;
+
         public bool SweepNegate;
+
         public int SweepShift;
+
         public bool NegateDirty = false;
 
-        private readonly byte[,] SquareDuty = new byte[,]{
+        private readonly byte[,] squareDuty = new byte[,]
+        {
             { 0, 0, 0, 0, 0, 0, 0, 1 },
             { 1, 0, 0, 0, 0, 0, 0, 1 },
             { 1, 0, 0, 0, 0, 1, 1, 1 },
-            { 0, 1, 1, 1, 1, 1, 1, 0 }
+            { 0, 1, 1, 1, 1, 1, 1, 0 },
         };
 
         public void Trigger()
         {
             this.LengthStatus = this.DacEnable;
 
-            if ( this.LengthTimer == 0 )
+            if (this.LengthTimer == 0)
             {
                 this.LengthTimer = 64;
             }
@@ -70,7 +87,7 @@
 
             this.NegateDirty = false;
 
-            if ( this.SweepShift != 0 )
+            if (this.SweepShift != 0)
             {
                 this.SweepCalculation();
             }
@@ -78,16 +95,16 @@
 
         public void ClockTick()
         {
-            if ( this.FrequencyTimer > 0 )
+            if (this.FrequencyTimer > 0)
             {
                 this.FrequencyTimer--;
             }
 
-            if ( this.FrequencyTimer == 0 )
+            if (this.FrequencyTimer == 0)
             {
                 this.FrequencyTimer = (2048 - this.Frequency) * 4;
 
-                if ( ++this.DutyStep > 7 )
+                if (++this.DutyStep > 7)
                 {
                     this.DutyStep = 0;
                 }
@@ -96,14 +113,14 @@
 
         public void LengthTimerTick()
         {
-            if ( this.LengthEnable )
+            if (this.LengthEnable)
             {
-                if ( this.LengthTimer > 0 )
+                if (this.LengthTimer > 0)
                 {
                     this.LengthTimer--;
                 }
 
-                if ( this.LengthTimer == 0 )
+                if (this.LengthTimer == 0)
                 {
                     this.LengthStatus = false;
                 }
@@ -112,20 +129,20 @@
 
         public void VolumeEnvelopeTick()
         {
-            if ( this.InitialVolumeTimer > 0 )
+            if (this.InitialVolumeTimer > 0)
             {
-                if ( this.VolumeTimer > 0 )
+                if (this.VolumeTimer > 0)
                 {
                     this.VolumeTimer--;
                 }
 
-                if ( this.VolumeTimer == 0 )
+                if (this.VolumeTimer == 0)
                 {
-                    if ( this.Volume < 15 && this.EnvelopeAddMode )
+                    if (this.Volume < 15 && this.EnvelopeAddMode)
                     {
                         this.Volume++;
                     }
-                    else if ( this.Volume > 0 && !this.EnvelopeAddMode )
+                    else if (this.Volume > 0 && !this.EnvelopeAddMode)
                     {
                         this.Volume--;
                     }
@@ -138,18 +155,18 @@
 
         public void SweepTick()
         {
-            if ( this.SweepTimer > 0 )
+            if (this.SweepTimer > 0)
             {
                 this.SweepTimer--;
             }
 
-            if ( this.SweepTimer == 0 )
+            if (this.SweepTimer == 0)
             {
-                if ( this.SweepEnabled && this.InitialSweepTimer != 0 )
+                if (this.SweepEnabled && this.InitialSweepTimer != 0)
                 {
                     int newFrequency = this.SweepCalculation();
 
-                    if ( newFrequency <= 2047 && this.SweepShift != 0 )
+                    if (newFrequency <= 2047 && this.SweepShift != 0)
                     {
                         this.SweepFrequency = newFrequency;
                         this.Frequency = newFrequency;
@@ -165,14 +182,14 @@
 
         public int SweepCalculation()
         {
-            int newFrequency = this.SweepFrequency + (this.SweepFrequency >> this.SweepShift) * (this.SweepNegate ? -1 : 1);
+            int newFrequency = this.SweepFrequency + ((this.SweepFrequency >> this.SweepShift) * (this.SweepNegate ? -1 : 1));
 
-            if ( this.SweepNegate )
+            if (this.SweepNegate)
             {
                 this.NegateDirty = true;
             }
 
-            if ( newFrequency > 2047 || newFrequency < 0 )
+            if (newFrequency > 2047 || newFrequency < 0)
             {
                 this.LengthStatus = false;
             }

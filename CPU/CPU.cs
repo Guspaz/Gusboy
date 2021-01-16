@@ -1,17 +1,15 @@
-﻿//#define ENABLE_TRACING
+﻿// #define ENABLE_TRACING
 
 namespace GusBoy
 {
+    /// <summary>
+    /// Main CPU emulation.
+    /// </summary>
     public partial class CPU
     {
-        public long ticks = 8;
-
         private readonly Gameboy gb;
 
-        // Accessors
-        private RAM Ram => this.gb.ram;
-
-        public Opcode instruction;
+        private Opcode instruction;
 
 #if ENABLE_TRACING
             private FileStream log;
@@ -31,6 +29,10 @@ namespace GusBoy
 #endif
         }
 
+        public long Ticks { get; set; } = 8;
+
+        private RAM Ram => this.gb.Ram;
+
         public void Tick()
         {
 #if ENABLE_TRACING
@@ -42,9 +44,9 @@ namespace GusBoy
 
             Gshort operand = 0;
 
-            if ( this.instruction.operandLength != 0 )
+            if (this.instruction.OperandLength != 0)
             {
-                if ( this.instruction.operandLength == 1 )
+                if (this.instruction.OperandLength == 1)
                 {
                     operand = this.Ram[this.rPC];
                 }
@@ -59,8 +61,8 @@ namespace GusBoy
                 //sw.Write($" OP: {String.Format(instruction.mnemonic, operand)}\n");
 #endif
 
-            this.rPC += this.instruction.operandLength;
-            this.ticks += this.instruction.func(operand);
+            this.rPC += this.instruction.OperandLength;
+            this.Ticks += this.instruction.Func(operand);
         }
     }
 }

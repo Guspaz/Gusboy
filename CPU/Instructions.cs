@@ -1,17 +1,23 @@
 ﻿namespace GusBoy
 {
+    using System;
+
+    /// <summary>
+    /// Implementations of all single-byte opcodes.
+    /// </summary>
     public partial class CPU
     {
-        private static bool HalfCarrySub(byte target, byte value, int carry = 0) => (((target & 0xF) - (value & 0xF) - carry) < 0);
+        private static bool HalfCarrySub(byte target, byte value, int carry = 0) => ((target & 0xF) - (value & 0xF) - carry) < 0;
 
         private static bool HalfCarryAdd(byte target, byte value, int carry = 0) => ((target & 0xF) + (value & 0xF) + carry) > 0xF;
 
         private static bool HalfCarryAdd(Gshort target, Gshort value) => ((target & 0xFFF) + (value & 0xFFF)) > 0xFFF;
 
-        private int Crash(Gshort operand) => throw new GbException($"Executed illegal instruction at address 0x{rPC:X4}");
+        private int Crash(Gshort operand) => throw new Exception($"Executed illegal instruction at address 0x{this.rPC:X4}");
 
+#pragma warning disable SA1300 // Element should begin with upper-case letter
 #pragma warning disable IDE1006 // Naming Styles
-        private int ext(Gshort operand) => this.extendedOpcodes[operand.Lo].func();
+        private int ext(Gshort operand) => this.extendedOpcodes[operand.Lo].Func();
 
         private int nop(Gshort operand) => 4;
 
@@ -23,7 +29,7 @@
 
         private int jp_nz_nn(Gshort operand)
         {
-            if ( !this.fZ )
+            if (!this.fZ)
             {
                 this.rPC = operand;
                 return 16;
@@ -36,7 +42,7 @@
 
         private int jp_z_nn(Gshort operand)
         {
-            if ( this.fZ )
+            if (this.fZ)
             {
                 this.rPC = operand;
                 return 16;
@@ -49,7 +55,7 @@
 
         private int jp_nc_nn(Gshort operand)
         {
-            if ( !this.fC )
+            if (!this.fC)
             {
                 this.rPC = operand;
                 return 16;
@@ -62,7 +68,7 @@
 
         private int jp_c_nn(Gshort operand)
         {
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rPC = operand;
                 return 16;
@@ -83,7 +89,7 @@
 
         private int call_nz_nn(Gshort operand)
         {
-            if ( !this.fZ )
+            if (!this.fZ)
             {
                 this.Ram.SetShort(this.rSP - 2, this.rPC);
                 this.rPC = operand;
@@ -98,7 +104,7 @@
 
         private int call_z_nn(Gshort operand)
         {
-            if ( this.fZ )
+            if (this.fZ)
             {
                 this.Ram.SetShort(this.rSP - 2, this.rPC);
                 this.rPC = operand;
@@ -113,7 +119,7 @@
 
         private int call_nc_nn(Gshort operand)
         {
-            if ( !this.fC )
+            if (!this.fC)
             {
                 this.Ram.SetShort(this.rSP - 2, this.rPC);
                 this.rPC = operand;
@@ -128,7 +134,7 @@
 
         private int call_c_nn(Gshort operand)
         {
-            if ( this.fC )
+            if (this.fC)
             {
                 this.Ram.SetShort(this.rSP - 2, this.rPC);
                 this.rPC = operand;
@@ -147,7 +153,7 @@
 
             this.fC = (this.rA & 0x80) == 0x80;
             this.rA = (byte)(this.rA << 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.rA |= 0x01;
             }
@@ -165,7 +171,7 @@
 
             this.fC = (this.rA & 0x01) == 0x01;
             this.rA = (byte)(this.rA >> 1);
-            if ( oldFC )
+            if (oldFC)
             {
                 this.rA |= 0x80;
             }
@@ -212,7 +218,7 @@
 
         private int ret_nz(Gshort operand)
         {
-            if ( !this.fZ )
+            if (!this.fZ)
             {
                 this.rPC = this.Ram.GetShort(this.rSP);
                 this.rSP += 2;
@@ -226,7 +232,7 @@
 
         private int ret_z(Gshort operand)
         {
-            if ( this.fZ )
+            if (this.fZ)
             {
                 this.rPC = this.Ram.GetShort(this.rSP);
                 this.rSP += 2;
@@ -240,7 +246,7 @@
 
         private int ret_nc(Gshort operand)
         {
-            if ( !this.fC )
+            if (!this.fC)
             {
                 this.rPC = this.Ram.GetShort(this.rSP);
                 this.rSP += 2;
@@ -254,7 +260,7 @@
 
         private int ret_c(Gshort operand)
         {
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rPC = this.Ram.GetShort(this.rSP);
                 this.rSP += 2;
@@ -1002,16 +1008,19 @@
             this.rBC++;
             return 8;
         }
+
         private int inc_de(Gshort operand)
         {
             this.rDE++;
             return 8;
         }
+
         private int inc_hl(Gshort operand)
         {
             this.rHL++;
             return 8;
         }
+
         private int inc_sp(Gshort operand)
         {
             this.rSP++;
@@ -1020,7 +1029,7 @@
 
         private int jr_nz_dn(Gshort operand)
         {
-            if ( !this.fZ )
+            if (!this.fZ)
             {
                 this.rPC += (sbyte)operand.Lo;
                 return 12;
@@ -1033,7 +1042,7 @@
 
         private int jr_z_dn(Gshort operand)
         {
-            if ( this.fZ )
+            if (this.fZ)
             {
                 this.rPC += (sbyte)operand.Lo;
                 return 12;
@@ -1046,7 +1055,7 @@
 
         private int jr_nc_dn(Gshort operand)
         {
-            if ( !this.fC )
+            if (!this.fC)
             {
                 this.rPC += (sbyte)operand.Lo;
                 return 12;
@@ -1059,7 +1068,7 @@
 
         private int jr_c_dn(Gshort operand)
         {
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rPC += (sbyte)operand.Lo;
                 return 12;
@@ -1241,7 +1250,6 @@
             return 8;
         }
 
-
         private int ld_b_a(Gshort operand)
         {
             this.rB = this.rA;
@@ -1283,7 +1291,6 @@
             this.rB = this.Ram[this.rHL];
             return 8;
         }
-
 
         private int ld_c_a(Gshort operand)
         {
@@ -1327,7 +1334,6 @@
             return 8;
         }
 
-
         private int ld_d_a(Gshort operand)
         {
             this.rD = this.rA;
@@ -1369,7 +1375,6 @@
             this.rD = this.Ram[this.rHL];
             return 8;
         }
-
 
         private int ld_e_a(Gshort operand)
         {
@@ -1413,7 +1418,6 @@
             return 8;
         }
 
-
         private int ld_h_a(Gshort operand)
         {
             this.rH = this.rA;
@@ -1456,7 +1460,6 @@
             return 8;
         }
 
-
         private int ld_l_a(Gshort operand)
         {
             this.rL = this.rA;
@@ -1498,7 +1501,6 @@
             this.rL = this.Ram[this.rHL];
             return 8;
         }
-
 
         private int or_a(Gshort operand)
         {
@@ -2150,8 +2152,8 @@
         private int add_hl_sp(Gshort operand)
         {
             this.fH = HalfCarryAdd(this.rHL, this.rSP);
-            //fH = ((rHL & 0xFFF) + (rSP & 0xFFF)) > 0xFFF;
 
+            // fH = ((rHL & 0xFFF) + (rSP & 0xFFF)) > 0xFFF;
             int result = this.rHL + this.rSP;
             this.rHL = result;
             this.fN = false;
@@ -2171,7 +2173,7 @@
             this.fC = (this.rA & 0x80) == 0x80;
 
             this.rA = (byte)(this.rA << 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rA |= 0x01;
             }
@@ -2188,7 +2190,7 @@
             this.fC = (this.rA & 0x01) == 0x01;
 
             this.rA = (byte)(this.rA >> 1);
-            if ( this.fC )
+            if (this.fC)
             {
                 this.rA |= 0x80;
             }
@@ -2205,7 +2207,7 @@
             this.fStop = true;
 
             // Work around buggy software? ROMs will hard-lock the gameboy if they halt with interrupts disabled. Blargg's cpu_instrs test appears to do this right before test 3.
-            if ( this.rInterruptEnable == 0 )
+            if (this.rInterruptEnable == 0)
             {
                 this.rInterruptEnable = 0x1f;
             }
@@ -2218,12 +2220,12 @@
             this.fHalt = true;
 
             // Work around buggy software? ROMs will hard-lock the gameboy if they halt with interrupts disabled.
-            if ( this.rInterruptEnable == 0 )
+            if (this.rInterruptEnable == 0)
             {
                 this.rInterruptEnable = 0x1f;
             }
 
-            if ( !this.fInterruptMasterEnable && (this.rInterruptEnable & this.rInterruptFlags & 0x1f) != 0 )
+            if (!this.fInterruptMasterEnable && (this.rInterruptEnable & this.rInterruptFlags & 0x1f) != 0)
             {
                 // HALT bug. Just disabling halt isn't accurate, but is probably close enough
                 this.fHalt = false;
@@ -2236,39 +2238,39 @@
         {
             Gshort a = this.rA;
 
-            if ( !this.fN )
+            if (!this.fN)
             {
-                if ( this.fH || (a & 0x0F) > 9 )
+                if (this.fH || (a & 0x0F) > 9)
                 {
                     a += 6;
                 }
 
-                if ( this.fC || a > 0x9F )
+                if (this.fC || a > 0x9F)
                 {
                     a += 0x60;
                 }
             }
             else
             {
-                if ( this.fH )
+                if (this.fH)
                 {
                     a = (a - 6) & 0xFF;
                 }
 
-                if ( this.fC )
+                if (this.fC)
                 {
                     a -= 0x60;
                 }
             }
 
             this.rF = (byte)(this.rF & ~(0x20 | 0x80));
-            if ( (a & 0x100) != 0 )
+            if ((a & 0x100) != 0)
             {
                 this.rF |= 0x10;
             }
 
             a &= 0xFF;
-            if ( a == 0 )
+            if (a == 0)
             {
                 this.rF |= 0x80;
             }
@@ -2278,5 +2280,6 @@
             return 4;
         }
 #pragma warning restore IDE1006 // Naming Styles
+#pragma warning restore SA1300 // Element should begin with upper-case letter
     }
 }

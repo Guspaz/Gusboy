@@ -1,26 +1,17 @@
-﻿using System;
-
-namespace GusBoy
+﻿namespace GusBoy
 {
+    using System;
+
+    /// <summary>
+    /// Definitions for single-byte opcodes.
+    /// </summary>
     public partial class CPU
     {
-        public struct Opcode
+        private readonly Opcode[] opcodes;
+
+        private Opcode[] GenerateOpcodes()
         {
-            public string mnemonic;
-            public int operandLength;
-            public Func<Gshort, int> func;
-
-            public Opcode(string name, int paramLength, Func<Gshort, int> func)
-            {
-                this.mnemonic = name;
-                this.operandLength = paramLength;
-                this.func = func;
-            }
-        }
-
-        public Opcode[] opcodes;
-
-        private Opcode[] GenerateOpcodes() => new Opcode[]
+            return new Opcode[]
             {
                 /* 0x00 */ new Opcode("NOP", 0, this.nop),
                 /* 0x01 */ new Opcode("LD BC, 0x{0:X4}", 2, this.ld_bc_nn),
@@ -294,5 +285,20 @@ namespace GusBoy
                 /* 0xFE */ new Opcode("CP 0x{0:X2}", 1, this.cp_n),
                 /* 0xFF */ new Opcode("RST 38", 0, this.rst_38),
             };
+        }
+
+        public struct Opcode
+        {
+            public readonly string Mnemonic;
+            public readonly int OperandLength;
+            public readonly Func<Gshort, int> Func;
+
+            public Opcode(string name, int paramLength, Func<Gshort, int> func)
+            {
+                this.Mnemonic = name;
+                this.OperandLength = paramLength;
+                this.Func = func;
+            }
+        }
     }
 }
