@@ -145,27 +145,6 @@
             }
         }
 
-        public void CheckLYCInterrupt()
-        {
-            // TODO: This doesn't seem to always fire at the right time, sometimes it's of by one scanline...
-            if (this.CurrentLine == this.rLYC)
-            {
-                // Set match bit
-                this.stat |= 1 << 2;
-
-                // LYC = LY status interrupt
-                if ((this.stat & (1 << 6)) != 0)
-                {
-                    this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
-                }
-            }
-            else
-            {
-                // Clear match bit
-                this.stat &= 0xFB;
-            }
-        }
-
         public byte ScrollX { get; set; }
 
         public byte ScrollY { get; set; }
@@ -217,6 +196,27 @@
             }
 
             this.SpriteCacheDirty = false;
+        }
+
+        public void CheckLYCInterrupt()
+        {
+            // TODO: This doesn't seem to always fire at the right time, sometimes it's of by one scanline...
+            if (this.CurrentLine == this.rLYC)
+            {
+                // Set match bit
+                this.stat |= 1 << 2;
+
+                // LYC = LY status interrupt
+                if ((this.stat & (1 << 6)) != 0)
+                {
+                    this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
+                }
+            }
+            else
+            {
+                // Clear match bit
+                this.stat &= 0xFB;
+            }
         }
 
         public byte GetLCDC() => this.control;
