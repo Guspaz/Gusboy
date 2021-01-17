@@ -83,7 +83,6 @@
             this.Name = "Gusboy";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Gusboy";
-            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Gusboy_FormClosed);
             this.Shown += new System.EventHandler(this.Gusboy_Shown);
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.Gusboy_Paint);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Gusboy_KeyDown);

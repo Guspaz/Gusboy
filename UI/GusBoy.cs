@@ -75,7 +75,7 @@ namespace Gusboy
             {
                 double timeElapsed = (double)(System.Diagnostics.Stopwatch.GetTimestamp() - this.clockTicks) / System.Diagnostics.Stopwatch.Frequency;
                 double framerate = 120 / timeElapsed;
-                double clockspeed = (this.gb.Cpu.Ticks - this.cpuTicks) / 1000000.0 / timeElapsed;
+                double clockspeed = (this.gb.CpuTicks - this.cpuTicks) / 1000000.0 / timeElapsed;
 
                 // Because NAudio might be a different thread, use invoke to touch the control
                 if (!this.statusStrip.IsDisposed)
@@ -83,7 +83,7 @@ namespace Gusboy
                     this.statusStrip.Invoke(new Action<string>(text => { this.statusStrip.Items[0].Text = text; }), $"Clockspeed: {clockspeed,5:N} MHz  Framerate: {framerate,2:N} Hz");
                 }
 
-                this.cpuTicks = this.gb.Cpu.Ticks;
+                this.cpuTicks = this.gb.CpuTicks;
                 this.clockTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             }
 
@@ -114,7 +114,7 @@ namespace Gusboy
             // This event-based input is laggy. Should probably switch to polling using the WinInput class.
             if (this.keymap.ContainsKey(e.KeyCode))
             {
-                this.gb.Input.KeyDown(this.keymap[e.KeyCode]);
+                this.gb.KeyDown(this.keymap[e.KeyCode]);
             }
 
             e.Handled = true;
@@ -124,13 +124,11 @@ namespace Gusboy
         {
             if (this.keymap.ContainsKey(e.KeyCode))
             {
-                this.gb.Input.KeyUp(this.keymap[e.KeyCode]);
+                this.gb.KeyUp(this.keymap[e.KeyCode]);
             }
 
             e.Handled = true;
         }
-
-        private void Gusboy_FormClosed(object sender, FormClosedEventArgs e) => this.gb.Rom.SaveSRAM();
 
         public class DirectBitmap : IDisposable
         {

@@ -49,6 +49,7 @@
         private byte startWinY;
         private byte currentWinY;
         private bool renderingWindow = false;
+        private byte currentLineCompare;
 
         public GPU(Gameboy gameBoy, Func<bool> drawFramebuffer, int[] framebuffer)
         {
@@ -138,24 +139,30 @@
 
             set
             {
-                if (value == this.rLYC)
-                {
-                    // Set match bit
-                    this.stat |= 1 << 2;
-
-                    // LYC = LY status interrupt
-                    if ((this.stat & (1 << 6)) != 0)
-                    {
-                        this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
-                    }
-                }
-                else
-                {
-                    // Clear match bit
-                    this.stat &= 0xFB;
-                }
-
                 this.currentLine = value;
+
+                this.CheckLYCInterrupt();
+            }
+        }
+
+        public void CheckLYCInterrupt()
+        {
+            // TODO: This doesn't seem to always fire at the right time, sometimes it's of by one scanline...
+            if (this.CurrentLine == this.rLYC)
+            {
+                // Set match bit
+                this.stat |= 1 << 2;
+
+                // LYC = LY status interrupt
+                if ((this.stat & (1 << 6)) != 0)
+                {
+                    this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
+                }
+            }
+            else
+            {
+                // Clear match bit
+                this.stat &= 0xFB;
             }
         }
 
@@ -165,7 +172,15 @@
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Register")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Register")]
-        public byte rLYC { get; set; }
+        public byte rLYC
+        {
+            get => this.currentLineCompare;
+            set
+            {
+                this.currentLineCompare = value;
+                this.CheckLYCInterrupt();
+            }
+        }
 
         public byte WinX { get; set; }
 
@@ -284,6 +299,7 @@
 
                         this.RenderScanline();
                         this.CurrentLine++;
+
                         if (this.renderingWindow)
                         {
                             this.currentWinY++;

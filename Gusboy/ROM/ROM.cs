@@ -52,7 +52,7 @@
                 CartridgeType.MBC5_RUMBLE or
                 CartridgeType.MBC5_RUMBLE_RAM or
                 CartridgeType.MBC5_RUMBLE_RAM_BATTERY => new MBC5(romFile, sram, ramPath),
-                _ => throw new Exception("Unsupported mapper type: " + this.hType.ToString()),
+                _ => new MBC5(romFile, sram, ramPath)
             };
 
             this.PrintInfo();

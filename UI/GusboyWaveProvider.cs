@@ -24,13 +24,13 @@
 
         public int Read(byte[] buffer, int offset, int count)
         {
-            while (gb.Apu.Buffer.Count < count >> 2)
+            while (this.gb.AudioBuffer.Count < count >> 2)
             {
-                gb.Tick();
+                this.gb.Tick();
             }
 
-            Buffer.BlockCopy(gb.Apu.Buffer.ToArray(), 0, buffer, offset, count);
-            gb.Apu.Buffer.Clear();
+            Buffer.BlockCopy(this.gb.AudioBuffer.ToArray(), 0, buffer, offset, count);
+            this.gb.AudioBuffer.Clear();
 
             return count;
         }

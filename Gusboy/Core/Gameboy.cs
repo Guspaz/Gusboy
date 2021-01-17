@@ -1,4 +1,6 @@
-﻿namespace Gusboy
+﻿[assembly: System.Resources.NeutralResourcesLanguageAttribute("en")]
+
+namespace Gusboy
 {
     using System;
 
@@ -19,15 +21,22 @@
             // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\cpu_instrs\cpu_instrs.gb", false); // PASS
 
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\dr_mario.gb", false);
-            // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\ff_legend_3.gb", false);
+            // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\ff_legend_3.gb", false);
             // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\kirby.gb", false);
 
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\marioland.gb", false);
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\marioland2.gb", false);
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\pokemon_blue.gb", false);
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\tetris.gb", false);
-            // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\zelda.gb", false);
-            this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\zelda_dx.gbc", false);
+            // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Mega Man V (USA) (SGB Enhanced).gb", false); // Some off-by-one scanline issues
+            // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\zelda_dx.gbc", false);
+            // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Final Fantasy Adventure (USA).gb", false); // Super high-pitched whine from channel 2
+
+            // The following issues are resolved by bypassing CanAccessVRAM() so I think there's a timing bug, they shouldn't be doing this.
+            // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Final Fantasy Legend II (USA).gb", false); // Corrupt background tiles on title screen, hint of squeal
+            // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Final Fantasy Legend, The (USA).gb", false); // Garbled title screen
+            // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Wario Land II (USA, Europe) (SGB Enhanced).gb", false); // Off-by-one scanline issues
+            this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Yoshi's Cookie (USA, Europe).gb", false);
 
             // Blargg tests
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\dmg_sound\dmg_sound.gb", false);
@@ -73,19 +82,27 @@
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Prehistorik Man (USA, Europe).gb", true);
         }
 
-        public CPU Cpu { get; }
+        public long CpuTicks => this.Cpu.Ticks;
 
-        public GPU Gpu { get; }
+        public System.Collections.Generic.List<float> AudioBuffer => this.Apu.Buffer;
 
-        public APU Apu { get; }
+        internal CPU Cpu { get; }
 
-        public ROM Rom { get; }
+        internal GPU Gpu { get; }
 
-        public RAM Ram { get; }
+        internal APU Apu { get; }
 
-        public Input Input { get; }
+        internal ROM Rom { get; }
+
+        internal RAM Ram { get; }
+
+        internal Input Input { get; }
 
         internal Func<string, bool> MessageCallback { get; }
+
+        public void KeyDown(Input.Keys key) => this.Input.KeyDown(key);
+
+        public void KeyUp(Input.Keys key) => this.Input.KeyUp(key);
 
         public void Tick()
         {
