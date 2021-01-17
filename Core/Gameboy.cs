@@ -38,8 +38,8 @@
             // rom = new ROM(ram, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\dmg_sound\09-wave read while on.gb", false);
             // rom = new ROM(ram, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\dmg_sound\10-wave trigger while on.gb", false);
             // rom = new ROM(ram, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\dmg_sound\12-wave write while on.gb", false);
+            // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\test roms\blargg\dmg_sound-2.gb", false);
 
-            // rom = new ROM(ram, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\test roms\blargg\dmg_sound-2.gb", false);
             // rom = new ROM(ram, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\test roms\blargg\dmg_sound-2\04-sweep.gb", false);
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\test roms\blargg\dmg_sound-2\01-registers.gb", false);
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\test roms\blargg\interrupt_time.gb", false);

@@ -3,18 +3,21 @@
     using System;
     using System.Collections.Generic;
 
+    /// <summary>
+    /// Largely implemented from https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware .
+    /// </summary>
     public class APU
     {
         private const int CPU_CLOCK = 4194304;
-        private const double CAPACITOR_BASE = 0.999958;
+        private const double CAPACITOR_BASE = 0.999958; // use 0.998943 for MGB&CGB or 0.999958 for DMG
 
         private readonly Gameboy gb;
         private readonly SquareChannel channel1 = new SquareChannel();
         private readonly SquareChannel channel2 = new SquareChannel();
         private readonly WaveChannel channel3 = new WaveChannel();
         private readonly NoiseChannel channel4 = new NoiseChannel();
-        private readonly double[] capacitor = new double[2];
-        private readonly double capacitorFactor;
+        private readonly float[] capacitor = new float[2];
+        private readonly float capacitorFactor;
         private readonly int sampleClock;
 
         private bool vInLeftEnable;
@@ -31,8 +34,8 @@
         public APU(Gameboy gameBoy, int sampleRate)
         {
             this.gb = gameBoy;
-            this.capacitorFactor = Math.Pow(CAPACITOR_BASE, CPU_CLOCK / sampleRate); // use 0.998943 for MGB&CGB or 0.999958 for DMG
-            this.sampleClock = (int)Math.Round(CPU_CLOCK / (decimal)sampleRate);
+            this.capacitorFactor = (float)Math.Pow(CAPACITOR_BASE, CPU_CLOCK / (double)sampleRate);
+            this.sampleClock = (int)Math.Round(CPU_CLOCK / (double)sampleRate);
         }
 
         public List<float> Buffer { get; } = new List<float>(8000);
@@ -64,7 +67,7 @@
                 // Switching from negative to positive after we've calculated using negative disables the channel
                 if (this.channel1.NegateDirty && oldNegate && !this.channel1.SweepNegate)
                 {
-                    this.channel1.LengthStatus = false;
+                    this.channel1.ChannelEnable = false;
                 }
             }
         }
@@ -116,7 +119,7 @@
                 if ((value & 0b1111_1000) == 0)
                 {
                     // Disable DAC
-                    this.channel1.LengthStatus = false;
+                    this.channel1.ChannelEnable = false;
                     this.channel1.DacEnable = false;
                 }
                 else
@@ -213,7 +216,7 @@
                 if ((value & 0b1111_1000) == 0)
                 {
                     // Disable DAC
-                    this.channel2.LengthStatus = false;
+                    this.channel2.ChannelEnable = false;
                     this.channel2.DacEnable = false;
                 }
                 else
@@ -283,7 +286,7 @@
 
                 if (!this.channel3.DacEnable)
                 {
-                    this.channel3.LengthStatus = false;
+                    this.channel3.ChannelEnable = false;
                 }
             }
         }
@@ -504,9 +507,9 @@
             {
                 int power = (Convert.ToInt32(this.apuPower) << 7) & 0b1000_0000;
                 int l4 = (Convert.ToInt32(this.channel4.ChannelEnable) << 3) & 0b0000_1000;
-                int l3 = (Convert.ToInt32(this.channel3.LengthStatus) << 2) & 0b0000_0100;
-                int l2 = (Convert.ToInt32(this.channel2.LengthStatus) << 1) & 0b0000_0010;
-                int l1 = (Convert.ToInt32(this.channel1.LengthStatus) << 0) & 0b0000_0001;
+                int l3 = (Convert.ToInt32(this.channel3.ChannelEnable) << 2) & 0b0000_0100;
+                int l2 = (Convert.ToInt32(this.channel2.ChannelEnable) << 1) & 0b0000_0010;
+                int l1 = (Convert.ToInt32(this.channel1.ChannelEnable) << 0) & 0b0000_0001;
 
                 return (byte)(power | l4 | l3 | l2 | l1 | 0b0111_0000);
             }
@@ -550,9 +553,9 @@
                     this.NR50 = 0;
                     this.NR51 = 0;
 
-                    this.channel1.LengthStatus = false;
-                    this.channel2.LengthStatus = false;
-                    this.channel3.LengthStatus = false;
+                    this.channel1.ChannelEnable = false;
+                    this.channel2.ChannelEnable = false;
+                    this.channel3.ChannelEnable = false;
                     this.channel4.ChannelEnable = false;
                 }
 
@@ -562,7 +565,7 @@
 
         public byte[] WaveTable => this.channel3.WaveTable;
 
-        public bool WaveEnabled => this.channel3.LengthStatus;
+        public bool WaveEnabled => this.channel3.ChannelEnable;
 
         public void Tick()
         {
@@ -634,7 +637,7 @@
 
                 if (this.timer == 0)
                 {
-                    if (this.apuPower)
+                    if (this.apuPower && (this.channel2.DacEnable || this.channel1.DacEnable || this.channel3.DacEnable || this.channel4.DacEnable))
                     {
                         this.Buffer.Add(this.HighPass((this.channel1.OutputLeft + this.channel2.OutputLeft + this.channel3.OutputLeft + this.channel4.OutputLeft) / 4 * (this.leftMasterVolume + 1), 1));
                         this.Buffer.Add(this.HighPass((this.channel1.OutputRight + this.channel2.OutputRight + this.channel3.OutputRight + this.channel4.OutputRight) / 4 * (this.rightMasterVolume + 1), 2));
@@ -654,20 +657,14 @@
             }
         }
 
-        private float HighPass(float input, int channel, bool dacs_enabled = true)
+        private float HighPass(float input, int channel)
         {
-            // TODO: Implement this flag
-            if (dacs_enabled)
-            {
-                double output = input - this.capacitor[channel - 1];
+            float output = input - this.capacitor[channel - 1];
 
-                // capacitor slowly charges to 'in' via their difference
-                this.capacitor[channel - 1] = input - (output * this.capacitorFactor);
+            // capacitor slowly charges to 'in' via their difference
+            this.capacitor[channel - 1] = input - (output * this.capacitorFactor);
 
-                return (float)output;
-            }
-
-            return 0;
+            return output;
         }
     }
 }

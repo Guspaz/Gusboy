@@ -94,7 +94,10 @@ namespace Gusboy
                 double clockspeed = (this.gb.Cpu.Ticks - this.cpuTicks) / 1000000.0 / timeElapsed;
 
                 // Because NAudio might be a different thread, use invoke to touch the control
-                this.Invoke(new Action<string>(text => { this.statusStrip.Items[0].Text = text; }), $"Clockspeed: {clockspeed,5:N} MHz  Framerate: {framerate,2:N} Hz");
+                if (!this.statusStrip.IsDisposed)
+                {
+                    this.statusStrip.Invoke(new Action<string>(text => { this.statusStrip.Items[0].Text = text; }), $"Clockspeed: {clockspeed,5:N} MHz  Framerate: {framerate,2:N} Hz");
+                }
 
                 this.cpuTicks = this.gb.Cpu.Ticks;
                 this.clockTicks = System.Diagnostics.Stopwatch.GetTimestamp();

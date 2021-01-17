@@ -1,6 +1,6 @@
 ﻿namespace Gusboy
 {
-    public class SquareChannel
+    public class SquareChannel : Channel
     {
         private readonly byte[,] squareDuty = new byte[,]
         {
@@ -10,24 +10,12 @@
             { 0, 1, 1, 1, 1, 1, 1, 0 },
         };
 
-        private int lengthTimer;
         private int volume;
+
         private int volumeTimer;
-        private int frequencyTimer;
         private int sweepTimer;
         private int sweepFrequency;
         private bool sweepEnabled;
-
-        public int LengthLoad
-        {
-            set => this.lengthTimer = 64 - value;
-        }
-
-        public bool DacEnable { get; set; }
-
-        public bool LengthStatus { get; set; }
-
-        public bool LengthEnable { get; set; }
 
         public int InitialVolume { get; set; }
 
@@ -41,14 +29,6 @@
 
         public int DutyStep { get; set; }
 
-        public float OutputLeft => (this.LengthStatus && this.LeftEnable) ? (this.squareDuty[this.Duty, this.DutyStep] * this.volume) / 100f : 0;
-
-        public float OutputRight => (this.LengthStatus && this.RightEnable) ? (this.squareDuty[this.Duty, this.DutyStep] * this.volume) / 100f : 0;
-
-        public bool LeftEnable { get; set; }
-
-        public bool RightEnable { get; set; }
-
         public int InitialSweepTimer { get; set; }
 
         public bool SweepNegate { get; set; }
@@ -57,17 +37,21 @@
 
         public bool NegateDirty { get; set; } = false;
 
+        protected override int DigitalOutput => this.squareDuty[this.Duty, this.DutyStep] * this.volume;
+
+        protected override int LengthWidth => 64;
+
         public void Trigger()
         {
-            this.LengthStatus = this.DacEnable;
+            this.ChannelEnable = this.DacEnable;
 
-            if (this.lengthTimer == 0)
+            if (this.LengthTimer == 0)
             {
-                this.lengthTimer = 64;
+                this.LengthTimer = this.LengthWidth;
             }
 
             // When triggering a square channel, the low two bits of the frequency timer are NOT modified.
-            this.frequencyTimer = (this.frequencyTimer & 0b11) | (((2048 - this.Frequency) * 4) & ~0b11);
+            this.FrequencyTimer = (this.FrequencyTimer & 0b11) | (((2048 - this.Frequency) * 4) & ~0b11);
 
             // Volume/sweep timer treat a period of 0 as 8
             this.volumeTimer = this.InitialVolumeTimer == 0 ? 8 : this.InitialVolumeTimer;
@@ -84,40 +68,6 @@
             if (this.SweepShift != 0)
             {
                 this.SweepCalculation();
-            }
-        }
-
-        public void ClockTick()
-        {
-            if (this.frequencyTimer > 0)
-            {
-                this.frequencyTimer--;
-            }
-
-            if (this.frequencyTimer == 0)
-            {
-                this.frequencyTimer = (2048 - this.Frequency) * 4;
-
-                if (++this.DutyStep > 7)
-                {
-                    this.DutyStep = 0;
-                }
-            }
-        }
-
-        public void LengthTimerTick()
-        {
-            if (this.LengthEnable)
-            {
-                if (this.lengthTimer > 0)
-                {
-                    this.lengthTimer--;
-                }
-
-                if (this.lengthTimer == 0)
-                {
-                    this.LengthStatus = false;
-                }
             }
         }
 
@@ -185,10 +135,20 @@
 
             if (newFrequency > 2047 || newFrequency < 0)
             {
-                this.LengthStatus = false;
+                this.ChannelEnable = false;
             }
 
             return newFrequency;
+        }
+
+        protected override int FrequencyTimerFire()
+        {
+            if (++this.DutyStep > 7)
+            {
+                this.DutyStep = 0;
+            }
+
+            return (2048 - this.Frequency) * 4;
         }
     }
 }
