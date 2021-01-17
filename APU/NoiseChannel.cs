@@ -28,12 +28,12 @@
         {
             this.ChannelEnable = this.DacEnable;
 
-            if (this.LengthTimer == 0)
+            if (this.lengthTimer == 0)
             {
-                this.LengthTimer = this.LengthWidth;
+                this.lengthTimer = this.LengthWidth;
             }
 
-            this.FrequencyTimer = this.divisor[this.DivisorCode] << this.ClockShift;
+            this.frequencyTimer = this.divisor[this.DivisorCode] << this.ClockShift;
 
             // Volume/sweep timer treat a period of 0 as 8
             this.volumeTimer = this.InitialVolumeTimer == 0 ? 8 : this.InitialVolumeTimer;

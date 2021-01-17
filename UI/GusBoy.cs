@@ -4,7 +4,6 @@ namespace Gusboy
 {
     using System;
     using System.Collections.Generic;
-    using System.ComponentModel;
     using System.Drawing;
     using System.Drawing.Drawing2D;
     using System.Runtime.InteropServices;
@@ -16,6 +15,8 @@ namespace Gusboy
     /// </summary>
     public partial class Gusboy : Form
     {
+        private const int SAMPLE_RATE = 48000;
+
         private readonly Dictionary<Keys, Input.Keys> keymap = new Dictionary<Keys, Input.Keys>
         {
             { Keys.A, Input.Keys.A },
@@ -28,7 +29,7 @@ namespace Gusboy
             { Keys.Right, Input.Keys.Right },
         };
 
-        private readonly BufferedCallbackWaveProvider audioBuffer;
+        private readonly GusboyWaveProvider audioSource;
         private readonly WaveOutEvent outputDevice = new WaveOutEvent() { DesiredLatency = 50, NumberOfBuffers = 10 };
         private readonly DirectBitmap framebuffer = new DirectBitmap(160, 144);
 
@@ -42,35 +43,16 @@ namespace Gusboy
         {
             this.InitializeComponent();
 
-            this.gb = new Gameboy(this.AddMessage, this.DrawFramebuffer, this.framebuffer.Bits, 48000);
+            this.gb = new Gameboy(this.AddMessage, this.DrawFramebuffer, this.framebuffer.Bits, SAMPLE_RATE);
 
-            this.audioBuffer = new BufferedCallbackWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(48000, 2), Gusboy.BufferLowCallback, this.gb);
-            this.outputDevice.Init(this.audioBuffer);
+            this.audioSource = new GusboyWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(SAMPLE_RATE, 2), this.gb);
+            this.outputDevice.Init(this.audioSource);
             this.outputDevice.Play();
-        }
-
-        public static bool BufferLowCallback(BufferedCallbackWaveProvider audioBuffer, object param)
-        {
-            Gameboy gb = (Gameboy)param;
-            gb.Tick();
-
-            // Read buffer in 5ms (at 48 kHz) chunks
-            if (gb.Apu.Buffer.Count >= audioBuffer.WaveFormat.AverageBytesPerSecond / 1000 * 5 / 4)
-            {
-                float[] inBuffer = gb.Apu.Buffer.ToArray();
-                byte[] outBuffer = new byte[inBuffer.Length * 4];
-                Buffer.BlockCopy(inBuffer, 0, outBuffer, 0, outBuffer.Length);
-
-                audioBuffer.AddSamples(outBuffer, 0, outBuffer.Length);
-                gb.Apu.Buffer.Clear();
-                return true;
-            }
-
-            return true;
         }
 
         public bool AddMessage(string message)
         {
+            // TODO: This may also need an invoke
             if (!this.txt_messages.IsDisposed)
             {
                 this.txt_messages.AppendText(message + "\r\n");
@@ -86,6 +68,8 @@ namespace Gusboy
             this.frames++;
 
             this.Invalidate(new Rectangle(0, 0, 160 * 2, 144 * 2), false);
+
+            Application.DoEvents();
 
             if (this.frames % 120 == 0)
             {

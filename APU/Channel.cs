@@ -2,9 +2,14 @@
 {
     public abstract class Channel
     {
+#pragma warning disable SA1401 // There is a large performance impact in debug mode if these are properties
+        protected int frequencyTimer;
+        protected int lengthTimer;
+#pragma warning restore SA1401
+
         public int LengthLoad
         {
-            set => this.LengthTimer = this.LengthWidth - value;
+            set => this.lengthTimer = this.LengthWidth - value;
         }
 
         public bool DacEnable { get; set; }
@@ -23,22 +28,18 @@
 
         protected abstract int DigitalOutput { get; }
 
-        protected int LengthTimer { get; set; }
-
-        protected int FrequencyTimer { get; set; }
-
         protected abstract int LengthWidth { get; }
 
         public void LengthTimerTick()
         {
             if (this.LengthEnable)
             {
-                if (this.LengthTimer > 0)
+                if (this.lengthTimer > 0)
                 {
-                    this.LengthTimer--;
+                    this.lengthTimer--;
                 }
 
-                if (this.LengthTimer == 0)
+                if (this.lengthTimer == 0)
                 {
                     this.ChannelEnable = false;
                 }
@@ -47,14 +48,14 @@
 
         public void ClockTick()
         {
-            if (this.FrequencyTimer > 0)
+            if (this.frequencyTimer > 0)
             {
-                this.FrequencyTimer--;
+                this.frequencyTimer--;
             }
 
-            if (this.FrequencyTimer == 0)
+            if (this.frequencyTimer == 0)
             {
-                this.FrequencyTimer = this.FrequencyTimerFire();
+                this.frequencyTimer = this.FrequencyTimerFire();
             }
         }
 

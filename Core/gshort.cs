@@ -1,8 +1,9 @@
 ﻿namespace Gusboy
 {
     /// <summary>
-    /// Basically just a ushort with access to the hi and lo bytes and some extra implicit conversions.
-    /// Changed to treat it more like int because .NET insists on converting everything to int when you do operations on stuff.
+    /// This class is used as the core 16-bit data type in the CPU. It was originally based on UInt16 and was much longer, but it turned out to be a bad design decision.
+    /// .NET insists on always turning everything into Int32, so all all the casting to/from UInt16 as well as the overhead of using this struct was quite slow.
+    /// I've modified it now to just use int internally, and hope to remove this struct entirely in the future to improve performance.
     /// </summary>
     public struct Gshort
     {
@@ -23,22 +24,6 @@
         {
             get => (byte)(this.Var >> 8);
             set => this.Var = (this.Var & 0x00FF) | (value << 8);
-        }
-
-        public bool this[int i]
-        {
-            get => (this.Var & (1 << i)) != 0;
-            set
-            {
-                if (value)
-                {
-                    this.Var |= 1 << i;
-                }
-                else
-                {
-                    this.Var &= ~(1 << i);
-                }
-            }
         }
 
         public static implicit operator Gshort(int i)

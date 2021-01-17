@@ -561,11 +561,11 @@
         private int sub_a_a(Gshort operand)
         {
             this.fH = HalfCarrySub(this.rA, this.rA);
-            this.fC = this.rA > this.rA;
+            this.fC = false; // this.rA > this.rA;
 
-            this.rA -= this.rA;
+            this.rA = 0; // -= this.rA;
 
-            this.fZ = this.rA == 0;
+            this.fZ = true; // this.rA == 0;
             this.fN = true;
 
             return 4;
@@ -803,10 +803,10 @@
 
         private int cp_a(Gshort operand)
         {
-            this.fZ = this.rA == this.rA;
+            this.fZ = true; // this.rA == this.rA;
             this.fN = true;
             this.fH = HalfCarrySub(this.rA, this.rA);
-            this.fC = this.rA < this.rA;
+            this.fC = false; // this.rA < this.rA;
 
             return 4;
         }

@@ -9,11 +9,17 @@
 #pragma warning disable IDE1006 // Naming Styles
 
         // 16-bit registers
-        private Gshort rAF = 0x01B0;
-        private Gshort rBC = 0x0013;
-        private Gshort rDE = 0x00D8;
-        private Gshort rHL = 0x014D;
         private Gshort rSP = 0xFFFE;
+
+        // 8-bit registers
+        private byte rA = 0x01;
+        private byte rF = 0xB0;
+        private byte rB = 0x00;
+        private byte rC = 0x13;
+        private byte rD = 0x00;
+        private byte rE = 0xD8;
+        private byte rH = 0x01;
+        private byte rL = 0x4D;
 
         public bool fHalt { get; set; }
 
@@ -21,80 +27,88 @@
 
         public int rPC { get; set; }
 
-        // 8-bit registers
-        public byte rA
+        // 16-bit registers
+        private int rAF
         {
-            get => this.rAF.Hi;
-            set => this.rAF.Hi = value;
+            get => (this.rA << 8) | this.rF;
+
+            set
+            {
+                this.rA = (byte)(value >> 8);
+                this.rF = (byte)value;
+            }
         }
 
-        public byte rF
+        private int rBC
         {
-            get => this.rAF.Lo;
-            set => this.rAF.Lo = value;
+            get => (this.rB << 8) | this.rC;
+
+            set
+            {
+                this.rB = (byte)(value >> 8);
+                this.rC = (byte)value;
+            }
         }
 
-        public byte rB
+        private int rDE
         {
-            get => this.rBC.Hi;
-            set => this.rBC.Hi = value;
+            get => (this.rD << 8) | this.rE;
+
+            set
+            {
+                this.rD = (byte)(value >> 8);
+                this.rE = (byte)value;
+            }
         }
 
-        public byte rC
+        private int rHL
         {
-            get => this.rBC.Lo;
-            set => this.rBC.Lo = value;
-        }
+            get => (this.rH << 8) | this.rL;
 
-        public byte rD
-        {
-            get => this.rDE.Hi;
-            set => this.rDE.Hi = value;
-        }
-
-        public byte rE
-        {
-            get => this.rDE.Lo;
-            set => this.rDE.Lo = value;
-        }
-
-        public byte rH
-        {
-            get => this.rHL.Hi;
-            set => this.rHL.Hi = value;
-        }
-
-        public byte rL
-        {
-            get => this.rHL.Lo;
-            set => this.rHL.Lo = value;
+            set
+            {
+                this.rH = (byte)(value >> 8);
+                this.rL = (byte)value;
+            }
         }
 
         // Flags
-        public bool fZ
+        private bool fZ
         {
-            get => this.rAF[7];
-            set => this.rAF[7] = value;
+            get => this.GetFlag(7);
+            set => this.SetFlag(value, 7);
         }
 
-        public bool fN
+        private bool fN
         {
-            get => this.rAF[6];
-            set => this.rAF[6] = value;
+            get => this.GetFlag(6);
+            set => this.SetFlag(value, 6);
         }
 
-        public bool fH
+        private bool fH
         {
-            get => this.rAF[5];
-            set => this.rAF[5] = value;
+            get => this.GetFlag(5);
+            set => this.SetFlag(value, 5);
         }
 
-        public bool fC
+        private bool fC
         {
-            get => this.rAF[4];
-            set => this.rAF[4] = value;
+            get => this.GetFlag(4);
+            set => this.SetFlag(value, 4);
         }
-#pragma warning restore IDE1006 // Naming Styles
-#pragma warning restore SA1300 // Element should begin with upper-case letter
+
+        private bool GetFlag(int i) => (this.rF & (1 << i)) != 0;
+
+        private void SetFlag(bool value, int i)
+        {
+            if (value)
+            {
+                this.rF |= (byte)(1 << i);
+            }
+            else
+            {
+                this.rF &= (byte)(~(1 << i));
+            }
+        }
     }
 }

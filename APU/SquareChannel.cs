@@ -45,13 +45,13 @@
         {
             this.ChannelEnable = this.DacEnable;
 
-            if (this.LengthTimer == 0)
+            if (this.lengthTimer == 0)
             {
-                this.LengthTimer = this.LengthWidth;
+                this.lengthTimer = this.LengthWidth;
             }
 
             // When triggering a square channel, the low two bits of the frequency timer are NOT modified.
-            this.FrequencyTimer = (this.FrequencyTimer & 0b11) | (((2048 - this.Frequency) * 4) & ~0b11);
+            this.frequencyTimer = (this.frequencyTimer & 0b11) | (((2048 - this.Frequency) * 4) & ~0b11);
 
             // Volume/sweep timer treat a period of 0 as 8
             this.volumeTimer = this.InitialVolumeTimer == 0 ? 8 : this.InitialVolumeTimer;

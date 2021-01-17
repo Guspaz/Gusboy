@@ -15,9 +15,8 @@
             this.Input = new Input(this);
 
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\test roms\mooneye\acceptance\interrupts\ie_push.gb", false);
-
-            // Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\cpu_instrs\cpu_instrs.gb", false); // PASS
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\instr_timing\instr_timing.gb", false); // PASS
+            // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\cpu_instrs\cpu_instrs.gb", false); // PASS
 
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\dr_mario.gb", false);
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\ff_legend_3.gb", false);

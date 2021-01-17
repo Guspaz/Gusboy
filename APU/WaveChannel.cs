@@ -22,13 +22,13 @@
         {
             this.ChannelEnable = this.DacEnable;
 
-            if (this.LengthTimer == 0)
+            if (this.lengthTimer == 0)
             {
-                this.LengthTimer = this.LengthWidth;
+                this.lengthTimer = this.LengthWidth;
             }
 
             // Per Binji: "The trick is to add a 6 cycle delay to the wave period whenever it is triggered." Dunno if this is actually needed.
-            this.FrequencyTimer = (2048 - this.Frequency) * 2; // + 6;
+            this.frequencyTimer = (2048 - this.Frequency) * 2; // + 6;
 
             this.wavePosition = 0;
         }
