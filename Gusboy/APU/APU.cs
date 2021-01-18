@@ -9,7 +9,8 @@
     public class APU
     {
         private const int CPU_CLOCK = 4194304;
-        private const double CAPACITOR_BASE = 0.999958; // use 0.998943 for MGB&CGB or 0.999958 for DMG
+        private const double CAPACITOR_BASE_DMG = 0.999958;
+        private const double CAPACITOR_BASE_CGB = 0.999958; // Should be 0.998943 but that sounds very tinny
 
         private readonly Gameboy gb;
         private readonly SquareChannel channel1 = new SquareChannel();
@@ -17,14 +18,15 @@
         private readonly WaveChannel channel3 = new WaveChannel();
         private readonly NoiseChannel channel4 = new NoiseChannel();
         private readonly float[] capacitor = new float[2];
-        private readonly float capacitorFactor;
         private readonly int sampleClock;
+        private readonly int sampleRate;
 
         private bool vInLeftEnable;
         private bool vInRightEnable;
         private int leftMasterVolume;
         private int rightMasterVolume;
         private bool apuPower;
+        private float capacitorFactor;
 
         private long oldCpuTicks;
         private long timer;
@@ -34,8 +36,8 @@
         public APU(Gameboy gameBoy, int sampleRate)
         {
             this.gb = gameBoy;
-            this.capacitorFactor = (float)Math.Pow(CAPACITOR_BASE, CPU_CLOCK / (double)sampleRate);
             this.sampleClock = (int)Math.Round(CPU_CLOCK / (double)sampleRate);
+            this.sampleRate = sampleRate;
         }
 
         public List<float> Buffer { get; } = new List<float>(8000);
@@ -567,10 +569,21 @@
 
         public bool WaveEnabled => this.channel3.ChannelEnable;
 
+        public void Initialize()
+        {
+            this.capacitorFactor = (float)Math.Pow(this.gb.IsCgb ? CAPACITOR_BASE_CGB : CAPACITOR_BASE_DMG, CPU_CLOCK / (double)this.sampleRate);
+        }
+
         public void Tick()
         {
             long apuTicks = this.gb.Cpu.Ticks - this.oldCpuTicks;
             this.oldCpuTicks = this.gb.Cpu.Ticks;
+
+            if (this.gb.Cpu.fSpeed)
+            {
+                // CGB runs the GPU/APU at half-speed
+                apuTicks >>= 1;
+            }
 
             for (int i = 0; i < apuTicks; i++)
             {

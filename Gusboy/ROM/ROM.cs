@@ -13,7 +13,7 @@
         private byte[] biosFile;
         private bool biosFlag;
 
-        public ROM(Gameboy gameBoy, string filepath, bool useBios)
+        public ROM(Gameboy gameBoy, string filepath)
         {
             this.gb = gameBoy;
 
@@ -31,7 +31,7 @@
 
             string ramPath = Path.Combine(Path.GetDirectoryName(filepath), Path.GetFileNameWithoutExtension(filepath)) + ".sav";
 
-            this.Bootstrap(useBios);
+            this.InitializeState();
 
             this.mapper = this.hType switch
             {
@@ -62,19 +62,20 @@
         {
             get
             {
-                if (this.biosFlag && i <= 0x100)
+                if (this.biosFlag)
                 {
-                    return this.biosFile[i];
+                    if (i < 0x100 || (this.gb.IsCgb && i >= 0x200 && i < 0x900))
+                    {
+                        return this.biosFile[i];
+                    }
                 }
-                else
-                {
-                    return this.mapper.Read(i);
-                }
+
+                return this.mapper.Read(i);
             }
 
             set
             {
-                if (i == 0xFF50 && value == 1)
+                if (i == 0xFF50 && value != 0)
                 {
                     this.biosFlag = false;
                 }
@@ -102,15 +103,27 @@
             this.gb.MessageCallback($"Global #: 0x{this.hGlobalChecksum:X4}");
         }
 
-        private void Bootstrap(bool useBios)
+        private void InitializeState()
         {
-            if (useBios && File.Exists("bios.gb"))
+            // Determine CGB mode based on the header
+            if (this.hCGB == CGBType.Yes || this.hCGB == CGBType.Both)
             {
-                this.biosFile = File.ReadAllBytes("bios.gb");
+                this.gb.IsCgb = true;
+            }
+
+            this.gb.Apu.Initialize();
+
+            string filename = this.gb.IsCgb ? "cgb.bin" : "dmg.bin";
+
+            if (this.gb.USE_BIOS && File.Exists(filename))
+            {
+                this.biosFile = File.ReadAllBytes(filename);
                 this.biosFlag = true;
             }
             else
             {
+                this.gb.Cpu.FakeBootstrap();
+
                 this.gb.Ram[0xFF05] = 0;
                 this.gb.Ram[0xFF06] = 0;
                 this.gb.Ram[0xFF07] = 0;
@@ -142,11 +155,6 @@
                 this.gb.Ram[0xFF4A] = 0x00;
                 this.gb.Ram[0xFF4B] = 0x00;
                 this.gb.Ram[0xFFFF] = 0x00;
-
-                // Init timer to roughly where it ought to start
-                this.gb.Cpu.rDIV = 0xABD0;
-
-                this.gb.Cpu.rPC = 0x100;
             }
         }
     }

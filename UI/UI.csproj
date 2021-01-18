@@ -7,7 +7,7 @@
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 
 		<RootNamespace>Gusboy</RootNamespace>
-		<AssemblyName>UI</AssemblyName>
+		<AssemblyName>GusboyUI</AssemblyName>
 		<StartupObject></StartupObject>
 	</PropertyGroup>
 

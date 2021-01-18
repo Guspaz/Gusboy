@@ -5,15 +5,24 @@
         private readonly Gameboy gb;
 
         private readonly byte[] oam = new byte[0x100];
-        private readonly byte[] wram = new byte[0x2000];
         private readonly byte[] hram = new byte[0x80];
+        private readonly byte[,] wram = new byte[8, 0x1000];
+
+        private int wramBank;
+        private int backgroundPaletteIndex;
+        private bool backgroundPaletteAutoIncrement;
+        private int spritePaletteIndex;
+        private bool spritePaletteAutoIncrement;
 
         public RAM(Gameboy gameBoy)
         {
             this.gb = gameBoy;
         }
 
-        public byte[] Vram { get; set; } = new byte[0x2000];
+        public byte[,] Vram { get; set; } = new byte[2, 0x2000];
+
+        public int VramBank { get; set; }
+
 
         private CPU Cpu => this.gb.Cpu;
 
@@ -39,33 +48,25 @@
                         return this.Rom[i]; // Cartridge ROM
 
                     case >= 0x8000 and <= 0x9FFF:
-                        if (this.Gpu.CanAccessVRAM(isDma))
-                        {
-                            return this.Vram[i - 0x8000]; // VRAM
-                        }
-                        else
-                        {
-                            return 0xFF;
-                        }
+                        return this.Gpu.CanAccessVRAM(isDma) ? this.Vram[this.VramBank, i - 0x8000] : 0xFF;
 
                     case >= 0xA000 and <= 0xBFFF:
                         return this.Rom[i]; // Cartridge RAM
 
-                    case >= 0xC000 and <= 0xDFFF:
-                        return this.wram[i - 0xC000]; // System RAM
+                    case >= 0xC000 and <= 0xCFFF:
+                        return this.wram[0, i - 0xC000]; // System RAM
 
-                    case >= 0xE000 and <= 0xFDFF:
-                        return this.wram[i - 0xE000]; // System RAM (mirror)
+                    case >= 0xD000 and <= 0xDFFF:
+                        return this.wram[this.wramBank == 0 ? 1 : this.wramBank, i - 0xD000]; // System RAM, bank 0 maps to 1
+
+                    case >= 0xE000 and <= 0xEDFF:
+                        return this.wram[0, i - 0xE000]; // System RAM (mirror)
+
+                    case >= 0xF000 and <= 0xFDFF:
+                        return this.wram[this.wramBank == 0 ? 1 : this.wramBank, i - 0xF000]; // System RAM (mirror), bank 0 maps to 1
 
                     case >= 0xFE00 and <= 0xFEFF:
-                        if (this.Gpu.CanAccessOAM(isDma))
-                        {
-                            return this.oam[i - 0xFE00]; // Object Attribute Memory (FEA0-FEFF unusable)
-                        }
-                        else
-                        {
-                            return 0xFF;
-                        }
+                        return this.Gpu.CanAccessOAM(isDma) ? this.oam[i - 0xFE00] : 0xFF; // Object Attribute Memory (FEA0-FEFF unusable)
 
                     case 0xFF00:
                         return this.gb.Input.Read();
@@ -74,7 +75,7 @@
                         return RAM.Unsupported(0x00); // SB (Serial data transfer)
 
                     case 0xFF02:
-                        return RAM.Unsupported(0x7E); // SC (serial data transfer)
+                        return RAM.Unsupported(this.gb.IsCgb ? 0x7C : 0x7E); // SC (serial data transfer)
 
                     case 0xFF03:
                         return RAM.Unsupported(0x00); // Serial data transfer registers
@@ -170,14 +171,7 @@
                         return 0xFF; // Unused sound bytes
 
                     case >= 0xFF30 and <= 0xFF3F:
-                        if (this.Apu.WaveEnabled)
-                        {
-                            return 0xFF;
-                        }
-                        else
-                        {
-                            return this.Apu.WaveTable[i - 0xFF30];
-                        }
+                        return this.Apu.WaveEnabled ? 0xFF : this.Apu.WaveTable[i - 0xFF30];
 
                     case 0xFF40:
                         return this.Gpu.GetLCDC();
@@ -215,6 +209,54 @@
                     case 0xFF4B:
                         return this.Gpu.WinX;
 
+                    // TODO: Optimize this to make the switch contiguous again
+                    case 0xFF4D:
+                        return this.gb.IsCgb ? (byte)(((this.Cpu.fSpeed ? 1 : 0) << 7) | (this.Cpu.fPrepareSwitch ? 1 : 0) | 0b0111_1110) : 0xFF;
+
+                    case 0xFF4F:
+                        return this.gb.IsCgb ? (byte)(this.VramBank | 0x1111_1110) : 0xFF;
+
+                    case 0xFF55:
+                        return this.gb.Gpu.HDMA5Control;
+
+                    case 0xFF68:
+                        return 0xFF; // TODO: Check if this is supposed to be readable?
+
+                    case 0xFF69:
+                        int x = this.backgroundPaletteIndex >> 3;
+                        int y = (this.backgroundPaletteIndex >> 1) & 0b00_0011;
+
+                        if ((this.backgroundPaletteIndex & 0b0001) == 0)
+                        {
+                            return (byte)(this.Gpu.PalCgbBackground[x, y] & 0x00FF);
+                        }
+                        else
+                        {
+                            return (byte)((this.Gpu.PalCgbBackground[x, y] & 0xFF00) >> 8);
+                        }
+
+                    case 0xFF6A:
+                        return 0xFF; // TODO: Check if this is supposed to be readable?
+
+                    case 0xFF6B:
+                        int a = this.spritePaletteIndex >> 3;
+                        int b = (this.spritePaletteIndex >> 1) & 0b00_0011;
+
+                        if ((this.spritePaletteIndex & 0b0001) == 0)
+                        {
+                            return (byte)(this.Gpu.PalCgbSprites[a, b] & 0x00FF);
+                        }
+                        else
+                        {
+                            return (byte)((this.Gpu.PalCgbSprites[a, b] & 0xFF00) >> 8);
+                        }
+
+                    case 0xFF6C:
+                        return this.Gpu.OAMPriorityMode ? 0 : 1; // NOTE: This is inverted to default to DMG mode.
+
+                    case 0xFF70:
+                        return this.gb.IsCgb ? (byte)(this.wramBank | 0x1111_1000) : 0xFF;
+
                     case >= 0xFF4C and <= 0xFF7F:
                         return RAM.Unsupported(0xFF); // Unsupported/unused (mostly CGB stuff)
 
@@ -225,7 +267,11 @@
                         return this.Cpu.rInterruptEnable; // (byte)(cpu.interruptEnable | 0b1110_0000);
 
                     default:
-                        return 0xFF;
+                        // Just to shut up the compiler suggesting this be made into a switch expression
+                        if (true)
+                        {
+                            return 0xFF;
+                        }
                 }
             }
 
@@ -246,7 +292,12 @@
                     case >= 0x8000 and <= 0x9FFF:
                         if (this.Gpu.CanAccessVRAM(isDma))
                         {
-                            this.Vram[i - 0x8000] = value; // VRAM
+                            this.Vram[this.VramBank, i - 0x8000] = value; // VRAM
+
+                            if (this.VramBank == 1 && i >= 0x9800)
+                            {
+                                this.Gpu.BackgroundCacheDirty = true;
+                            }
                         }
 
                         break;
@@ -255,12 +306,20 @@
                         this.Rom[i] = value; // Cartridge RAM
                         break;
 
-                    case >= 0xC000 and <= 0xDFFF:
-                        this.wram[i - 0xC000] = value; // System RAM
+                    case >= 0xC000 and <= 0xCFFF:
+                        this.wram[0, i - 0xC000] = value; // System RAM
                         break;
 
-                    case >= 0xE000 and <= 0xFDFF:
-                        this.wram[i - 0xE000] = value; // System RAM (mirror)
+                    case >= 0xD000 and <= 0xDFFF:
+                        this.wram[this.wramBank == 0 ? 1 : this.wramBank, i - 0xD000] = value; // System RAM
+                        break;
+
+                    case >= 0xE000 and <= 0xEDFF:
+                        this.wram[0, i - 0xE000] = value; // System RAM (mirror)
+                        break;
+
+                    case >= 0xF000 and <= 0xFDFF:
+                        this.wram[this.wramBank == 0 ? 1 : this.wramBank, i - 0xF000] = value; // System RAM (mirror)
                         break;
 
                     case >= 0xFE00 and <= 0xFEFF:
@@ -302,7 +361,7 @@
                         break;
 
                     case 0xFF0F:
-                        this.Cpu.rInterruptFlags = value;
+                        this.Cpu.rInterruptFlags = (byte)(value & 0b1110_0000);
                         break;
 
                     case 0xFF10:
@@ -457,12 +516,102 @@
                         this.Gpu.WinX = value;
                         break;
 
-                    case >= 0xFF4C and <= 0xFF4F:
+                    case 0xFF4D:
+                        if (this.gb.IsCgb)
+                        {
+                            this.Cpu.fPrepareSwitch = (value & 0b0000_0001) != 0;
+                        }
+
+                        break;
+
+                    // TODO: Restore contiguity
+                    case >= 0xFF4C and <= 0xFF4E:
                         RAM.Unsupported(0xFF);
+                        break;
+
+                    case 0xFF4F:
+                        if (this.gb.IsCgb)
+                        {
+                            this.VramBank = value & 0b0001;
+                        }
+
                         break;
 
                     case 0xFF50:
                         this.Rom[0xFF50] = value; // Bootstrap completed
+                        break;
+
+                    case 0xFF55:
+                        this.gb.Gpu.HDMA5Control = value;
+                        break;
+
+                    case 0xFF68:
+                        this.backgroundPaletteIndex = value & 0b0011_1111;
+                        this.backgroundPaletteAutoIncrement = (value & 0b1000_0000) != 0;
+                        break;
+
+                    case 0xFF69:
+
+                        int x = this.backgroundPaletteIndex >> 3;
+                        int y = (this.backgroundPaletteIndex >> 1) & 0b00_0011;
+
+                        if ((this.backgroundPaletteIndex & 0b0001) == 0)
+                        {
+                            this.Gpu.PalCgbBackground[x, y] = (this.Gpu.PalCgbBackground[x, y] & 0xFF00) | value;
+                        }
+                        else
+                        {
+                            this.Gpu.PalCgbBackground[x, y] = (this.Gpu.PalCgbBackground[x, y] & 0x00FF) | (value << 8);
+                        }
+
+                        this.Gpu.BackgroundCacheDirty = true;
+
+                        if (this.backgroundPaletteAutoIncrement)
+                        {
+                            this.backgroundPaletteIndex++;
+                        }
+
+                        break;
+
+                    case 0xFF6A:
+                        this.spritePaletteIndex = value & 0b0011_1111;
+                        this.spritePaletteAutoIncrement = (value & 0b1000_0000) != 0;
+                        break;
+
+                    case 0xFF6B:
+
+                        int a = this.spritePaletteIndex >> 3;
+                        int b = (this.spritePaletteIndex >> 1) & 0b00_0011;
+
+                        if ((this.spritePaletteIndex & 0b0001) == 0)
+                        {
+                            this.Gpu.PalCgbSprites[a, b] = (this.Gpu.PalCgbSprites[a, b] & 0xFF00) | value;
+                        }
+                        else
+                        {
+                            this.Gpu.PalCgbSprites[a, b] = (this.Gpu.PalCgbSprites[a, b] & 0x00FF) | (value << 8);
+                        }
+
+                        this.Gpu.SpriteCacheDirty = true;
+
+                        if (this.spritePaletteAutoIncrement)
+                        {
+                            this.spritePaletteIndex++;
+                        }
+
+                        break;
+
+                    case 0xFF6C:
+                        this.Gpu.OAMPriorityMode = (value & 1) == 1; // NOTE: This is inverted so that it defaults to DMG behaviour.
+                        break;
+
+                    // TODO: Make contiguous again for performance
+                    case 0xFF70:
+                        if (this.gb.IsCgb)
+                        {
+                            this.wramBank = value & 0b0111;
+                        }
+
                         break;
 
                     case >= 0xFF51 and <= 0xFF7F:

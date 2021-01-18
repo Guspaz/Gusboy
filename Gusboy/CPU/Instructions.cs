@@ -2212,6 +2212,14 @@
                 this.rInterruptEnable = 0x1f;
             }
 
+            if (this.fPrepareSwitch)
+            {
+                // TODO: How many clocks to add here?
+                this.fSpeed = !this.fSpeed;
+                this.fPrepareSwitch = false;
+                this.fStop = false;
+            }
+
             return 0; // WAS 4
         }
 

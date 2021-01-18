@@ -64,5 +64,35 @@ namespace Gusboy
             this.rPC += this.instruction.OperandLength;
             this.Ticks += this.instruction.Func(operand);
         }
+
+        public void FakeBootstrap()
+        {
+            if (this.gb.IsCgb)
+            {
+                this.rAF = 0x1180;
+                this.rBC = 0x0000;
+                this.rDE = 0xFF56;
+                this.rHL = 0x000D;
+                this.rSP = 0xFFFE;
+                this.rPC = 0x0100;
+                this.fInterruptMasterEnable = false;
+                this.rInterruptEnable = 0x00;
+                this.rInterruptFlags = 0x01;
+                this.rDIV = 0x267C; // Actually for a CGB with a DMG game, not super important.
+            }
+            else
+            {
+                this.rAF = 0x01B0;
+                this.rBC = 0x0013;
+                this.rDE = 0x00D8;
+                this.rHL = 0x014D;
+                this.rSP = 0xFFFE;
+                this.rPC = 0x0100;
+                this.fInterruptMasterEnable = false;
+                this.rInterruptEnable = 0x00;
+                this.rInterruptFlags = 0x01;
+                this.rDIV = 0xABCC;
+            }
+        }
     }
 }

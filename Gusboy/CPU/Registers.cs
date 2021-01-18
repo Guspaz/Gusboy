@@ -9,21 +9,25 @@
 #pragma warning disable IDE1006 // Naming Styles
 
         // 16-bit registers
-        private Gshort rSP = 0xFFFE;
+        private Gshort rSP;
 
         // 8-bit registers
-        private byte rA = 0x01;
-        private byte rF = 0xB0;
-        private byte rB = 0x00;
-        private byte rC = 0x13;
-        private byte rD = 0x00;
-        private byte rE = 0xD8;
-        private byte rH = 0x01;
-        private byte rL = 0x4D;
+        private byte rA;
+        private byte rF;
+        private byte rB;
+        private byte rC;
+        private byte rD;
+        private byte rE;
+        private byte rH;
+        private byte rL;
 
         public bool fHalt { get; set; }
 
         public bool fStop { get; set; }
+
+        public bool fSpeed { get; set; }
+
+        public bool fPrepareSwitch { get; set; }
 
         public int rPC { get; set; }
 

@@ -30,13 +30,13 @@
         public void InterruptTick()
         {
             // TODO: Verify if we need to trigger the JOYPAD interrupt if the game wrote to the JOYPD register with different values than the current input
-            if ((this.fHalt || this.fStop) && (this.rInterruptEnable & this.rInterruptFlags & 0x1f) != 0)
+            /*if ((this.fHalt || this.fStop) && (this.rInterruptEnable & this.rInterruptFlags & 0x1f) != 0)
             {
                 this.fHalt = false;
                 this.fStop = false;
-            }
+            }*/
 
-            if (this.fInterruptMasterEnable && this.rInterruptEnable > 0 && this.rInterruptFlags > 0)
+            if (this.rInterruptEnable > 0 && this.rInterruptFlags > 0)
             {
                 // Get the set of interrupts that have fired and are enabled
                 int fired = this.rInterruptFlags & this.rInterruptEnable;
@@ -77,17 +77,28 @@
 
         private void FireInterrupt(int interrupt, int address)
         {
-            // Clear the interrupt flag
-            this.rInterruptFlags = (byte)(this.rInterruptFlags & ~interrupt);
+            if (this.fHalt || this.fStop)
+            {
+                // TODO: Check if stop should also add 4
+                this.Ticks += 4;
+                this.fStop = false;
+                this.fHalt = false;
+            }
 
-            // Disable interrupts
-            this.fInterruptMasterEnable = false;
+            if (this.fInterruptMasterEnable)
+            {
+                // Clear the interrupt flag
+                this.rInterruptFlags = (byte)(this.rInterruptFlags & ~interrupt);
 
-            this.Ram.SetShort(this.rSP - 2, this.rPC);
-            this.rPC = address;
-            this.rSP -= 2;
+                // Disable interrupts
+                this.fInterruptMasterEnable = false;
 
-            this.Ticks += 16; // Nintendo says RST instructions are 16
+                this.Ram.SetShort(this.rSP - 2, this.rPC);
+                this.rPC = address;
+                this.rSP -= 2;
+
+                this.Ticks += 20;
+            }
         }
     }
 }

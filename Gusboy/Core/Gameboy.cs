@@ -29,14 +29,15 @@ namespace Gusboy
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\pokemon_blue.gb", false);
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\tetris.gb", false);
             // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Mega Man V (USA) (SGB Enhanced).gb", false); // Some off-by-one scanline issues
-            // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\zelda_dx.gbc", false);
+            this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\zelda_dx.gbc");
+
             // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Final Fantasy Adventure (USA).gb", false); // Super high-pitched whine from channel 2
 
             // The following issues are resolved by bypassing CanAccessVRAM() so I think there's a timing bug, they shouldn't be doing this.
             // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Final Fantasy Legend II (USA).gb", false); // Corrupt background tiles on title screen, hint of squeal
             // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Final Fantasy Legend, The (USA).gb", false); // Garbled title screen
             // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Wario Land II (USA, Europe) (SGB Enhanced).gb", false); // Off-by-one scanline issues
-            this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Yoshi's Cookie (USA, Europe).gb", false);
+            // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Yoshi's Cookie (USA, Europe).gb");
 
             // Blargg tests
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\dmg_sound\dmg_sound.gb", false);
@@ -86,6 +87,12 @@ namespace Gusboy
 
         public System.Collections.Generic.List<float> AudioBuffer => this.Apu.Buffer;
 
+        internal bool IsCgb { get; set; }
+
+        internal bool UseFilter { get; } = true;
+
+        internal bool USE_BIOS { get; } = true;
+
         internal CPU Cpu { get; }
 
         internal GPU Gpu { get; }
@@ -115,13 +122,14 @@ namespace Gusboy
                 this.Cpu.Tick();
             }
 
+            // This was originally at the end, but apparently is checked right after instruction execution?
+            this.Cpu.InterruptTick();
+
             this.Gpu.Tick();
 
             this.Apu.Tick();
 
             this.Cpu.TimerTick();
-
-            this.Cpu.InterruptTick();
         }
     }
 }
