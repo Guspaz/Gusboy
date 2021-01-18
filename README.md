@@ -1,9 +1,11 @@
 # Gusboy
-C# Gameboy emulator
+C# Gameboy Color emulator
 
 I created this emulator back in 2017, got it so most games I tried were playable, but stopped before implementing audio, because it seemed too hard. Now, years later, I've picked it up again, fully implemented audio (passes 8/12 dmg_sound), improved performance and accuracy (~1100 FPS on my machine in release mode if you bypass audio sync), cleaned up the code a bunch, etc. It's hardly "production quality" levels of accuracy or polish (very very far from it), but lots of games run without obvious major glitches.
 
 It's still a work-in-progress, and I had no idea what I was doing at the start, so the design is a huge mess. I've started cleaning up and refactoring, but it's still not great. The CPU in particular, I cringe at how I implemented it as hundreds of standalone functions, so much code instead of even just relying on reference parameters. The thing is, the CPU execution unit, as hilariously bloated as it is, seems to work perfectly (passes cpu_instrs and instr_timing) and isn't a performance bottleneck, so it's not worth rewriting at the moment.
+
+Preliminary Gameboy Color support has been added, many of the GPU features for it are still missing, but the core ones are there and are good enough to run some games fully, like Zelda.
 
 The UI depends on NAudio and WinForms, but the emulator itself should be platform-independent. It only interfaces with the UI through a handful of basic properties and callbacks.  Video is handled via an int32 framebuffer and a callback function to notify the application that the Gameboy has finished rendering a frame (it hit its vblank). Audio is handled by a float buffer that the application can consume as desired. Input is handled by KeyUp and KeyDown methods that the application can call. It's left up to the application to wire itself up to that and call the emulator's tick function in a loop.
 
