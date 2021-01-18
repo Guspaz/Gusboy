@@ -1,6 +1,7 @@
 ﻿namespace Gusboy
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
 
     public class GPU
@@ -188,7 +189,13 @@
 
         public byte WinY { get; set; }
 
-        public bool OAMPriorityMode { get; set; } // TODO: Implement me.
+        // This is supposed to be written to by the BIOS, but it isn't... So let's just link it to cgb mode for now.
+        public bool OAMPriorityMode
+        {
+            get => this.gb.IsCgb;
+
+            set { }
+        }
 
         public byte HDMA1SourceHi { get; set; }
 
@@ -300,6 +307,8 @@
                 this.sprites[n].YFlip = (this.gb.Ram[baseAddress + 3] & (1 << 6)) != 0;
                 this.sprites[n].XFlip = (this.gb.Ram[baseAddress + 3] & (1 << 5)) != 0;
                 this.sprites[n].VramBank = (this.gb.Ram[baseAddress + 3] >> 3) & 1;
+
+                this.sprites[n].OamNum = (byte)n;
 
                 if (this.gb.IsCgb)
                 {
@@ -599,6 +608,16 @@
                         tileNum = 256 + (sbyte)tileNum;
                     }
 
+                    if (this.tiles[cachedTileNum].XFlip)
+                    {
+                        x = (byte)(7 - x);
+                    }
+
+                    if (this.tiles[cachedTileNum].YFlip)
+                    {
+                        y = (byte)(7 - y);
+                    }
+
                     int tileAddress = ((tileNum * TILE_HEIGHT) + (y & 7)) * TILE_ROW_BYTES;
                     byte shift = (byte)(7 - (x & 7));
 
@@ -628,7 +647,18 @@
 
                 byte spriteHeight = (byte)(this.LCDCFlag(LCDC.SpriteSize) ? 16 : 8);
 
-                foreach (var currentSprite in this.sprites.Where(s => (byte)(this.CurrentLine - s.Y) < spriteHeight).Take(10).OrderBy(s => s.X).Reverse())
+                IEnumerable<Sprite> prioritySprites;
+
+                if (this.OAMPriorityMode)
+                {
+                    prioritySprites = this.sprites.Where(s => (byte)(this.CurrentLine - s.Y) < spriteHeight).Take(10).OrderByDescending(s => s.OamNum);
+                }
+                else
+                {
+                    prioritySprites = this.sprites.Where(s => (byte)(this.CurrentLine - s.Y) < spriteHeight).Take(10).OrderBy(s => s.X).Reverse();
+                }
+
+                foreach (var currentSprite in prioritySprites)
                 {
                     // Sprite appears on this scanline, draw it.
                     for (int i = 0; i < 8; i++)
@@ -696,6 +726,7 @@
             public byte X;
 
             public byte TileNum;
+            public byte OamNum;
 
             public bool Priority;
             public bool YFlip; // Vertical
