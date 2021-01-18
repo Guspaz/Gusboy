@@ -290,7 +290,6 @@
             {
                 int baseAddress = 0xFE00 + (n << 2);
 
-                // TODO: Pull directly from VRAM to use the right bank? Gotta figure out GPU VRAM banking. I don't think OAM is banked.
                 this.sprites[n].Y = (byte)(this.gb.Ram[baseAddress + 0] - 16); // Pre-offset the location
 
                 this.sprites[n].X = (byte)(this.gb.Ram[baseAddress + 1] - 8); // Pre-offset the location
@@ -341,7 +340,7 @@
                 this.tiles[n].OAMPriority = (this.gb.Ram.Vram[1, baseAddress] & (1 << 7)) != 0;
                 this.tiles[n].YFlip = (this.gb.Ram.Vram[1, baseAddress] & (1 << 6)) != 0;
                 this.tiles[n].XFlip = (this.gb.Ram.Vram[1, baseAddress] & (1 << 5)) != 0;
-                this.tiles[n].VramBank = (this.gb.Ram.Vram[1, baseAddress] >> 4) & 1;
+                this.tiles[n].VramBank = (this.gb.Ram.Vram[1, baseAddress] >> 3) & 1;
                 this.tiles[n].PaletteIndex = this.gb.Ram.Vram[1, baseAddress] & 0b111;
 
                 // TODO: Fill this in for both CGB and DMG
@@ -712,7 +711,7 @@
             public bool OAMPriority; // TODO: Implement me
             public bool YFlip; // Vertical // TODO: Implement me
             public bool XFlip; // Horizontal // TODO: Implement me
-            public int VramBank; // TODO: Test me
+            public int VramBank;
             public int PaletteIndex;
 
             public int[] MappedPalette;
