@@ -6,9 +6,11 @@ namespace Gusboy
 
     public class Gameboy
     {
-        public Gameboy(Func<string, bool> messageCallback, Func<bool> drawFramebuffer, int[] framebuffer, int sampleRate)
+        private readonly Func<string, bool, bool> messageCallback;
+
+        public Gameboy(Func<string, bool, bool> messageCallback, Func<bool> drawFramebuffer, int[] framebuffer, int sampleRate)
         {
-            this.MessageCallback = messageCallback;
+            this.messageCallback = messageCallback;
 
             this.Ram = new RAM(this);
             this.Cpu = new CPU(this);
@@ -30,7 +32,10 @@ namespace Gusboy
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\tetris.gb", false);
             // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Mega Man V (USA) (SGB Enhanced).gb", false); // Some off-by-one scanline issues
             // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Legend of Zelda, The - Oracle of Seasons (USA).gbc");
-            this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\zelda_dx.gbc");
+            this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\DMG-AZLJ-JPN.gbs");
+
+            // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Shantae (USA).gbc");
+            // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\zelda_dx.gbc");
 
             // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Final Fantasy Adventure (USA).gb", false); // Super high-pitched whine from channel 2
 
@@ -92,7 +97,7 @@ namespace Gusboy
 
         internal bool UseFilter { get; } = true;
 
-        internal bool USE_BIOS { get; } = true;
+        internal bool UseBios { get; set; } = true;
 
         internal CPU Cpu { get; }
 
@@ -106,15 +111,13 @@ namespace Gusboy
 
         internal Input Input { get; }
 
-        internal Func<string, bool> MessageCallback { get; }
-
         public void KeyDown(Input.Keys key) => this.Input.KeyDown(key);
 
         public void KeyUp(Input.Keys key) => this.Input.KeyUp(key);
 
         public void Tick()
         {
-            if (this.Cpu.fHalt || this.Cpu.fStop)
+            if (this.Cpu.fHalt || this.Cpu.fStop || (this.Rom.IsGbs && this.Rom.Gbs.ProcedureDone()))
             {
                 this.Cpu.Ticks += 4;
             }
@@ -131,6 +134,13 @@ namespace Gusboy
             this.Apu.Tick();
 
             this.Cpu.TimerTick();
+
+            if (this.Rom.IsGbs)
+            {
+                this.Rom.Gbs.Tick();
+            }
         }
+
+        internal bool MessageCallback(string message, bool removePrevious = false) => this.messageCallback(message, removePrevious);
     }
 }

@@ -8,9 +8,6 @@
 #pragma warning disable SA1300 // Element should begin with upper-case letter
 #pragma warning disable IDE1006 // Naming Styles
 
-        // 16-bit registers
-        private Gshort rSP;
-
         // 8-bit registers
         private byte rA;
         private byte rF;
@@ -30,6 +27,9 @@
         public bool fPrepareSwitch { get; set; }
 
         public int rPC { get; set; }
+
+        // 16-bit registers
+        public Gshort rSP { get; set; }
 
         // 16-bit registers
         private int rAF
@@ -99,6 +99,12 @@
         {
             get => this.GetFlag(4);
             set => this.SetFlag(value, 4);
+        }
+
+        public void InitGbs(byte rA, int rSP)
+        {
+            this.rA = rA;
+            this.rSP = rSP;
         }
 
         private bool GetFlag(int i) => (this.rF & (1 << i)) != 0;

@@ -70,6 +70,12 @@
             // Trigger CPU interrupt
             this.gb.Cpu.TriggerInterrupt(CPU.INT_JOYPAD);
 
+            // Control for the GBS player
+            if (this.gb.Rom.IsGbs)
+            {
+                this.gb.Rom.Gbs.KeyDown(key);
+            }
+
             switch (key)
             {
                 case Keys.A:

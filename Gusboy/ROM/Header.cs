@@ -310,9 +310,14 @@
 #pragma warning restore IDE1006 // Naming Styles
 #pragma warning restore SA1300 // Element should begin with upper-case letter
 
+        public static string GetRomString(byte[] romFile, int offset, int maxLength)
+        {
+            return Encoding.ASCII.GetString(romFile[offset..(offset + maxLength)].TakeWhile(b => b != 0x80 && b != 0xC0 && b != 0x00).ToArray());
+        }
+
         public void ReadHeader(byte[] romFile)
         {
-            this.hTitle = Encoding.ASCII.GetString(romFile[OFFSET_TITLE..(OFFSET_TITLE + 16)].TakeWhile(b => b != 0x80 && b != 0xC0 && b != 0x00).ToArray());
+            this.hTitle = ROM.GetRomString(romFile, OFFSET_TITLE, 16);
 
             this.hCGB = romFile[OFFSET_CGB] switch
             {

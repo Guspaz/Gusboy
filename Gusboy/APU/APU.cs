@@ -534,31 +534,7 @@
                     // TODO: DMG preserves length counters on poweroff
 
                     // Power on => off
-                    this.NR10 = 0;
-                    this.NR11 = 0;
-                    this.NR12 = 0;
-                    this.NR13 = 0;
-                    this.NR14 = 0;
-                    this.NR21 = 0;
-                    this.NR22 = 0;
-                    this.NR23 = 0;
-                    this.NR24 = 0;
-                    this.NR30 = 0;
-                    this.NR31 = 0;
-                    this.NR32 = 0;
-                    this.NR33 = 0;
-                    this.NR34 = 0;
-                    this.NR41 = 0;
-                    this.NR42 = 0;
-                    this.NR43 = 0;
-                    this.NR44 = 0;
-                    this.NR50 = 0;
-                    this.NR51 = 0;
-
-                    this.channel1.ChannelEnable = false;
-                    this.channel2.ChannelEnable = false;
-                    this.channel3.ChannelEnable = false;
-                    this.channel4.ChannelEnable = false;
+                    this.Initialize();
                 }
 
                 this.apuPower = newPower;
@@ -572,6 +548,32 @@
         public void Initialize()
         {
             this.capacitorFactor = (float)Math.Pow(this.gb.IsCgb ? CAPACITOR_BASE_CGB : CAPACITOR_BASE_DMG, CPU_CLOCK / (double)this.sampleRate);
+
+            this.NR10 = 0;
+            this.NR11 = 0;
+            this.NR12 = 0;
+            this.NR13 = 0;
+            this.NR14 = 0;
+            this.NR21 = 0;
+            this.NR22 = 0;
+            this.NR23 = 0;
+            this.NR24 = 0;
+            this.NR30 = 0;
+            this.NR31 = 0;
+            this.NR32 = 0;
+            this.NR33 = 0;
+            this.NR34 = 0;
+            this.NR41 = 0;
+            this.NR42 = 0;
+            this.NR43 = 0;
+            this.NR44 = 0;
+            this.NR50 = 0;
+            this.NR51 = 0;
+
+            this.channel1.ChannelEnable = false;
+            this.channel2.ChannelEnable = false;
+            this.channel3.ChannelEnable = false;
+            this.channel4.ChannelEnable = false;
         }
 
         public void Tick()

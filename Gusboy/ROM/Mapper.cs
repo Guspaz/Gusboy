@@ -10,26 +10,26 @@
         public Mapper(byte[] romFile, byte[] sram, string ramPath)
         {
             this.RomFile = romFile;
-            this.Sram = sram;
+            this.Sram = sram ?? System.Array.Empty<byte>();
             this.ramPath = ramPath;
 
-            if (sram.Length > 0)
+            if (this.Sram.Length > 0)
             {
                 if (File.Exists(ramPath))
                 {
-                    File.ReadAllBytes(ramPath).CopyTo(sram, 0);
+                    File.ReadAllBytes(ramPath).CopyTo(this.Sram, 0);
                 }
             }
 
             this.RomAddressMask = romFile.Length - 1;
-            this.RamAddressMask = sram.Length - 1;
+            this.RamAddressMask = this.Sram.Length - 1;
         }
 
         protected int RomAddressMask { get; }
 
         protected int RamAddressMask { get; }
 
-        protected byte[] RomFile { get; }
+        protected byte[] RomFile { get; set; }
 
         protected byte[] Sram { get; }
 
@@ -42,7 +42,8 @@
                 if (!value & this.ramg)
                 {
                     // RAM access was enabled and is being disabled, dump the RAM to disk
-                    this.SaveSRAM();
+                    // TODO: Implement a minimum interval here, some games toggle ramg super rapidly.
+                    // this.SaveSRAM();
                 }
 
                 this.ramg = value;

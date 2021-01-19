@@ -23,7 +23,6 @@
 
         public int VramBank { get; set; }
 
-
         private CPU Cpu => this.gb.Cpu;
 
         private APU Apu => this.gb.Apu;
@@ -636,6 +635,17 @@
         }
 
         public Gshort GetShort(int address) => (ushort)((this[address + 1] << 8) + this[address]);
+
+        internal void ClearRAM()
+        {
+            for (int bank = 0; bank < 8; bank++)
+            {
+                for (int address = 0; address < 0x1000; address++)
+                {
+                    this.wram[bank, address] = 0x00;
+                }
+            }
+        }
 
         // This exists mainly to make it easy to print debug statements if required.
         private static byte Unsupported(byte value) => value;

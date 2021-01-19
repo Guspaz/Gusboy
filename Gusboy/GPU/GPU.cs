@@ -101,8 +101,8 @@
         [Flags]
         private enum LCDC
         {
-            SpritesEnabled = 1 << 1,
             BGEnabled = 1 << 0,
+            SpritesEnabled = 1 << 1,
             SpriteSize = 1 << 2, // 0 = 8x8, 1 = 8x16
             BGTileMap = 1 << 3,
             BGWindowTileset = 1 << 4,
@@ -560,11 +560,12 @@
         private void RenderScanline()
         {
             bool[] bgIsTransparent = new bool[256];
+            bool[] bgPriority = new bool[256];
 
             // TODO: CGB handles BGEnabled differently
 
             // Tiles
-            if (this.LCDCFlag(LCDC.BGEnabled) || this.renderingWindow)
+            if (this.gb.IsCgb || this.LCDCFlag(LCDC.BGEnabled) || this.renderingWindow)
             {
                 // Regenerate the background cache if the tile maps have been touched since our last scanline
                 if (this.BackgroundCacheDirty)
@@ -624,6 +625,7 @@
                     byte palIndex = (byte)((((this.gb.Ram.Vram[this.tiles[cachedTileNum].VramBank, tileAddress + 1] >> shift) & 1) << 1) | ((this.gb.Ram.Vram[this.tiles[cachedTileNum].VramBank, tileAddress] >> shift) & 1));
 
                     bgIsTransparent[i] = palIndex == 0;
+                    bgPriority[i] = this.gb.IsCgb && this.LCDCFlag(LCDC.BGEnabled) && this.tiles[cachedTileNum].OAMPriority;
 
                     if (this.gb.IsCgb)
                     {
@@ -696,7 +698,10 @@
 
                         byte palIndex = (byte)((((this.gb.Ram.Vram[currentSprite.VramBank, tileAddress + 1] >> shift) & 1) << 1) | ((this.gb.Ram.Vram[currentSprite.VramBank, tileAddress] >> shift) & 1));
 
-                        if (palIndex != 0 && (!currentSprite.Priority || bgIsTransparent[(byte)(currentSprite.X + i)]) && (byte)(currentSprite.X + i) < 160)
+                        byte finalX = (byte)(currentSprite.X + i);
+
+                        // TODO: Verify that bgPriority doesn't need to take transparency into account
+                        if (palIndex != 0 && (!currentSprite.Priority || bgIsTransparent[finalX]) && finalX < 160 && !bgPriority[finalX])
                         {
                             this.framebuffer[(this.CurrentLine * 160) + (byte)(currentSprite.X + i)] = currentSprite.MappedPalette[palIndex];
                         }
@@ -709,7 +714,7 @@
         {
             if (this.gb.IsCgb)
             {
-                Array.Copy(Enumerable.Repeat(FilterCGB(0xFFFFFF, gb.UseFilter), this.framebuffer.Length).ToArray(), this.framebuffer, this.framebuffer.Length);
+                Array.Copy(Enumerable.Repeat(FilterCGB(0xFFFFFF, this.gb.UseFilter), this.framebuffer.Length).ToArray(), this.framebuffer, this.framebuffer.Length);
             }
             else
             {

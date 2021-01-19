@@ -50,11 +50,18 @@ namespace Gusboy
             this.outputDevice.Play();
         }
 
-        public bool AddMessage(string message)
+        public bool AddMessage(string message, bool deletePrevious = false)
         {
             // TODO: This may also need an invoke
             if (!this.txt_messages.IsDisposed)
             {
+                if (deletePrevious)
+                {
+                    this.txt_messages.Text = this.txt_messages.Text.Remove(this.txt_messages.Text.LastIndexOf("\r\n"));
+                    this.txt_messages.Text = this.txt_messages.Text.Remove(this.txt_messages.Text.LastIndexOf("\r\n"));
+                    this.txt_messages.Text += "\r\n";
+                }
+
                 this.txt_messages.AppendText(message + "\r\n");
             }
 

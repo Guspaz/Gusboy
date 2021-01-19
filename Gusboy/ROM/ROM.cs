@@ -2,14 +2,16 @@
 {
     using System;
     using System.IO;
+    using System.Text;
 
     /// <summary>
     /// Main ROM support.
     /// </summary>
     public partial class ROM
     {
-        private readonly Gameboy gb;
         private readonly Mapper mapper;
+
+        private readonly Gameboy gb;
         private byte[] biosFile;
         private bool biosFlag;
 
@@ -19,6 +21,16 @@
 
             // Load the ROM file
             byte[] romFile = File.ReadAllBytes(filepath);
+
+            // Check for GBS file, need to replace the rom file
+            if (Encoding.ASCII.GetString(romFile, 0, 3) == "GBS")
+            {
+                this.IsGbs = true;
+                this.Gbs = new GBS(romFile, this.gb, this);
+                this.mapper = this.Gbs;
+
+                return;
+            }
 
             this.ReadHeader(romFile);
 
@@ -40,23 +52,24 @@
                 CartridgeType.MBC1_RAM or
                 CartridgeType.MBC1_RAM_BATTERY => new MBC1(romFile, sram, ramPath),
 
-                // Treat MBC3 as MBC5 for now
-                CartridgeType.MBC3 or
-                CartridgeType.MBC3_RAM or
-                CartridgeType.MBC3_RAM_BATTERY or
-                CartridgeType.MBC3_TIMER_BATTERY or
-                CartridgeType.MBC3_TIMER_RAM_BATTERY or
                 CartridgeType.MBC5 or
                 CartridgeType.MBC5_RAM or
                 CartridgeType.MBC5_RAM_BATTERY or
                 CartridgeType.MBC5_RUMBLE or
                 CartridgeType.MBC5_RUMBLE_RAM or
                 CartridgeType.MBC5_RUMBLE_RAM_BATTERY => new MBC5(romFile, sram, ramPath),
+
+                // Treat unknown as MBC5 for now
                 _ => new MBC5(romFile, sram, ramPath),
             };
 
             this.PrintInfo();
         }
+
+        // Special case, this mapper needs to influence outside the ROM, so it gets its own property.
+        public GBS Gbs { get; }
+
+        public bool IsGbs { get; set; }
 
         public byte this[int i]
         {
@@ -88,22 +101,7 @@
 
         public void SaveSRAM() => this.mapper.SaveSRAM();
 
-        private void PrintInfo()
-        {
-            this.gb.MessageCallback($"Title:    {this.hTitle}");
-            this.gb.MessageCallback($"Licensee: {this.hLicensee}");
-            this.gb.MessageCallback($"Version:  {this.hMaskRomVersion}");
-            this.gb.MessageCallback($"Region:   {(this.hDestination ? "International" : "Japan")}");
-            this.gb.MessageCallback($"ROM Size: {this.hRomSize / 1024} KiB");
-            this.gb.MessageCallback($"RAM Size: {this.hRamSize / 1024} KiB");
-            this.gb.MessageCallback($"Mapper:   {this.hType}");
-            this.gb.MessageCallback($"Colour:   {this.hCGB}");
-            this.gb.MessageCallback($"SGB:      {(this.hSGB ? "Yes" : "No")}");
-            this.gb.MessageCallback($"Header #: 0x{this.hHeaderChecksum:X2}");
-            this.gb.MessageCallback($"Global #: 0x{this.hGlobalChecksum:X4}");
-        }
-
-        private void InitializeState()
+        internal void InitializeState()
         {
             // Determine CGB mode based on the header
             if (this.hCGB == CGBType.Yes || this.hCGB == CGBType.Both)
@@ -115,7 +113,7 @@
 
             string filename = this.gb.IsCgb ? "cgb.bin" : "dmg.bin";
 
-            if (this.gb.USE_BIOS && File.Exists(filename))
+            if (this.gb.UseBios && File.Exists(filename))
             {
                 this.biosFile = File.ReadAllBytes(filename);
                 this.biosFlag = true;
@@ -156,6 +154,21 @@
                 this.gb.Ram[0xFF4B] = 0x00;
                 this.gb.Ram[0xFFFF] = 0x00;
             }
+        }
+
+        private void PrintInfo()
+        {
+            this.gb.MessageCallback($"Title:    {this.hTitle}");
+            this.gb.MessageCallback($"Licensee: {this.hLicensee}");
+            this.gb.MessageCallback($"Version:  {this.hMaskRomVersion}");
+            this.gb.MessageCallback($"Region:   {(this.hDestination ? "International" : "Japan")}");
+            this.gb.MessageCallback($"ROM Size: {this.hRomSize / 1024} KiB");
+            this.gb.MessageCallback($"RAM Size: {this.hRamSize / 1024} KiB");
+            this.gb.MessageCallback($"Mapper:   {this.hType}");
+            this.gb.MessageCallback($"Colour:   {this.hCGB}");
+            this.gb.MessageCallback($"SGB:      {(this.hSGB ? "Yes" : "No")}");
+            this.gb.MessageCallback($"Header #: 0x{this.hHeaderChecksum:X2}");
+            this.gb.MessageCallback($"Global #: 0x{this.hGlobalChecksum:X4}");
         }
     }
 }
