@@ -11,7 +11,7 @@ The UI depends on NAudio and WinForms, but the emulator itself should be platfor
 
 Speed control is left up to the application. You can either loop the emulator until it notifies you that a frame is ready, and then halt emulation until the next vsync, synchronizing to video, or you can drain the audio buffer at the same speed as playback, synchronizing to audio. The included UI does the latter, every time NAudio wants to read more audio data, the emulator is run until its internal audio buffer has enough data to satisfy NAudio's read request. You get smooth audio at the expense of frame pacing.
 
-#TODOs/Wishlist
+#### TODOs/Wishlist
 
 In no particular order
 
