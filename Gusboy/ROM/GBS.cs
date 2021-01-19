@@ -51,13 +51,13 @@
             }
 
             // TODO: Draw something to the framebuffer to indicate it's a GBS file?
-            this.gb.MessageCallback($"Title:     {this.Title}");
-            this.gb.MessageCallback($"Version:   {this.Version}");
-            this.gb.MessageCallback($"Author:    {this.Author}");
-            this.gb.MessageCallback($"Copyright: {this.Author}");
-            this.gb.MessageCallback($"Colour:    {rom.hCGB}");
-            this.gb.MessageCallback($"Songs:     {this.NumSongs}");
-            this.gb.MessageCallback($"Playing:   {this.currentSong}");
+            this.gb.MessageCallback($"Title:   {this.Title}");
+            this.gb.MessageCallback($"Version: {this.Version}");
+            this.gb.MessageCallback($"Author:  {this.Author}");
+            this.gb.MessageCallback($"©:       {this.Author}");
+            this.gb.MessageCallback($"Colour:  {rom.hCGB}");
+            this.gb.MessageCallback($"Songs:   {this.NumSongs}");
+            this.gb.MessageCallback($"Playing: {this.currentSong}");
 
             this.gb.UseBios = false;
 
@@ -65,7 +65,7 @@
             this.RomFile = romFile.Skip(0x70).ToArray();
 
             // Load the memory space, it will be rewritten as required.
-            Array.Copy(this.RomFile, 0, this.memory, this.LoadAddress, Math.Min(0x8000, this.LoadAddress + this.RomFile.Length));
+            Array.Copy(this.RomFile, 0, this.memory, this.LoadAddress, Math.Min(0x8000, this.RomFile.Length));
 
             this.SetSong(this.FirstSong);
 
@@ -190,7 +190,15 @@
                     pageOffset = (0x8000 - this.LoadAddress) + (0x4000 * (value - 2));
                 }
 
-                // I don't think we need to null out the rest of the page like the spec says, the ROM file shouldn't be jumping to it.
+                // TODO: Is this a bug in the GBS, or in my emulation? Donkey Kong Country jumps to bank 53 despite its highest bank number being 2.
+                if (pageOffset >= this.RomFile.Length)
+                {
+                    this.gb.MessageCallback($"Invalid bank switch ({pageOffset:X4}): {value}");
+                    return;
+                }
+
+                // Maybe optimize this to only zero out the missing part of a final bank.
+                Array.Copy(Enumerable.Repeat((byte)0x00, 0x4000).ToArray(), 0, this.memory, 0x4000, 0x4000);
                 Array.Copy(this.RomFile, pageOffset, this.memory, 0x4000, Math.Min(0x4000, this.RomFile.Length - pageOffset));
             }
             else if (address >= 0xA000 && address <= 0xBFFF)
@@ -223,7 +231,7 @@
                 this.currentSong = this.NumSongs;
             }
 
-            this.gb.MessageCallback($"Playing:   {this.currentSong}", true);
+            this.gb.MessageCallback($"Playing: {this.currentSong}", true);
 
             this.Init();
         }

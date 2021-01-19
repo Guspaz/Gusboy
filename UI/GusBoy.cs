@@ -52,17 +52,28 @@ namespace Gusboy
 
         public bool AddMessage(string message, bool deletePrevious = false)
         {
-            // TODO: This may also need an invoke
             if (!this.txt_messages.IsDisposed)
             {
-                if (deletePrevious)
+                var action = new Action<string, bool>((message, deletePrevious) =>
                 {
-                    this.txt_messages.Text = this.txt_messages.Text.Remove(this.txt_messages.Text.LastIndexOf("\r\n"));
-                    this.txt_messages.Text = this.txt_messages.Text.Remove(this.txt_messages.Text.LastIndexOf("\r\n"));
-                    this.txt_messages.Text += "\r\n";
-                }
+                    if (deletePrevious)
+                    {
+                        this.txt_messages.Text = this.txt_messages.Text.Remove(this.txt_messages.Text.LastIndexOf("\r\n"));
+                        this.txt_messages.Text = this.txt_messages.Text.Remove(this.txt_messages.Text.LastIndexOf("\r\n"));
+                        this.txt_messages.Text += "\r\n";
+                    }
 
-                this.txt_messages.AppendText(message + "\r\n");
+                    this.txt_messages.AppendText(message + "\r\n");
+                });
+
+                if (this.txt_messages.InvokeRequired)
+                {
+                    this.txt_messages.Invoke(action, message, deletePrevious);
+                }
+                else
+                {
+                    action(message, deletePrevious);
+                }
             }
 
             return true;

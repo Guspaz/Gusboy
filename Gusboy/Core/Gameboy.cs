@@ -32,7 +32,7 @@ namespace Gusboy
             // rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\tetris.gb", false);
             // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Mega Man V (USA) (SGB Enhanced).gb", false); // Some off-by-one scanline issues
             // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Legend of Zelda, The - Oracle of Seasons (USA).gbc");
-            this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\DMG-AZLJ-JPN.gbs");
+            this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\gbs\Donkey Kong Country.gbs");
 
             // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Shantae (USA).gbc");
             // this.Rom = new ROM(this, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\zelda_dx.gbc");
