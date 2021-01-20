@@ -7,6 +7,7 @@ namespace Gusboy
     public class Gameboy
     {
         private readonly Func<string, bool, bool> messageCallback;
+        private readonly object tickLock = new object();
 
         public Gameboy(Func<string, bool, bool> messageCallback, Func<bool> drawFramebuffer, int[] framebuffer, int sampleRate, string filePath)
         {
@@ -48,32 +49,36 @@ namespace Gusboy
 
         public void Tick()
         {
-            if (this.Cpu.fHalt || this.Cpu.fStop || (this.Rom.IsGbs && this.Rom.Gbs.ProcedureDone()))
+            // Block simultaneous ticks if we're called asynchronously
+            lock (this.tickLock)
             {
-                this.Cpu.Ticks += 4;
+                if (this.Cpu.fHalt || this.Cpu.fStop || (this.Rom.IsGbs && this.Rom.Gbs.ProcedureDone()))
+                {
+                    this.Cpu.Ticks += 4;
+                }
+                else
+                {
+                    this.Cpu.Tick();
+                }
+
+                // Skip the GPU for GBS music
+                if (!this.Rom.IsGbs)
+                {
+                    this.Gpu.Tick();
+                }
+
+                this.Apu.Tick();
+
+                this.Cpu.TimerTick();
+
+                if (this.Rom.IsGbs)
+                {
+                    this.Rom.Gbs.Tick();
+                }
+
+                // When are these actually checked? Some sources say right after instructions are executed, but putting it there would delay firing interrupts by one cycle, wouldn't it?
+                this.Cpu.InterruptTick();
             }
-            else
-            {
-                this.Cpu.Tick();
-            }
-
-            // Skip the GPU for GBS music
-            if (!this.Rom.IsGbs)
-            {
-                this.Gpu.Tick();
-            }
-
-            this.Apu.Tick();
-
-            this.Cpu.TimerTick();
-
-            if (this.Rom.IsGbs)
-            {
-                this.Rom.Gbs.Tick();
-            }
-
-            // When are these actually checked? Some sources say right after instructions are executed, but putting it there would delay firing interrupts by one cycle, wouldn't it?
-            this.Cpu.InterruptTick();
         }
 
         internal bool MessageCallback(string message, bool removePrevious = false) => this.messageCallback(message, removePrevious);

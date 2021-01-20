@@ -85,6 +85,11 @@
 
             set
             {
+                if (this.gb.IsCgb && !this.apuPower)
+                {
+                    return;
+                }
+
                 this.channel1.LengthLoad = value & 0b0011_1111;
 
                 if (!this.apuPower)
@@ -193,6 +198,11 @@
 
             set
             {
+                if (this.gb.IsCgb && !this.apuPower)
+                {
+                    return;
+                }
+
                 this.channel2.LengthLoad = value & 0b0011_1111;
 
                 if (!this.apuPower)
@@ -318,7 +328,15 @@
         public byte NR31
         {
             get => 0b1111_1111;
-            set => this.channel3.LengthLoad = value;
+            set
+            {
+                if (this.gb.IsCgb && !this.apuPower)
+                {
+                    return;
+                }
+
+                this.channel3.LengthLoad = value;
+            }
         }
 
         public byte NR32
@@ -389,7 +407,15 @@
         public byte NR41
         {
             get => 0b1111_1111;
-            set => this.channel4.LengthLoad = value & 0b0011_1111;
+            set
+            {
+                if (this.gb.IsCgb && !this.apuPower)
+                {
+                    return;
+                }
+
+                this.channel4.LengthLoad = value & 0b0011_1111;
+            }
         }
 
         public byte NR42
