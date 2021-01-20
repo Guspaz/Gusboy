@@ -2228,15 +2228,15 @@
             this.fHalt = true;
 
             // Work around buggy software? ROMs will hard-lock the gameboy if they halt with interrupts disabled.
-            if (this.rInterruptEnable == 0)
+            /*if (this.rInterruptEnable == 0)
             {
                 this.rInterruptEnable = 0x1f;
-            }
+            }*/
 
             if (!this.fInterruptMasterEnable && (this.rInterruptEnable & this.rInterruptFlags & 0x1f) != 0)
             {
                 // HALT bug. Just disabling halt isn't accurate, but is probably close enough
-                this.fHalt = false;
+                this.fHaltBug = true;
             }
 
             return 0; // WAS 4

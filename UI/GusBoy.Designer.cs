@@ -42,14 +42,14 @@
             this.txt_messages.BackColor = System.Drawing.SystemColors.Control;
             this.txt_messages.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.txt_messages.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.txt_messages.Location = new System.Drawing.Point(0, 288);
+            this.txt_messages.Location = new System.Drawing.Point(0, 432);
             this.txt_messages.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.txt_messages.Multiline = true;
             this.txt_messages.Name = "txt_messages";
             this.txt_messages.ReadOnly = true;
             this.txt_messages.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.txt_messages.ShortcutsEnabled = false;
-            this.txt_messages.Size = new System.Drawing.Size(346, 222);
+            this.txt_messages.Size = new System.Drawing.Size(523, 182);
             this.txt_messages.TabIndex = 99;
             this.txt_messages.TabStop = false;
             // 
@@ -57,9 +57,9 @@
             // 
             this.statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripStatusLabel});
-            this.statusStrip.Location = new System.Drawing.Point(0, 510);
+            this.statusStrip.Location = new System.Drawing.Point(0, 617);
             this.statusStrip.Name = "statusStrip";
-            this.statusStrip.Size = new System.Drawing.Size(346, 22);
+            this.statusStrip.Size = new System.Drawing.Size(523, 22);
             this.statusStrip.SizingGrip = false;
             this.statusStrip.TabIndex = 100;
             this.statusStrip.Text = "statusStrip1";
@@ -71,9 +71,10 @@
             // 
             // Gusboy
             // 
+            this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(346, 532);
+            this.ClientSize = new System.Drawing.Size(523, 639);
             this.Controls.Add(this.statusStrip);
             this.Controls.Add(this.txt_messages);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
@@ -84,6 +85,8 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Gusboy";
             this.Shown += new System.EventHandler(this.Gusboy_Shown);
+            this.DragDrop += new System.Windows.Forms.DragEventHandler(this.Gusboy_DragDrop);
+            this.DragEnter += new System.Windows.Forms.DragEventHandler(this.Gusboy_DragEnter);
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.Gusboy_Paint);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Gusboy_KeyDown);
             this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Gusboy_KeyUp);

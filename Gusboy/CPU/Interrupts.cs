@@ -18,6 +18,7 @@
         private const int ADDR_INT_JOYPAD = 0x60;
 
         private bool fInterruptMasterEnable;
+        private bool fHaltBug;
 
 #pragma warning disable SA1300 // Element should begin with upper-case letter
 #pragma warning disable IDE1006 // Naming Styles

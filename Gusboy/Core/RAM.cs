@@ -361,7 +361,7 @@
                         break;
 
                     case 0xFF0F:
-                        this.Cpu.rInterruptFlags = (byte)(value & 0b1110_0000);
+                        this.Cpu.rInterruptFlags = (byte)(value | 0b1110_0000);
                         break;
 
                     case 0xFF10:

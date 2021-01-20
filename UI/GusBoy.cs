@@ -6,6 +6,7 @@ namespace Gusboy
     using System.Collections.Generic;
     using System.Drawing;
     using System.Drawing.Drawing2D;
+    using System.IO;
     using System.Runtime.InteropServices;
     using System.Windows.Forms;
     using NAudio.Wave;
@@ -29,11 +30,12 @@ namespace Gusboy
             { Keys.Right, Input.Keys.Right },
         };
 
-        private readonly GusboyWaveProvider audioSource;
-        private readonly WaveOutEvent outputDevice = new WaveOutEvent() { DesiredLatency = 50, NumberOfBuffers = 10 };
         private readonly DirectBitmap framebuffer = new DirectBitmap(160, 144);
 
-        private readonly Gameboy gb;
+        private GusboyWaveProvider audioSource;
+        private WaveOutEvent outputDevice;
+
+        private Gameboy gb;
 
         private long frames = -1;
         private long cpuTicks = 0;
@@ -43,11 +45,12 @@ namespace Gusboy
         {
             this.InitializeComponent();
 
-            this.gb = new Gameboy(this.AddMessage, this.DrawFramebuffer, this.framebuffer.Bits, SAMPLE_RATE, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Super Mario Bros. Deluxe (USA, Europe) (Rev B).gbc");
+            var args = Environment.GetCommandLineArgs();
 
-            this.audioSource = new GusboyWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(SAMPLE_RATE, 2), this.gb);
-            this.outputDevice.Init(this.audioSource);
-            this.outputDevice.Play();
+            if (args?.Length == 2)
+            {
+                this.InitGameboy(args[1]);
+            }
         }
 
         public bool AddMessage(string message, bool deletePrevious = false)
@@ -85,7 +88,7 @@ namespace Gusboy
         {
             this.frames++;
 
-            this.Invalidate(new Rectangle(0, 0, 160 * 2, 144 * 2), false);
+            this.Invalidate(new Rectangle(0, 0, 160 * 4, 144 * 4), false);
 
             Application.DoEvents();
 
@@ -110,7 +113,7 @@ namespace Gusboy
 
         private void Gusboy_Shown(object sender, EventArgs e)
         {
-            this.ClientSize = new Size(160 * 2, this.ClientSize.Height);
+            this.ClientSize = new Size(160 * 3, (144 * 3) + 200);
 
             this.SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
         }
@@ -123,7 +126,7 @@ namespace Gusboy
                 e.Graphics.CompositingQuality = CompositingQuality.HighSpeed;
                 e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
                 e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
-                e.Graphics.DrawImage(this.framebuffer.Bitmap, 0, 0, 160 * 2, 144 * 2);
+                e.Graphics.DrawImage(this.framebuffer.Bitmap, 0, 0, 160 * 3, 144 * 3);
             }
         }
 
@@ -146,6 +149,41 @@ namespace Gusboy
             }
 
             e.Handled = true;
+        }
+
+        private void Gusboy_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                e.Effect = DragDropEffects.Copy;
+            }
+        }
+
+        private void Gusboy_DragDrop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetData(DataFormats.FileDrop) is string[] data && data.Length == 1)
+            {
+                this.InitGameboy(data[0]);
+            }
+        }
+
+        private void InitGameboy(string filePath)
+        {
+            if (File.Exists(filePath))
+            {
+                if (this.outputDevice != null)
+                {
+                    this.outputDevice.Stop();
+                    this.outputDevice.Dispose();
+                }
+
+                this.gb = new Gameboy(this.AddMessage, this.DrawFramebuffer, this.framebuffer.Bits, SAMPLE_RATE, filePath);
+
+                this.audioSource = new GusboyWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(SAMPLE_RATE, 2), this.gb);
+                this.outputDevice = new WaveOutEvent() { DesiredLatency = 200, NumberOfBuffers = 10 };
+                this.outputDevice.Init(this.audioSource);
+                this.outputDevice.Play();
+            }
         }
 
         public class DirectBitmap : IDisposable
