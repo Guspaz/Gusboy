@@ -43,7 +43,7 @@ namespace Gusboy
         {
             this.InitializeComponent();
 
-            this.gb = new Gameboy(this.AddMessage, this.DrawFramebuffer, this.framebuffer.Bits, SAMPLE_RATE, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\zelda_dx.gbc");
+            this.gb = new Gameboy(this.AddMessage, this.DrawFramebuffer, this.framebuffer.Bits, SAMPLE_RATE, @"H:\Backups\Intel\files\Users\Adam\Desktop\gbc\nondumped\Super Mario Bros. Deluxe (USA, Europe) (Rev B).gbc");
 
             this.audioSource = new GusboyWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(SAMPLE_RATE, 2), this.gb);
             this.outputDevice.Init(this.audioSource);

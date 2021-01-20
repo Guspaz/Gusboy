@@ -221,13 +221,15 @@
             {
                 this.hdmaControl = value;
 
-                int source = (this.HDMA1SourceHi << 8 | this.HDMA2SourceLo) & 0b1111_1111_1111_0000;
-                int destination = (this.HDMA3DestHi << 8 | this.HDMA4DestLo) & 0b0001_1111_1111_0000;
+                // We already masked the bits on write
+                int source = this.HDMA1SourceHi << 8 | this.HDMA2SourceLo;
+                int destination = (this.HDMA3DestHi << 8 | this.HDMA4DestLo) + 0x8000;
                 bool hdma = (value & 0b1000_0000) != 0;
                 int size = ((value & 0b0111_1111) + 1) * 16;
                 int transferTime = 4 + ((32 * (size / 16)) * (this.gb.Cpu.fSpeed ? 2 : 1));
 
                 this.BackgroundCacheDirty = true;
+                this.SpriteCacheDirty = true;
 
                 // TODO: Enforce invalid source address behaviour
                 if (hdma)
@@ -235,7 +237,7 @@
                     // TODO: Put a real implementation here, it can be changed in-flight and this is not going to be accurate
                     for (int i = 0; i < size; i++)
                     {
-                        this.gb.Ram[source + i, isDma: true] = this.gb.Ram[destination + i, isDma: true];
+                        this.gb.Ram[destination + i, isDma: true] = this.gb.Ram[source + i, isDma: true];
                     }
 
                     this.gb.Cpu.Ticks += transferTime;
@@ -245,7 +247,7 @@
                     // GDMA
                     for (int i = 0; i < size; i++)
                     {
-                        this.gb.Ram[source + i, isDma: true] = this.gb.Ram[destination + i, isDma: true];
+                        this.gb.Ram[destination + i, isDma: true] = this.gb.Ram[source + i, isDma: true];
                     }
 
                     this.gb.Cpu.Ticks += transferTime;

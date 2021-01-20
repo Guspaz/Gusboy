@@ -216,7 +216,8 @@
                         return this.gb.IsCgb ? (byte)(this.VramBank | 0x1111_1110) : 0xFF;
 
                     case 0xFF55:
-                        return this.gb.Gpu.HDMA5Control;
+                        // Since we copy instantly, always signal done
+                        return 0xFF; // this.gb.Gpu.HDMA5Control;
 
                     case 0xFF68:
                         return 0xFF; // TODO: Check if this is supposed to be readable?
@@ -538,6 +539,22 @@
 
                     case 0xFF50:
                         this.Rom[0xFF50] = value; // Bootstrap completed
+                        break;
+
+                    case 0xFF51:
+                        this.Gpu.HDMA1SourceHi = value;
+                        break;
+
+                    case 0xFF52:
+                        this.Gpu.HDMA2SourceLo = (byte)(value & 0b1111_0000);
+                        break;
+
+                    case 0xFF53:
+                        this.Gpu.HDMA3DestHi = (byte)(value & 0b0001_1111);
+                        break;
+
+                    case 0xFF54:
+                        this.Gpu.HDMA4DestLo = (byte)(value & 0b1111_0000);
                         break;
 
                     case 0xFF55:
