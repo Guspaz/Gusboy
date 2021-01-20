@@ -72,6 +72,13 @@
             }
 
             this.drawFramebuffer = drawFramebuffer;
+
+            // We might be loaded by a GBS player that cares not for the video output
+            if (framebuffer == null)
+            {
+                framebuffer = new int[160 * 144];
+            }
+
             this.framebuffer = framebuffer;
 
             // Pre-set palette alpha

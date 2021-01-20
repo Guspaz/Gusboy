@@ -29,13 +29,6 @@
 
         public void InterruptTick()
         {
-            // TODO: Verify if we need to trigger the JOYPAD interrupt if the game wrote to the JOYPD register with different values than the current input
-            /*if ((this.fHalt || this.fStop) && (this.rInterruptEnable & this.rInterruptFlags & 0x1f) != 0)
-            {
-                this.fHalt = false;
-                this.fStop = false;
-            }*/
-
             if (this.rInterruptEnable > 0 && this.rInterruptFlags > 0)
             {
                 // Get the set of interrupts that have fired and are enabled
