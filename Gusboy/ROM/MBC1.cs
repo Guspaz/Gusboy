@@ -56,7 +56,7 @@
             }
             else if (address >= 0xA000 && address <= 0xBFFF)
             {
-                if (this.RAMG)
+                if (this.RAMG && this.Sram.Length > 0)
                 {
                     // Only the first 13 bits of the address are wired up to the RAM chips
                     address &= 0b0001_1111_1111_1111;
@@ -106,7 +106,7 @@
             }
             else if (address >= 0xA000 && address <= 0xBFFF)
             {
-                if (this.RAMG)
+                if (this.RAMG && this.Sram.Length > 0)
                 {
                     // Only the first 13 bits of the address are wired up to the RAM chips
                     address &= 0b0001_1111_1111_1111;

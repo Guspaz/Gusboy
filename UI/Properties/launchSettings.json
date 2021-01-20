@@ -1,8 +1,7 @@
 {
   "profiles": {
     "UI": {
-      "commandName": "Project",
-      "commandLineArgs": "\"H:\\Backups\\Intel\\files\\Users\\Adam\\Desktop\\gbc\\nondumped\\Legend of Zelda, The - Oracle of Seasons (USA).gbc\""
+      "commandName": "Project"
     }
   }
 }

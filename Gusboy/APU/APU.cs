@@ -161,8 +161,19 @@
                     return;
                 }
 
+                bool oldLengthEnabled = this.channel1.LengthEnable;
+
                 this.channel1.LengthEnable = Convert.ToBoolean((value & 0b0100_0000) >> 6);
                 this.channel1.Frequency = (this.channel1.Frequency & 0b000_1111_1111) | ((value & 0b0000_0111) << 8);
+
+                // Length Enable bug
+                if (!oldLengthEnabled && this.channel1.LengthEnable)
+                {
+                    if (this.frameSequencerStep == 1 || this.frameSequencerStep == 3 || this.frameSequencerStep == 5 || this.frameSequencerStep == 7)
+                    {
+                        this.channel1.LengthTimerTick();
+                    }
+                }
 
                 if ((value & 0b1000_0000) != 0)
                 {
@@ -258,8 +269,19 @@
                     return;
                 }
 
+                bool oldLengthEnabled = this.channel2.LengthEnable;
+
                 this.channel2.LengthEnable = Convert.ToBoolean((value & 0b0100_0000) >> 6);
                 this.channel2.Frequency = (this.channel2.Frequency & 0b000_1111_1111) | ((value & 0b0000_0111) << 8);
+
+                // Length Enable bug
+                if (!oldLengthEnabled && this.channel1.LengthEnable)
+                {
+                    if (this.frameSequencerStep == 1 || this.frameSequencerStep == 3 || this.frameSequencerStep == 5 || this.frameSequencerStep == 7)
+                    {
+                        this.channel2.LengthTimerTick();
+                    }
+                }
 
                 if ((value & 0b1000_0000) != 0)
                 {
@@ -343,8 +365,19 @@
                     return;
                 }
 
+                bool oldLengthEnabled = this.channel3.LengthEnable;
+
                 this.channel3.LengthEnable = Convert.ToBoolean((value & 0b0100_0000) >> 6);
                 this.channel3.Frequency = (this.channel3.Frequency & 0b000_1111_1111) | ((value & 0b0000_0111) << 8);
+
+                // Length Enable bug
+                if (!oldLengthEnabled && this.channel1.LengthEnable)
+                {
+                    if (this.frameSequencerStep == 1 || this.frameSequencerStep == 3 || this.frameSequencerStep == 5 || this.frameSequencerStep == 7)
+                    {
+                        this.channel3.LengthTimerTick();
+                    }
+                }
 
                 if ((value & 0b1000_0000) != 0)
                 {
@@ -434,7 +467,18 @@
                     return;
                 }
 
+                bool oldLengthEnabled = this.channel4.LengthEnable;
+
                 this.channel4.LengthEnable = Convert.ToBoolean((value & 0b0100_0000) >> 6);
+
+                // Length Enable bug
+                if (!oldLengthEnabled && this.channel1.LengthEnable)
+                {
+                    if (this.frameSequencerStep == 1 || this.frameSequencerStep == 3 || this.frameSequencerStep == 5 || this.frameSequencerStep == 7)
+                    {
+                        this.channel4.LengthTimerTick();
+                    }
+                }
 
                 if ((value & 0b1000_0000) != 0)
                 {
@@ -534,7 +578,7 @@
                     // TODO: DMG preserves length counters on poweroff
 
                     // Power on => off
-                    this.Initialize();
+                    this.Initialize(powerOff: true);
                 }
 
                 this.apuPower = newPower;
@@ -545,25 +589,35 @@
 
         public bool WaveEnabled => this.channel3.ChannelEnable;
 
-        public void Initialize()
+        public void Initialize(bool powerOff = false)
         {
             this.capacitorFactor = (float)Math.Pow(this.gb.IsCgb ? CAPACITOR_BASE_CGB : CAPACITOR_BASE_DMG, CPU_CLOCK / (double)this.sampleRate);
 
+            if (!powerOff || this.gb.IsCgb)
+            {
+                this.NR11 = 0;
+                this.NR21 = 0;
+                this.NR31 = 0;
+                this.NR41 = 0;
+            }
+            else
+            {
+                this.NR11 &= 0b0011_1111;
+                this.NR21 &= 0b0011_1111;
+                this.NR41 &= 0b0011_1111;
+            }
+
             this.NR10 = 0;
-            this.NR11 = 0;
             this.NR12 = 0;
             this.NR13 = 0;
             this.NR14 = 0;
-            this.NR21 = 0;
             this.NR22 = 0;
             this.NR23 = 0;
             this.NR24 = 0;
             this.NR30 = 0;
-            this.NR31 = 0;
             this.NR32 = 0;
             this.NR33 = 0;
             this.NR34 = 0;
-            this.NR41 = 0;
             this.NR42 = 0;
             this.NR43 = 0;
             this.NR44 = 0;

@@ -584,7 +584,8 @@
 
                         if (this.backgroundPaletteAutoIncrement)
                         {
-                            this.backgroundPaletteIndex++;
+                            // Increment and wrap if required (not sure if wrapping is correct, or if it should just stop incrementing
+                            this.backgroundPaletteIndex += this.backgroundPaletteIndex == 63 ? -63 : 1;
                         }
 
                         break;
@@ -612,7 +613,8 @@
 
                         if (this.spritePaletteAutoIncrement)
                         {
-                            this.spritePaletteIndex++;
+                            // Increment and wrap if required (not sure if wrapping is correct, or if it should just stop incrementing
+                            this.spritePaletteIndex += this.spritePaletteIndex == 63 ? -63 : 1;
                         }
 
                         break;

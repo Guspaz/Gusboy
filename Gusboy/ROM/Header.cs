@@ -345,12 +345,6 @@
 
             this.hRomSize = 0x8000 << romFile[OFFSET_ROM_SIZE];
 
-            // Override for bad ROMs that say they have no RAM, but actually do
-            if (this.hRamSize == 0 && Enum.GetName(typeof(CartridgeType), this.hType).Contains("_RAM"))
-            {
-                this.hRamSize = 0x8000;
-            }
-
             this.hRamSize = (this.hType == CartridgeType.MBC2 || this.hType == CartridgeType.MBC2_BATTERY) ? 0x100 : this.ramSizeTable[romFile[OFFSET_RAM_SIZE]];
 
             this.hDestination = romFile[OFFSET_DESTINATION_CODE] == 0x01;

@@ -52,7 +52,7 @@ namespace Gusboy
             {
                 this.Cpu.Ticks += 4;
             }
-            else if (!this.Cpu.fStop)
+            else
             {
                 this.Cpu.Tick();
             }
@@ -72,7 +72,7 @@ namespace Gusboy
                 this.Rom.Gbs.Tick();
             }
 
-            // Apparently is checked right after instruction execution? But that would add a one-cycle delay to all interrupts?
+            // When are these actually checked? Some sources say right after instructions are executed, but putting it there would delay firing interrupts by one cycle, wouldn't it?
             this.Cpu.InterruptTick();
         }
 
