@@ -223,32 +223,46 @@
                         return 0xFF; // TODO: Check if this is supposed to be readable?
 
                     case 0xFF69:
-                        int x = this.backgroundPaletteIndex >> 3;
-                        int y = (this.backgroundPaletteIndex >> 1) & 0b00_0011;
-
-                        if ((this.backgroundPaletteIndex & 0b0001) == 0)
+                        if (this.Gpu.CanAccessCGBPal(isDma))
                         {
-                            return (byte)(this.Gpu.PalCgbBackground[x, y] & 0x00FF);
+                            int x = this.backgroundPaletteIndex >> 3;
+                            int y = (this.backgroundPaletteIndex >> 1) & 0b00_0011;
+
+                            if ((this.backgroundPaletteIndex & 0b0001) == 0)
+                            {
+                                return (byte)(this.Gpu.PalCgbBackground[x, y] & 0x00FF);
+                            }
+                            else
+                            {
+                                return (byte)((this.Gpu.PalCgbBackground[x, y] & 0xFF00) >> 8);
+                            }
                         }
                         else
                         {
-                            return (byte)((this.Gpu.PalCgbBackground[x, y] & 0xFF00) >> 8);
+                            return 0xFF;
                         }
 
                     case 0xFF6A:
                         return 0xFF; // TODO: Check if this is supposed to be readable?
 
                     case 0xFF6B:
-                        int a = this.spritePaletteIndex >> 3;
-                        int b = (this.spritePaletteIndex >> 1) & 0b00_0011;
-
-                        if ((this.spritePaletteIndex & 0b0001) == 0)
+                        if (this.Gpu.CanAccessCGBPal(isDma))
                         {
-                            return (byte)(this.Gpu.PalCgbSprites[a, b] & 0x00FF);
+                            int a = this.spritePaletteIndex >> 3;
+                            int b = (this.spritePaletteIndex >> 1) & 0b00_0011;
+
+                            if ((this.spritePaletteIndex & 0b0001) == 0)
+                            {
+                                return (byte)(this.Gpu.PalCgbSprites[a, b] & 0x00FF);
+                            }
+                            else
+                            {
+                                return (byte)((this.Gpu.PalCgbSprites[a, b] & 0xFF00) >> 8);
+                            }
                         }
                         else
                         {
-                            return (byte)((this.Gpu.PalCgbSprites[a, b] & 0xFF00) >> 8);
+                            return 0xFF;
                         }
 
                     case 0xFF6C:
@@ -567,25 +581,27 @@
                         break;
 
                     case 0xFF69:
-
-                        int x = this.backgroundPaletteIndex >> 3;
-                        int y = (this.backgroundPaletteIndex >> 1) & 0b00_0011;
-
-                        if ((this.backgroundPaletteIndex & 0b0001) == 0)
+                        if (this.Gpu.CanAccessCGBPal(isDma))
                         {
-                            this.Gpu.PalCgbBackground[x, y] = (this.Gpu.PalCgbBackground[x, y] & 0xFF00) | value;
-                        }
-                        else
-                        {
-                            this.Gpu.PalCgbBackground[x, y] = (this.Gpu.PalCgbBackground[x, y] & 0x00FF) | (value << 8);
-                        }
+                            int x = this.backgroundPaletteIndex >> 3;
+                            int y = (this.backgroundPaletteIndex >> 1) & 0b00_0011;
 
-                        this.Gpu.BackgroundCacheDirty = true;
+                            if ((this.backgroundPaletteIndex & 0b0001) == 0)
+                            {
+                                this.Gpu.PalCgbBackground[x, y] = (this.Gpu.PalCgbBackground[x, y] & 0xFF00) | value;
+                            }
+                            else
+                            {
+                                this.Gpu.PalCgbBackground[x, y] = (this.Gpu.PalCgbBackground[x, y] & 0x00FF) | (value << 8);
+                            }
 
-                        if (this.backgroundPaletteAutoIncrement)
-                        {
-                            // Increment and wrap if required (not sure if wrapping is correct, or if it should just stop incrementing
-                            this.backgroundPaletteIndex += this.backgroundPaletteIndex == 63 ? -63 : 1;
+                            this.Gpu.BackgroundCacheDirty = true;
+
+                            if (this.backgroundPaletteAutoIncrement)
+                            {
+                                // Increment and wrap if required (not sure if wrapping is correct, or if it should just stop incrementing
+                                this.backgroundPaletteIndex += this.backgroundPaletteIndex == 63 ? -63 : 1;
+                            }
                         }
 
                         break;
@@ -596,25 +612,27 @@
                         break;
 
                     case 0xFF6B:
-
-                        int a = this.spritePaletteIndex >> 3;
-                        int b = (this.spritePaletteIndex >> 1) & 0b00_0011;
-
-                        if ((this.spritePaletteIndex & 0b0001) == 0)
+                        if (this.Gpu.CanAccessCGBPal(isDma))
                         {
-                            this.Gpu.PalCgbSprites[a, b] = (this.Gpu.PalCgbSprites[a, b] & 0xFF00) | value;
-                        }
-                        else
-                        {
-                            this.Gpu.PalCgbSprites[a, b] = (this.Gpu.PalCgbSprites[a, b] & 0x00FF) | (value << 8);
-                        }
+                            int a = this.spritePaletteIndex >> 3;
+                            int b = (this.spritePaletteIndex >> 1) & 0b00_0011;
 
-                        this.Gpu.SpriteCacheDirty = true;
+                            if ((this.spritePaletteIndex & 0b0001) == 0)
+                            {
+                                this.Gpu.PalCgbSprites[a, b] = (this.Gpu.PalCgbSprites[a, b] & 0xFF00) | value;
+                            }
+                            else
+                            {
+                                this.Gpu.PalCgbSprites[a, b] = (this.Gpu.PalCgbSprites[a, b] & 0x00FF) | (value << 8);
+                            }
 
-                        if (this.spritePaletteAutoIncrement)
-                        {
-                            // Increment and wrap if required (not sure if wrapping is correct, or if it should just stop incrementing
-                            this.spritePaletteIndex += this.spritePaletteIndex == 63 ? -63 : 1;
+                            this.Gpu.SpriteCacheDirty = true;
+
+                            if (this.spritePaletteAutoIncrement)
+                            {
+                                // Increment and wrap if required (not sure if wrapping is correct, or if it should just stop incrementing
+                                this.spritePaletteIndex += this.spritePaletteIndex == 63 ? -63 : 1;
+                            }
                         }
 
                         break;

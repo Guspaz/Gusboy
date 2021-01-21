@@ -308,22 +308,22 @@
             {
                 int baseAddress = 0xFE00 + (n << 2);
 
-                this.sprites[n].Y = (byte)(this.gb.Ram[baseAddress + 0] - 16); // Pre-offset the location
+                this.sprites[n].Y = (byte)(this.gb.Ram[baseAddress + 0, isDma: true] - 16); // Pre-offset the location
 
-                this.sprites[n].X = (byte)(this.gb.Ram[baseAddress + 1] - 8); // Pre-offset the location
+                this.sprites[n].X = (byte)(this.gb.Ram[baseAddress + 1, isDma: true] - 8); // Pre-offset the location
 
-                this.sprites[n].TileNum = this.gb.Ram[baseAddress + 2];
+                this.sprites[n].TileNum = this.gb.Ram[baseAddress + 2, isDma: true];
 
-                this.sprites[n].Priority = (this.gb.Ram[baseAddress + 3] & (1 << 7)) != 0;
-                this.sprites[n].YFlip = (this.gb.Ram[baseAddress + 3] & (1 << 6)) != 0;
-                this.sprites[n].XFlip = (this.gb.Ram[baseAddress + 3] & (1 << 5)) != 0;
-                this.sprites[n].VramBank = (this.gb.Ram[baseAddress + 3] >> 3) & 1;
+                this.sprites[n].Priority = (this.gb.Ram[baseAddress + 3, isDma: true] & (1 << 7)) != 0;
+                this.sprites[n].YFlip = (this.gb.Ram[baseAddress + 3, isDma: true] & (1 << 6)) != 0;
+                this.sprites[n].XFlip = (this.gb.Ram[baseAddress + 3, isDma: true] & (1 << 5)) != 0;
+                this.sprites[n].VramBank = (this.gb.Ram[baseAddress + 3, isDma: true] >> 3) & 1;
 
                 this.sprites[n].OamNum = (byte)n;
 
                 if (this.gb.IsCgb)
                 {
-                    this.sprites[n].PaletteIndex = this.gb.Ram[baseAddress + 3] & 0b0000_0111;
+                    this.sprites[n].PaletteIndex = this.gb.Ram[baseAddress + 3, isDma: true] & 0b0000_0111;
 
                     this.sprites[n].MappedPalette = new[]
                     {
@@ -335,7 +335,7 @@
                 }
                 else
                 {
-                    this.sprites[n].PaletteIndex = (this.gb.Ram[baseAddress + 3] & (1 << 4)) >> 4;
+                    this.sprites[n].PaletteIndex = (this.gb.Ram[baseAddress + 3, isDma: true] & (1 << 4)) >> 4;
 
                     this.sprites[n].MappedPalette = new[]
                     {
@@ -425,12 +425,15 @@
         // Always access when LCD power is off, but that forces mode 0 anyway. DMA period blocks access but the memory mapper handles that globally.
         // DMA itself gets to bypass the restriction, I think?
         // Disabled for now because my timing isn't accurate enough to enforce this properly.
-        public bool CanAccessOAM(bool isDma) => this.mode == GPUMode.HBLANK || this.mode == GPUMode.VBLANK || isDma || true;
+        public bool CanAccessOAM(bool isDMA) => this.mode == GPUMode.HBLANK || this.mode == GPUMode.VBLANK || isDMA;
 
-        // Always access when LCD power is off, but that forces mode 0 anyway. DMA periodblocks access but the memory mapper handles that globally.
+        // Always access when LCD power is off, but that forces mode 0 anyway. DMA period blocks access but the memory mapper handles that globally.
         // DMA itself gets to bypass the restriction, I think?
         // Disabled for now because my timing isn't accurate enough to enforce this properly.
-        public bool CanAccessVRAM(bool isDma) => this.mode == GPUMode.HBLANK || this.mode == GPUMode.VBLANK || this.mode == GPUMode.OAM || isDma || true;
+        public bool CanAccessVRAM(bool isDMA) => this.mode == GPUMode.HBLANK || this.mode == GPUMode.VBLANK || this.mode == GPUMode.OAM || isDMA;
+
+        // This is just the same as the VRAM restriction for now.
+        public bool CanAccessCGBPal(bool isDMA) => this.CanAccessVRAM(isDMA);
 
         public void Tick()
         {
@@ -550,7 +553,7 @@
                         this.mode = GPUMode.HBLANK;
                         this.remainingCycles = this.TIME_HBLANK;
 
-                        if (this.CheckModeFlag(GPUMode.OAM))
+                        if (this.CheckModeFlag(GPUMode.HBLANK))
                         {
                             this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
                         }

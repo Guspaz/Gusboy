@@ -15,7 +15,7 @@
 
             if (this.Sram.Length > 0)
             {
-                if (File.Exists(ramPath))
+                if (File.Exists(ramPath) && new FileInfo(ramPath).Length == this.Sram.Length)
                 {
                     File.ReadAllBytes(ramPath).CopyTo(this.Sram, 0);
                 }
