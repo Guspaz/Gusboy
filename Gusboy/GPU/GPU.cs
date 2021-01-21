@@ -9,12 +9,6 @@
         // private const int TIME_DMA = 648;
         // private const int TIME_DMA_DELAY = 8;
         // private const long FRAME_DURATION = (long)(10000000.0 / (4194304.0 / (TIME_VBLANK * (MAX_LINE + VBLANK_LENGTH + 1.0))));
-        private const int TIME_HBLANK = 204;
-        private const int TIME_OAM = 80;
-        private const int TIME_VRAM = 172;
-        private const int TIME_VBLANK = TIME_OAM + TIME_VRAM + TIME_HBLANK; // Time per scanline, vblank will be 10 of these
-        private const int MAX_LINE = 143;
-        private const int VBLANK_LENGTH = 10; // Number of scanlines
         private const int TILE_MAP_WIDTH = 32;
         private const int TILE_HEIGHT = 8;
         private const int TILE_ROW_BYTES = 2;
@@ -40,19 +34,19 @@
         private readonly Func<bool> drawFramebuffer;
         private readonly int[][] palObjMap = new int[4][];
         private int[] palBgMap = new int[4];
-        private byte stat = 0;
+        private byte lcdcStat = 0;
         private GPUMode mode = GPUMode.HBLANK;
-        private GPUMode oldMode = GPUMode.HBLANK;
         private byte control = 0;
         private bool lcdWasOff = true; // LCD starts off
         private long gpuTicks = 0;
         private long oldCpuTicks = 0;
-        private byte currentLine = 0;
+        private byte internalCurrentLine = 0;
         private byte startWinY;
         private byte currentWinY;
         private bool renderingWindow = false;
         private byte currentLineCompare;
         private byte hdmaControl;
+        private int remainingCycles = 4; // Start at one M-Cycle since we will immediately decrement it
 
         public GPU(Gameboy gameBoy, Func<bool> drawFramebuffer, int[] framebuffer)
         {
@@ -130,9 +124,9 @@
 
         public byte Stat
         {
-            get => (byte)((this.stat & 0xFC) | (byte)this.mode);
+            get => (byte)((this.lcdcStat & 0xFC) | (byte)this.mode);
 
-            set => this.stat = value;
+            set => this.lcdcStat = value;
         }
 
         public byte BgPal
@@ -166,11 +160,11 @@
 
         public byte CurrentLine
         {
-            get => this.currentLine;
+            get => this.internalCurrentLine;
 
             set
             {
-                this.currentLine = value;
+                this.internalCurrentLine = value;
 
                 this.CheckLYCInterrupt();
             }
@@ -254,6 +248,14 @@
                 }
             }
         }
+
+        private int TIME_HBLANK => this.gb.Cpu.fSpeed ? 400 : 200;
+
+        private int TIME_VRAM => this.gb.Cpu.fSpeed ? 344 : 172;
+
+        private int TIME_OAM => this.gb.Cpu.fSpeed ? 168 : 84;
+
+        private int TIME_VBLANK => this.gb.Cpu.fSpeed ? 912 : 456; // Time per scanline, will be 10 of these
 
         // Colour transform for 5bpc GGB to 8bpc VGA
         // From https://byuu.net/video/color-emulation/
@@ -377,14 +379,13 @@
 
         public void CheckLYCInterrupt()
         {
-            // TODO: This doesn't seem to always fire at the right time, sometimes it's of by one scanline...
             if (this.CurrentLine == this.rLYC)
             {
                 // Set match bit
-                this.stat |= 1 << 2;
+                this.lcdcStat |= 1 << 2;
 
                 // LYC = LY status interrupt
-                if ((this.stat & (1 << 6)) != 0)
+                if ((this.lcdcStat & (1 << 6)) != 0)
                 {
                     this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
                 }
@@ -392,7 +393,7 @@
             else
             {
                 // Clear match bit
-                this.stat &= 0xFB;
+                this.lcdcStat &= 0xFB;
             }
         }
 
@@ -405,7 +406,7 @@
             // https://www.reddit.com/r/Gameboy/comments/a1c8h0/what_happens_when_a_gameboy_screen_is_disabled/eap4f8c/
             if (!this.LCDCFlag(LCDC.LCDPower))
             {
-                this.currentLine = 0; // Reset rLY to 0
+                this.CurrentLine = 0; // Reset rLY to 0
                 this.gpuTicks = 0; // Reset GPU clock
                 this.mode = GPUMode.HBLANK; // Reset mode to 0
 
@@ -439,38 +440,32 @@
                 return;
             }
 
-            this.gpuTicks += (this.gb.Cpu.Ticks - this.oldCpuTicks) >> (this.gb.Cpu.fSpeed ? 1 : 0);
+            this.gpuTicks = (this.gb.Cpu.Ticks - this.oldCpuTicks) >> 2;
             this.oldCpuTicks = this.gb.Cpu.Ticks;
 
-            switch (this.mode)
+            for (int i = 0; i < this.gpuTicks; i++)
             {
-                case GPUMode.HBLANK:
-                    if (this.oldMode != this.mode)
+                this.remainingCycles -= 4;
+
+                if (this.remainingCycles == 0)
+                {
+                    // Mode change required
+                    if (this.mode == GPUMode.HBLANK)
                     {
-                        this.oldMode = this.mode;
-
-                        if ((this.stat & (1 << 3)) != 0)
+                        // We're in HBLANK, next is either OAM or VBLANK
+                        if (this.CurrentLine == 143)
                         {
-                            this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
-                        }
-                    }
-
-                    // Switch to VBLANK mode
-                    if (this.gpuTicks >= TIME_HBLANK)
-                    {
-                        this.gpuTicks -= TIME_HBLANK;
-
-                        this.RenderScanline();
-                        this.CurrentLine++;
-
-                        if (this.renderingWindow)
-                        {
-                            this.currentWinY++;
-                        }
-
-                        if (this.CurrentLine == MAX_LINE + 1)
-                        {
+                            // This was the last line of the screen, so enter VBLANK
                             this.mode = GPUMode.VBLANK;
+                            this.remainingCycles = this.TIME_VBLANK;
+
+                            // VBLANK gets its own dedicated interrupt on top of the flag in STAT
+                            this.gb.Cpu.TriggerInterrupt(CPU.INT_VBLANK);
+
+                            if (this.CheckModeFlag(GPUMode.VBLANK))
+                            {
+                                this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
+                            }
 
                             // The first frame after turning the LCD on is skipped (some games show garbage on this frame, real hardware doesn't draw it)
                             if (this.lcdWasOff)
@@ -481,84 +476,86 @@
                             }
 
                             this.drawFramebuffer();
-                        }
-                        else
-                        {
-                            this.mode = GPUMode.OAM;
-                        }
-                    }
 
-                    break;
-                case GPUMode.VBLANK:
+                            // Increment LY at the end of HBLANK
+                            this.CurrentLine++;
 
-                    if (this.oldMode != this.mode)
-                    {
-                        this.oldMode = this.mode;
-
-                        this.gb.Cpu.TriggerInterrupt(CPU.INT_VBLANK);
-
-                        if ((this.stat & (1 << 4)) != 0)
-                        {
-                            this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
-                        }
-                    }
-
-                    // Switch to OAM mode
-                    if (this.gpuTicks >= TIME_VBLANK)
-                    {
-                        this.gpuTicks -= TIME_VBLANK;
-                        this.CurrentLine++;
-
-                        if (this.renderingWindow)
-                        {
-                            this.currentWinY++;
-                        }
-
-                        if (this.CurrentLine > MAX_LINE + VBLANK_LENGTH + 1)
-                        {
+                            // Reset window
                             this.renderingWindow = false;
-
-                            this.mode = GPUMode.OAM;
-                            this.CurrentLine = 0;
                             this.startWinY = this.WinY;
                             this.currentWinY = 0;
                         }
+                        else
+                        {
+                            // Not the last line, go to OAM on the next one
+                            this.mode = GPUMode.OAM;
+                            this.remainingCycles = this.TIME_OAM;
+
+                            if (this.CheckModeFlag(GPUMode.OAM))
+                            {
+                                this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
+                            }
+
+                            // Increment LY at the end of HBLANK
+                            this.CurrentLine++;
+
+                            // Increment window Y at the end of HBLANK
+                            if (this.renderingWindow)
+                            {
+                                this.currentWinY++;
+                            }
+                        }
                     }
-
-                    break;
-                case GPUMode.OAM:
-                    if (this.oldMode != this.mode)
+                    else if (this.mode == GPUMode.VBLANK)
                     {
-                        this.oldMode = this.mode;
+                        // We're in VBLANK, next is either OAM or more VBLANK
+                        if (this.CurrentLine == 153)
+                        {
+                            // End of the line, top of the screen OAM
+                            this.mode = GPUMode.OAM;
+                            this.remainingCycles = this.TIME_OAM;
 
-                        if ((this.stat & (1 << 5)) != 0)
+                            // Reset LY at the end of the last line of VBLANK
+                            this.CurrentLine = 0;
+
+                            if (this.CheckModeFlag(GPUMode.OAM))
+                            {
+                                this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
+                            }
+                        }
+                        else
+                        {
+                            // There's yet more VBLANK to come, keep going
+                            this.remainingCycles = this.TIME_VBLANK;
+
+                            // Increment LY at the end of VBLANK
+                            this.CurrentLine++;
+                        }
+                    }
+                    else if (this.mode == GPUMode.OAM)
+                    {
+                        // We're in OAM, next is VRAM
+                        this.mode = GPUMode.VRAM;
+                        this.remainingCycles = this.TIME_VRAM;
+
+                        // In a real system this would start drawing bit-by-bit here, but we're just going to do it all in one shot up front.
+                        this.RenderScanline();
+
+                        // TODO: We should add cycles to VRAM (and subtract them from HBLANK after that) depending on how many sprites are
+                        // on this line... and scrollX, I think?
+                    }
+                    else
+                    {
+                        // We're in VRAM, next is HBLANK
+                        this.mode = GPUMode.HBLANK;
+                        this.remainingCycles = this.TIME_HBLANK;
+
+                        if (this.CheckModeFlag(GPUMode.OAM))
                         {
                             this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
                         }
                     }
-
-                    // Switch to VRAM mode
-                    if (this.gpuTicks >= TIME_OAM)
-                    {
-                        this.gpuTicks -= TIME_OAM;
-                        this.mode = GPUMode.VRAM;
-                    }
-
-                    break;
-                case GPUMode.VRAM:
-                    if (this.oldMode != this.mode)
-                    {
-                        this.oldMode = this.mode;
-                    }
-
-                    // Switch to HBLANK mode
-                    if (this.gpuTicks >= TIME_VRAM)
-                    {
-                        this.gpuTicks -= TIME_VRAM;
-                        this.mode = GPUMode.HBLANK;
-                    }
-
-                    break;
+                }
             }
         }
 
@@ -729,6 +726,13 @@
             {
                 Array.Copy(Enumerable.Repeat(this.palBg[0], this.framebuffer.Length).ToArray(), this.framebuffer, this.framebuffer.Length);
             }
+        }
+
+        private bool CheckModeFlag(GPUMode mode)
+        {
+            return ((this.lcdcStat & 0b0000_1000) != 0 && mode == GPUMode.HBLANK)
+                || ((this.lcdcStat & 0b0001_0000) != 0 && mode == GPUMode.VBLANK)
+                || ((this.lcdcStat & 0b0010_0000) != 0 && mode == GPUMode.OAM);
         }
 
         private bool LCDCFlag(LCDC flag) => (this.control & (byte)flag) != 0;
