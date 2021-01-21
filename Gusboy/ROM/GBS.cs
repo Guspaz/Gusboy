@@ -104,7 +104,7 @@
             this.rom.InitializeState();
             this.gb.Apu.Initialize();
             this.gb.Ram.ClearRAM();
-            Array.Copy(Enumerable.Repeat((byte)0x00, 0x2000).ToArray(), 0, this.memory, 0xA000, 0x2000);
+            Array.Fill(this.memory, (byte)0x00, 0xA000, 0x2000);
 
             this.gb.Cpu.InitGbs((byte)(this.currentSong - 1), this.StackPointer);
 
@@ -198,7 +198,7 @@
                 }
 
                 // Maybe optimize this to only zero out the missing part of a final bank.
-                Array.Copy(Enumerable.Repeat((byte)0x00, 0x4000).ToArray(), 0, this.memory, 0x4000, 0x4000);
+                Array.Fill(this.memory, (byte)0x00, 0x4000, 0x4000);
                 Array.Copy(this.RomFile, pageOffset, this.memory, 0x4000, Math.Min(0x4000, this.RomFile.Length - pageOffset));
             }
             else if (address >= 0xA000 && address <= 0xBFFF)

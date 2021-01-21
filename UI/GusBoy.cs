@@ -30,7 +30,8 @@ namespace Gusboy
             { Keys.Right, Input.Keys.Right },
         };
 
-        private readonly DirectBitmap framebuffer = new DirectBitmap(160, 144);
+        private readonly int[] framebuffer = new int[160 * 144];
+        private readonly DirectBitmap screenBuffer = new DirectBitmap(160, 144);
 
         private GusboyWaveProvider audioSource;
         private WaveOutEvent outputDevice;
@@ -86,6 +87,9 @@ namespace Gusboy
 
         private bool DrawFramebuffer()
         {
+            // Immediately copy the framebuffer as fast as possible
+            this.framebuffer.CopyTo(this.screenBuffer.Bits, 0);
+
             this.frames++;
 
             this.Invalidate(new Rectangle(0, 0, 160 * 4, 144 * 4), false);
@@ -126,7 +130,7 @@ namespace Gusboy
                 e.Graphics.CompositingQuality = CompositingQuality.HighSpeed;
                 e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
                 e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
-                e.Graphics.DrawImage(this.framebuffer.Bitmap, 0, 0, 160 * 3, 144 * 3);
+                e.Graphics.DrawImage(this.screenBuffer.Bitmap, 0, 0, 160 * 3, 144 * 3);
             }
         }
 
@@ -177,7 +181,7 @@ namespace Gusboy
                     this.outputDevice.Dispose();
                 }
 
-                this.gb = new Gameboy(this.AddMessage, this.DrawFramebuffer, this.framebuffer.Bits, SAMPLE_RATE, filePath);
+                this.gb = new Gameboy(this.AddMessage, this.DrawFramebuffer, this.framebuffer, SAMPLE_RATE, filePath);
 
                 this.audioSource = new GusboyWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(SAMPLE_RATE, 2), this.gb);
                 this.outputDevice = new WaveOutEvent() { DesiredLatency = 200, NumberOfBuffers = 10 };

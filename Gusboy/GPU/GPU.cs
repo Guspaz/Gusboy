@@ -581,65 +581,85 @@
 
                 byte x;
                 byte y;
-                int offset;
+                int tileDataAddress;
+                LCDC tilemapFlag;
+                int tileNum;
 
                 for (int i = 0; i < 160; i++)
                 {
                     this.renderingWindow =
-                        this.renderingWindow || (
                             this.LCDCFlag(LCDC.WindowEnable)
                             && i + WINDOW_X_OFFSET >= this.WinX
                             && this.CurrentLine >= this.startWinY
-                            && this.WinX <= WINDOW_MAX_X);
+                            && this.WinX <= WINDOW_MAX_X;
 
                     if (this.renderingWindow)
                     {
                         x = (byte)(i + WINDOW_X_OFFSET - this.WinX);
                         y = this.currentWinY;
-                        offset = !this.LCDCFlag(LCDC.WindowTileMap) ? 0x1800 : 0x1C00;
+                        tilemapFlag = LCDC.WindowTileMap;
                     }
                     else
                     {
                         x = (byte)(this.ScrollX + i);
                         y = (byte)(this.ScrollY + this.CurrentLine);
-                        offset = !this.LCDCFlag(LCDC.BGTileMap) ? 0x1800 : 0x1C00;
+                        tilemapFlag = LCDC.BGTileMap;
                     }
 
-                    int framebufferLine = this.CurrentLine * 160;
+                    // This is the number of the tile in the tile map (0-2047)
+                    tileNum = ((y / 8) * TILE_MAP_WIDTH) | (x / 8);
 
-                    int cachedTileNum = (offset == 0x1800 ? 0 : 1024) + ((y >> 3) * TILE_MAP_WIDTH) | (x >> 3);
-
-                    int tileNum = this.gb.Ram.Vram[0, offset + ((y >> 3) * TILE_MAP_WIDTH | (x >> 3))];
-                    if (!this.LCDCFlag(LCDC.BGWindowTileset))
+                    if (this.LCDCFlag(tilemapFlag))
                     {
-                        tileNum = 256 + (sbyte)tileNum;
+                        tileNum += 1024;
                     }
 
-                    if (this.tiles[cachedTileNum].XFlip)
+                    // The tilemap is always in vram bank 0 since bank 1 contains the CGB attributes
+                    // This is the actual address of the tile data
+                    byte tileLookupValue = this.gb.Ram.Vram[0, 0x1800 + tileNum];
+
+                    // This is wrong because I don't take X/Y into account yet
+                    if (this.LCDCFlag(LCDC.BGWindowTileset))
+                    {
+                        tileDataAddress = tileLookupValue * 16;
+                    }
+                    else
+                    {
+                        tileDataAddress = 0x1000 + ((sbyte)tileLookupValue * 16);
+                    }
+
+                    // CGB X Flip (will always be false on DMG)
+                    if (this.tiles[tileNum].XFlip)
                     {
                         x = (byte)(7 - x);
                     }
 
-                    if (this.tiles[cachedTileNum].YFlip)
+                    // CGB Y Flip (will always be false on DMG)
+                    if (this.tiles[tileNum].YFlip)
                     {
                         y = (byte)(7 - y);
                     }
 
-                    int tileAddress = ((tileNum * TILE_HEIGHT) + (y & 7)) * TILE_ROW_BYTES;
+                    // Get to the right row based on the y position
+                    tileDataAddress += (y & 7) * 2;
+
+                    // Used to get the specific pixel from the row based on X position
                     byte shift = (byte)(7 - (x & 7));
 
-                    byte palIndex = (byte)((((this.gb.Ram.Vram[this.tiles[cachedTileNum].VramBank, tileAddress + 1] >> shift) & 1) << 1) | ((this.gb.Ram.Vram[this.tiles[cachedTileNum].VramBank, tileAddress] >> shift) & 1));
+                    // Grab the specific pixel from the row
+                    byte palIndex = (byte)((((this.gb.Ram.Vram[this.tiles[tileNum].VramBank, tileDataAddress + 1] >> shift) & 1) << 1) | ((this.gb.Ram.Vram[this.tiles[tileNum].VramBank, tileDataAddress] >> shift) & 1));
 
+                    // Used  later for rendering sprites
                     bgIsTransparent[i] = palIndex == 0;
-                    bgPriority[i] = this.gb.IsCgb && this.LCDCFlag(LCDC.BGEnabled) && this.tiles[cachedTileNum].OAMPriority;
+                    bgPriority[i] = this.gb.IsCgb && this.LCDCFlag(LCDC.BGEnabled) && this.tiles[tileNum].OAMPriority;
 
                     if (this.gb.IsCgb)
                     {
-                        this.framebuffer[framebufferLine + i] = this.tiles[cachedTileNum].MappedPalette[palIndex];
+                        this.framebuffer[(this.CurrentLine * 160) + i] = this.tiles[tileNum].MappedPalette[palIndex];
                     }
                     else
                     {
-                        this.framebuffer[framebufferLine + i] = this.palBg[this.palBgMap[palIndex]];
+                        this.framebuffer[(this.CurrentLine * 160) + i] = this.palBg[this.palBgMap[palIndex]];
                     }
                 }
             }
@@ -706,8 +726,11 @@
 
                         byte finalX = (byte)(currentSprite.X + i);
 
-                        // TODO: Verify that bgPriority doesn't need to take transparency into account
-                        if (palIndex != 0 && (!currentSprite.Priority || bgIsTransparent[finalX]) && finalX < 160 && !bgPriority[finalX])
+                        if (
+                            palIndex != 0
+                            && finalX < 160
+                            && (!currentSprite.Priority || bgIsTransparent[finalX])
+                            && (!bgPriority[finalX] || bgIsTransparent[finalX]))
                         {
                             this.framebuffer[(this.CurrentLine * 160) + (byte)(currentSprite.X + i)] = currentSprite.MappedPalette[palIndex];
                         }
@@ -720,11 +743,11 @@
         {
             if (this.gb.IsCgb)
             {
-                Array.Copy(Enumerable.Repeat(FilterCGB(0xFFFFFF, this.gb.UseFilter), this.framebuffer.Length).ToArray(), this.framebuffer, this.framebuffer.Length);
+                Array.Fill(this.framebuffer, FilterCGB(0xFFFFFF, this.gb.UseFilter));
             }
             else
             {
-                Array.Copy(Enumerable.Repeat(this.palBg[0], this.framebuffer.Length).ToArray(), this.framebuffer, this.framebuffer.Length);
+                Array.Fill(this.framebuffer, this.palBg[0]);
             }
         }
 
