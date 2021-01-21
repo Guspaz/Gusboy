@@ -9,6 +9,8 @@
     public class APU
     {
         private const int CPU_CLOCK = 4194304;
+        private const bool SUPERSAMPLE = true;
+        private const int SUPERSAMPLE_MODULO = 8;
         private const double CAPACITOR_BASE_DMG = 0.999958;
         private const double CAPACITOR_BASE_CGB = 0.999958; // Should be 0.998943 but that sounds very tinny
 
@@ -17,7 +19,7 @@
         private readonly SquareChannel channel2 = new SquareChannel();
         private readonly WaveChannel channel3 = new WaveChannel();
         private readonly NoiseChannel channel4 = new NoiseChannel();
-        private readonly float[] capacitor = new float[2];
+        private readonly double[] capacitor = new double[2];
         private readonly int sampleClock;
         private readonly int sampleRate;
 
@@ -26,12 +28,17 @@
         private int leftMasterVolume;
         private int rightMasterVolume;
         private bool apuPower;
-        private float capacitorFactor;
+        private double capacitorFactor;
 
         private long oldCpuTicks;
-        private long timer;
-        private long frameSequencerTimer;
-        private long frameSequencerStep;
+        private int timer;
+        private int frameSequencerTimer;
+        private int frameSequencerStep;
+
+        private int superSampleStep;
+        private int superSampleCount;
+        private double accumulationBufferLeft;
+        private double accumulationBufferRight;
 
         public APU(Gameboy gameBoy, int sampleRate)
         {
@@ -285,7 +292,7 @@
                 this.channel2.Frequency = (this.channel2.Frequency & 0b000_1111_1111) | ((value & 0b0000_0111) << 8);
 
                 // Length Enable bug
-                if (!oldLengthEnabled && this.channel1.LengthEnable)
+                if (!oldLengthEnabled && this.channel2.LengthEnable)
                 {
                     if (this.frameSequencerStep == 1 || this.frameSequencerStep == 3 || this.frameSequencerStep == 5 || this.frameSequencerStep == 7)
                     {
@@ -389,7 +396,7 @@
                 this.channel3.Frequency = (this.channel3.Frequency & 0b000_1111_1111) | ((value & 0b0000_0111) << 8);
 
                 // Length Enable bug
-                if (!oldLengthEnabled && this.channel1.LengthEnable)
+                if (!oldLengthEnabled && this.channel3.LengthEnable)
                 {
                     if (this.frameSequencerStep == 1 || this.frameSequencerStep == 3 || this.frameSequencerStep == 5 || this.frameSequencerStep == 7)
                     {
@@ -498,7 +505,7 @@
                 this.channel4.LengthEnable = Convert.ToBoolean((value & 0b0100_0000) >> 6);
 
                 // Length Enable bug
-                if (!oldLengthEnabled && this.channel1.LengthEnable)
+                if (!oldLengthEnabled && this.channel4.LengthEnable)
                 {
                     if (this.frameSequencerStep == 1 || this.frameSequencerStep == 3 || this.frameSequencerStep == 5 || this.frameSequencerStep == 7)
                     {
@@ -591,6 +598,8 @@
                 bool initialPower = this.apuPower;
                 bool newPower = Convert.ToBoolean((value & 0b1000_0000) << 7);
 
+                // TODO: BADAPPLE causes some sort of strange threading bug where Channel 1 dac enable changes the output of channel 3...
+                // this.channel1.DacEnable = false
                 if (!initialPower && newPower)
                 {
                     // Power off => on
@@ -617,7 +626,16 @@
 
         public void Initialize(bool powerOff = false)
         {
-            this.capacitorFactor = (float)Math.Pow(this.gb.IsCgb ? CAPACITOR_BASE_CGB : CAPACITOR_BASE_DMG, CPU_CLOCK / (double)this.sampleRate);
+            if (SUPERSAMPLE)
+            {
+                this.capacitorFactor = Math.Pow(this.gb.IsCgb ? CAPACITOR_BASE_CGB : CAPACITOR_BASE_DMG, CPU_CLOCK / (CPU_CLOCK / SUPERSAMPLE_MODULO));
+            }
+            else
+            {
+#pragma warning disable CS0162 // Unreachable code detected
+                this.capacitorFactor = Math.Pow(this.gb.IsCgb ? CAPACITOR_BASE_CGB : CAPACITOR_BASE_DMG, CPU_CLOCK / (double)this.sampleRate);
+#pragma warning restore CS0162 // Unreachable code detected
+            }
 
             if (!powerOff || this.gb.IsCgb)
             {
@@ -730,17 +748,58 @@
                     this.channel4.ClockTick();
                 }
 
+                if (SUPERSAMPLE)
+                {
+                    this.superSampleStep++;
+
+                    if (this.superSampleStep == SUPERSAMPLE_MODULO)
+                    {
+                        this.superSampleCount++;
+
+                        if (this.apuPower && (this.channel1.DacEnable || this.channel2.DacEnable || this.channel3.DacEnable || this.channel4.DacEnable))
+                        {
+                            this.accumulationBufferLeft += this.HighPass((this.channel1.OutputLeft + this.channel2.OutputLeft + this.channel3.OutputLeft + this.channel4.OutputLeft) / 4 * (this.leftMasterVolume + 1), 1);
+                            this.accumulationBufferRight += this.HighPass((this.channel1.OutputRight + this.channel2.OutputRight + this.channel3.OutputRight + this.channel4.OutputRight) / 4 * (this.rightMasterVolume + 1), 2);
+                        }
+
+                        this.superSampleStep = 0;
+                    }
+                }
+
                 if (this.timer == 0)
                 {
-                    if (this.apuPower && (this.channel2.DacEnable || this.channel1.DacEnable || this.channel3.DacEnable || this.channel4.DacEnable))
+                    if (SUPERSAMPLE)
                     {
-                        this.Buffer.Add(this.HighPass((this.channel1.OutputLeft + this.channel2.OutputLeft + this.channel3.OutputLeft + this.channel4.OutputLeft) / 4 * (this.leftMasterVolume + 1), 1));
-                        this.Buffer.Add(this.HighPass((this.channel1.OutputRight + this.channel2.OutputRight + this.channel3.OutputRight + this.channel4.OutputRight) / 4 * (this.rightMasterVolume + 1), 2));
+                        if (this.superSampleCount > 0)
+                        {
+                            this.Buffer.Add((float)(this.accumulationBufferLeft / this.superSampleCount));
+                            this.Buffer.Add((float)(this.accumulationBufferRight / this.superSampleCount));
+                        }
+                        else
+                        {
+                            this.Buffer.Add(0);
+                            this.Buffer.Add(0);
+                        }
+
+                        this.accumulationBufferLeft = 0;
+                        this.accumulationBufferRight = 0;
+                        this.superSampleCount = 0;
+                        this.superSampleStep = 0;
                     }
                     else
                     {
-                        this.Buffer.Add(0);
-                        this.Buffer.Add(0);
+#pragma warning disable CS0162 // Unreachable code detected
+                        if (this.apuPower)
+#pragma warning restore CS0162 // Unreachable code detected
+                        {
+                            this.Buffer.Add((float)this.HighPass((this.channel1.OutputLeft + this.channel2.OutputLeft + this.channel3.OutputLeft + this.channel4.OutputLeft) / 4 * (this.leftMasterVolume + 1), 1));
+                            this.Buffer.Add((float)this.HighPass((this.channel1.OutputRight + this.channel2.OutputRight + this.channel3.OutputRight + this.channel4.OutputRight) / 4 * (this.rightMasterVolume + 1), 2));
+                        }
+                        else
+                        {
+                            this.Buffer.Add(0);
+                            this.Buffer.Add(0);
+                        }
                     }
 
                     this.timer = this.sampleClock;
@@ -752,9 +811,9 @@
             }
         }
 
-        private float HighPass(float input, int channel)
+        private double HighPass(double input, int channel)
         {
-            float output = input - this.capacitor[channel - 1];
+            double output = input - this.capacitor[channel - 1];
 
             // capacitor slowly charges to 'in' via their difference
             this.capacitor[channel - 1] = input - (output * this.capacitorFactor);

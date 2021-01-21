@@ -22,9 +22,9 @@
 
         public bool RightEnable { get; set; }
 
-        public float OutputLeft => (this.ChannelEnable && this.LeftEnable) ? this.DigitalOutput / 100f : 0;
+        public double OutputLeft => (this.ChannelEnable && this.LeftEnable) ? this.DigitalOutput / 100.0 : 0;
 
-        public float OutputRight => (this.ChannelEnable && this.RightEnable) ? this.DigitalOutput / 100f : 0;
+        public double OutputRight => (this.ChannelEnable && this.RightEnable) ? this.DigitalOutput / 100.0 : 0;
 
         protected abstract int DigitalOutput { get; }
 
