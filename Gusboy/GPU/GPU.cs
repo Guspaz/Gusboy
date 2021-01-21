@@ -48,6 +48,10 @@
         private byte hdmaControl;
         private int remainingCycles = 4; // Start at one M-Cycle since we will immediately decrement it
 
+        private int hdmaSource;
+        private int hdmaDestination;
+        private bool hdmaInProgress = false;
+
         public GPU(Gameboy gameBoy, Func<bool> drawFramebuffer, int[] framebuffer)
         {
             this.gb = gameBoy;
@@ -198,13 +202,57 @@
             set { }
         }
 
-        public byte HDMA1SourceHi { get; set; }
+        public byte HDMA1SourceHi
+        {
+            get
+            {
+                return (byte)(this.hdmaSource >> 8);
+            }
 
-        public byte HDMA2SourceLo { get; set; }
+            set
+            {
+                this.hdmaSource = (this.hdmaSource & 0b0000_0000_1111_1111) | (value << 8);
+            }
+        }
 
-        public byte HDMA3DestHi { get; set; }
+        public byte HDMA2SourceLo
+        {
+            get
+            {
+                return (byte)this.hdmaSource;
+            }
 
-        public byte HDMA4DestLo { get; set; }
+            set
+            {
+                this.hdmaSource = (this.hdmaSource & 0b1111_1111_0000_0000) | value;
+            }
+        }
+
+        public byte HDMA3DestHi
+        {
+            get
+            {
+                return (byte)(this.hdmaDestination >> 8);
+            }
+
+            set
+            {
+                this.hdmaDestination = (this.hdmaDestination & 0b0000_0000_1111_1111) | (value << 8);
+            }
+        }
+
+        public byte HDMA4DestLo
+        {
+            get
+            {
+                return (byte)this.hdmaDestination;
+            }
+
+            set
+            {
+                this.hdmaDestination = (this.hdmaDestination & 0b1111_1111_0000_0000) | value;
+            }
+        }
 
         // CGB DMA
         public byte HDMA5Control
@@ -216,35 +264,36 @@
                 this.hdmaControl = value;
 
                 // We already masked the bits on write
-                int source = this.HDMA1SourceHi << 8 | this.HDMA2SourceLo;
-                int destination = (this.HDMA3DestHi << 8 | this.HDMA4DestLo) + 0x8000;
-                bool hdma = (value & 0b1000_0000) != 0;
-                int size = ((value & 0b0111_1111) + 1) * 16;
-                int transferTime = 4 + ((32 * (size / 16)) * (this.gb.Cpu.fSpeed ? 2 : 1));
+                // TODO: Re-enable this when it's better tested and optimized, it's a dog right now.
+                bool hdma = false; // (value & 0b1000_0000) != 0;
 
-                this.BackgroundCacheDirty = true;
-                this.SpriteCacheDirty = true;
+                if (this.hdmaInProgress && !hdma)
+                {
+                    this.hdmaInProgress = false;
+                    return;
+                }
 
                 // TODO: Enforce invalid source address behaviour
                 if (hdma)
                 {
-                    // TODO: Put a real implementation here, it can be changed in-flight and this is not going to be accurate
-                    for (int i = 0; i < size; i++)
-                    {
-                        this.gb.Ram[destination + i, isDma: true] = this.gb.Ram[source + i, isDma: true];
-                    }
-
-                    this.gb.Cpu.Ticks += transferTime;
+                    this.hdmaInProgress = true;
+                    this.hdmaControl &= 0b0111_1111;
                 }
                 else
                 {
+                    int size = ((value & 0b0111_1111) + 1) * 16;
+                    int transferTime = 4 + ((32 * (size / 16)) * (this.gb.Cpu.fSpeed ? 2 : 1));
+
                     // GDMA
                     for (int i = 0; i < size; i++)
                     {
-                        this.gb.Ram[destination + i, isDma: true] = this.gb.Ram[source + i, isDma: true];
+                        this.gb.Ram[this.hdmaDestination + 0x8000 + i, isDma: true] = this.gb.Ram[this.hdmaSource + i, isDma: true];
                     }
 
                     this.gb.Cpu.Ticks += transferTime;
+
+                    this.BackgroundCacheDirty = true;
+                    this.SpriteCacheDirty = true;
                 }
             }
         }
@@ -479,6 +528,7 @@
                             }
 
                             this.drawFramebuffer();
+                            this.ClearFramebuffer();
 
                             // Increment LY at the end of HBLANK
                             this.CurrentLine++;
@@ -552,6 +602,12 @@
                         // We're in VRAM, next is HBLANK
                         this.mode = GPUMode.HBLANK;
                         this.remainingCycles = this.TIME_HBLANK;
+
+                        // TODO: We should also be able to start this if it started during hblank.
+                        if (this.hdmaInProgress)
+                        {
+                            this.HdmaTick();
+                        }
 
                         if (this.CheckModeFlag(GPUMode.HBLANK))
                         {
@@ -716,7 +772,7 @@
                             }
                             else
                             {
-                                tileNum += 1;
+                                tileNum |= 1;
                                 spriteRelY -= 8;
                             }
                         }
@@ -739,6 +795,41 @@
                         }
                     }
                 }
+            }
+        }
+
+        private void HdmaTick()
+        {
+            int size = ((this.hdmaControl & 0b0111_1111) + 1) * 16;
+            int transferTime = 4 + (32 * (this.gb.Cpu.fSpeed ? 2 : 1));
+
+            this.BackgroundCacheDirty = true;
+            this.SpriteCacheDirty = true;
+
+            // Transfer 0x10 bytes and increment stuff
+            if (size > 0)
+            {
+                for (int i = 0; i < 0x10; i++)
+                {
+                    this.gb.Ram[this.hdmaDestination + 0x8000 + i, isDma: true] = this.gb.Ram[this.hdmaSource + i, isDma: true];
+                }
+
+                this.gb.Cpu.Ticks += transferTime;
+            }
+
+            size -= 0x10;
+
+            // TODO: Handle overflow of destination
+            // TODO: Validate that this is the actual end of the transfer? We're not off-by-one?
+            if (size == 0)
+            {
+                this.hdmaInProgress = false;
+            }
+            else
+            {
+                this.hdmaSource += 0x10;
+                this.hdmaDestination += 0x10;
+                this.hdmaControl = (byte)((size - 1) / 16);
             }
         }
 
