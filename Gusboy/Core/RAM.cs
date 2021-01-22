@@ -591,7 +591,7 @@
                             }
                             else
                             {
-                                this.Gpu.PalCgbBackground[x, y] = (this.Gpu.PalCgbBackground[x, y] & 0x00FF) | (value << 8);
+                                this.Gpu.PalCgbBackground[x, y] = (this.Gpu.PalCgbBackground[x, y] & 0x00FF) | ((value & 0b0111_1111) << 8);
                             }
 
                             this.Gpu.BackgroundCacheDirty = true;

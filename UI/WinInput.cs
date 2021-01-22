@@ -26,7 +26,10 @@
 
         public void Subscribe(Keys key)
         {
-            this.subscribedKeys.Add(key, false);
+            lock (this.subscribedKeys)
+            {
+                this.subscribedKeys.Add(key, false);
+            }
         }
 
         [DllImport("user32.dll")]
@@ -36,19 +39,22 @@
 
         private void Tick(object stateInfo)
         {
-            foreach (KeyValuePair<Keys, bool> key in this.subscribedKeys)
+            lock (this.subscribedKeys)
             {
-                bool currentState = IsKeyDown(key.Key);
+                foreach (KeyValuePair<Keys, bool> key in this.subscribedKeys)
+                {
+                    bool currentState = IsKeyDown(key.Key);
 
-                if (currentState && !key.Value)
-                {
-                    this.control.Invoke(this.keyDownCallback, key.Key);
-                    this.subscribedKeys[key.Key] = currentState;
-                }
-                else if (key.Value && !currentState)
-                {
-                    this.control.Invoke(this.keyUpCallback, key.Key);
-                    this.subscribedKeys[key.Key] = currentState;
+                    if (currentState && !key.Value)
+                    {
+                        this.control.Invoke(this.keyDownCallback, key.Key);
+                        this.subscribedKeys[key.Key] = currentState;
+                    }
+                    else if (key.Value && !currentState)
+                    {
+                        this.control.Invoke(this.keyUpCallback, key.Key);
+                        this.subscribedKeys[key.Key] = currentState;
+                    }
                 }
             }
         }
