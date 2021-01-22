@@ -105,6 +105,9 @@ namespace Gusboy
             return true;
         }
 
+        [DllImport("user32.dll")]
+        private static extern bool HideCaret(IntPtr hWnd);
+
         private void OnKeyUp(Keys key)
         {
             if (this.ContainsFocus)
@@ -220,6 +223,16 @@ namespace Gusboy
                 this.outputDevice.Init(this.audioSource);
                 this.outputDevice.Play();
             }
+        }
+
+        private void Txt_messages_KeyDown(object sender, KeyEventArgs e)
+        {
+            e.Handled = true;
+        }
+
+        private void Txt_messages_GotFocus(object sender, EventArgs e)
+        {
+            HideCaret(this.txt_messages.Handle);
         }
 
         public class DirectBitmap : IDisposable

@@ -1,4 +1,6 @@
-﻿namespace Gusboy
+﻿using System;
+
+namespace Gusboy
 {
     partial class Gusboy
     {
@@ -52,6 +54,8 @@
             this.txt_messages.Size = new System.Drawing.Size(523, 182);
             this.txt_messages.TabIndex = 99;
             this.txt_messages.TabStop = false;
+            this.txt_messages.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Txt_messages_KeyDown);
+            this.txt_messages.GotFocus += new System.EventHandler(this.Txt_messages_GotFocus);
             // 
             // statusStrip
             // 
