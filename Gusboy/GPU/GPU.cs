@@ -4,7 +4,10 @@
     using System.Collections.Generic;
     using System.Linq;
 
-    public class GPU
+    /// <summary>
+    /// Main implementation.
+    /// </summary>
+    public partial class GPU
     {
         // private const int TIME_DMA = 648;
         // private const int TIME_DMA_DELAY = 8;
@@ -15,24 +18,15 @@
         private const int WINDOW_X_OFFSET = 7;
         private const int WINDOW_MAX_X = 166;
 
-        // private readonly int[] palBgGBL = { 0x00b284, 0x009a73, 0x00694a, 0x005139 };
-        // private readonly int[] palOBgGBl = { 0x00b284, 0x009a73, 0x00694a, 0x005139 };
-        // private readonly int[] palBgGrey = { 0xFFFFFF, 0xAAAAAA, 0x555555, 0x000000 };
-        // private readonly int[] palObjGrey = { 0xFFFFFF, 0xAAAAAA, 0x555555, 0x000000 };
-        // private readonly int[] palObjRed = { 0xF8E0D0, 0xC08870, 0x683456, 0x18081A };
-        // private readonly int[] palBgDMG = { 0x7b8210, 0x5a7942, 0x39594a, 0x294139 };
-        // private readonly int[] palObjDMG = { 0x7b8210, 0x5a7942, 0x39594a, 0x294139 };
-        private readonly int[] palBg = { 0xE0F8D0, 0x88C070, 0x346856, 0x08181A };
-        private readonly int[] palObj = { 0xE0F8D0, 0x88C070, 0x346856, 0x08181A };
-        private readonly int[] palBgMGB = { 0xc6cba5, 0x8c926b, 0x4a5139, 0x181818 };
-        private readonly int[] palObjMGB = { 0xc6cba5, 0x8c926b, 0x4a5139, 0x181818 };
-
         private readonly Gameboy gb;
-        private readonly Sprite[] sprites = new Sprite[40];
-        private readonly Tile[] tiles = new Tile[32 * 32 * 2];
+
+        private readonly Sprite[] spriteCache = new Sprite[40];
+
+        private readonly Tile[] tileCache = new Tile[32 * 32 * 2];
+        private readonly HashSet<int> tileCacheList = new HashSet<int>();
+
         private readonly int[] framebuffer;
         private readonly Func<bool> drawFramebuffer;
-        private readonly int[][] palObjMap = new int[4][];
         private int[] palBgMap = new int[4];
         private byte lcdcStat = 0;
         private GPUMode mode = GPUMode.HBLANK;
@@ -56,17 +50,21 @@
         {
             this.gb = gameBoy;
 
+            // Select palette
+            this.palObj = this.palObjMGB;
+            this.palBg = this.palBgMGB;
+
             // Initialize sprite array
-            for (int i = 0; i < this.sprites.Length; i++)
+            for (int i = 0; i < this.spriteCache.Length; i++)
             {
-                this.sprites[i] = default;
+                this.spriteCache[i] = new Sprite((byte)i, this.gb, this.palObj);
             }
 
             // Initialize background tile array
-            for (int i = 0; i < this.tiles.Length; i++)
+            for (int i = 0; i < this.tileCache.Length; i++)
             {
-                this.tiles[i] = default;
-                this.tiles[i].MappedPalette = new int[] { 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF };
+                this.tileCache[i] = default;
+                this.tileCache[i].MappedPalette = new int[] { 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF };
             }
 
             this.drawFramebuffer = drawFramebuffer;
@@ -87,12 +85,10 @@
             }
 
             // Init object palette maps so they're at least not undefined
-            this.palObjMap[0] = new int[4];
-            this.palObjMap[1] = new int[4];
+            this.PalObjMap[0] = new int[4];
+            this.PalObjMap[1] = new int[4];
 
-            // Select palette
-            this.palObj = this.palObjMGB;
-            this.palBg = this.palBgMGB;
+            this.BuildColourCache(this.gb.UseFilter);
         }
 
         private enum GPUMode
@@ -116,50 +112,18 @@
             LCDPower = 1 << 7,
         }
 
+        // TODO: Replace jagged array with multi-dimensional array
+        public int[][] PalObjMap { get; } = new int[4][];
+
         public bool IsDmaActive { get; set; }
 
-        public bool SpriteCacheDirty { get; set; }
-
         public bool BackgroundCacheDirty { get; set; }
-
-        public int[,] PalCgbSprites { get; } = new int[8, 4];
-
-        public int[,] PalCgbBackground { get; } = new int[8, 4];
 
         public byte Stat
         {
             get => (byte)((this.lcdcStat & 0xFC) | (byte)this.mode);
 
             set => this.lcdcStat = value;
-        }
-
-        public byte BgPal
-        {
-            get => PackByte(this.palBgMap[0], this.palBgMap[1], this.palBgMap[2], this.palBgMap[3]);
-
-            set => this.palBgMap = UnpackByte(value);
-        }
-
-        public byte ObjPal0
-        {
-            get => PackByte(this.palObjMap[0][0], this.palObjMap[0][1], this.palObjMap[0][2], this.palObjMap[0][3]);
-
-            set
-            {
-                this.palObjMap[0] = UnpackByte(value);
-                this.SpriteCacheDirty = true;
-            }
-        }
-
-        public byte ObjPal1
-        {
-            get => PackByte(this.palObjMap[1][0], this.palObjMap[1][1], this.palObjMap[1][2], this.palObjMap[1][3]);
-
-            set
-            {
-                this.palObjMap[1] = UnpackByte(value);
-                this.SpriteCacheDirty = true;
-            }
         }
 
         public byte CurrentLine
@@ -293,7 +257,6 @@
                     this.gb.Cpu.Ticks += transferTime;
 
                     this.BackgroundCacheDirty = true;
-                    this.SpriteCacheDirty = true;
                 }
             }
         }
@@ -305,32 +268,6 @@
         private int TIME_OAM => this.gb.Cpu.fSpeed ? 168 : 84;
 
         private int TIME_VBLANK => this.gb.Cpu.fSpeed ? 912 : 456; // Time per scanline, will be 10 of these
-
-        // Colour transform for 5bpc GGB to 8bpc VGA
-        // From https://byuu.net/video/color-emulation/
-        public static int FilterCGB(int color, bool useFilter)
-        {
-            int rIn = color & 0b0000_0000_0001_1111;
-            int gIn = (color & 0b0000_0011_1110_0000) >> 5;
-            int bIn = (color & 0b0111_1100_0000_0000) >> 10;
-
-            if (useFilter)
-            {
-                int rOut = Math.Min(960, (rIn * 26) + (gIn * 4) + (bIn * 2)) >> 2;
-                int gOut = Math.Min(960, (gIn * 24) + (bIn * 8)) >> 2;
-                int bOut = Math.Min(960, (rIn * 6) + (gIn * 4) + (bIn * 22)) >> 2;
-
-                return (0xFF << 24) | (rOut << 16) | (gOut << 8) | bOut;
-            }
-            else
-            {
-                int rOut = (rIn << 3) | (rIn >> 2);
-                int gOut = (gIn << 3) | (gIn >> 2);
-                int bOut = (bIn << 3) | (bIn >> 2);
-
-                return (0xFF << 24) | (rOut << 16) | (gOut << 8) | bOut;
-            }
-        }
 
         // DMG DMA
         public void TriggerDMA(byte address)
@@ -351,78 +288,26 @@
             // TODO: We should add the transfer time to the CPU clocks maybe? Not if it happens in the background though.
         }
 
-        public void CacheSprites()
+        public void CacheTile(int n)
         {
-            for (int n = 0; n < this.sprites.Length; n++)
+            if (!this.tileCacheList.Contains(n))
             {
-                int baseAddress = 0xFE00 + (n << 2);
+                this.tileCacheList.Add(n);
 
-                this.sprites[n].Y = (byte)(this.gb.Ram[baseAddress + 0, isDma: true] - 16); // Pre-offset the location
-
-                this.sprites[n].X = (byte)(this.gb.Ram[baseAddress + 1, isDma: true] - 8); // Pre-offset the location
-
-                this.sprites[n].TileNum = this.gb.Ram[baseAddress + 2, isDma: true];
-
-                this.sprites[n].Priority = (this.gb.Ram[baseAddress + 3, isDma: true] & (1 << 7)) != 0;
-                this.sprites[n].YFlip = (this.gb.Ram[baseAddress + 3, isDma: true] & (1 << 6)) != 0;
-                this.sprites[n].XFlip = (this.gb.Ram[baseAddress + 3, isDma: true] & (1 << 5)) != 0;
-                this.sprites[n].VramBank = (this.gb.Ram[baseAddress + 3, isDma: true] >> 3) & 1;
-
-                this.sprites[n].OamNum = (byte)n;
-
-                if (this.gb.IsCgb)
-                {
-                    this.sprites[n].PaletteIndex = this.gb.Ram[baseAddress + 3, isDma: true] & 0b0000_0111;
-
-                    this.sprites[n].MappedPalette = new[]
-                    {
-                        GPU.FilterCGB(this.PalCgbSprites[this.sprites[n].PaletteIndex, 0], this.gb.UseFilter),
-                        GPU.FilterCGB(this.PalCgbSprites[this.sprites[n].PaletteIndex, 1], this.gb.UseFilter),
-                        GPU.FilterCGB(this.PalCgbSprites[this.sprites[n].PaletteIndex, 2], this.gb.UseFilter),
-                        GPU.FilterCGB(this.PalCgbSprites[this.sprites[n].PaletteIndex, 3], this.gb.UseFilter),
-                    };
-                }
-                else
-                {
-                    this.sprites[n].PaletteIndex = (this.gb.Ram[baseAddress + 3, isDma: true] & (1 << 4)) >> 4;
-
-                    this.sprites[n].MappedPalette = new[]
-                    {
-                        this.palObj[this.palObjMap[this.sprites[n].PaletteIndex][0]],
-                        this.palObj[this.palObjMap[this.sprites[n].PaletteIndex][1]],
-                        this.palObj[this.palObjMap[this.sprites[n].PaletteIndex][2]],
-                        this.palObj[this.palObjMap[this.sprites[n].PaletteIndex][3]],
-                    };
-                }
-            }
-
-            this.SpriteCacheDirty = false;
-        }
-
-        public void CacheBackgrounds()
-        {
-            // TODO: This is super slow, need to only invalidate the specific tiles that use a given palette. Or do the palettes by reference and dirty this cache selectively when the tile attribute table is updated only.
-            for (int n = 0; n < this.tiles.Length; n++)
-            {
                 int baseAddress = 0x1800 | n;
+                int paletteIndex = this.gb.Ram.Vram[1, baseAddress] & 0b111;
 
-                this.tiles[n].OAMPriority = (this.gb.Ram.Vram[1, baseAddress] & (1 << 7)) != 0;
-                this.tiles[n].YFlip = (this.gb.Ram.Vram[1, baseAddress] & (1 << 6)) != 0;
-                this.tiles[n].XFlip = (this.gb.Ram.Vram[1, baseAddress] & (1 << 5)) != 0;
-                this.tiles[n].VramBank = (this.gb.Ram.Vram[1, baseAddress] >> 3) & 1;
-                this.tiles[n].PaletteIndex = this.gb.Ram.Vram[1, baseAddress] & 0b111;
+                this.tileCache[n].OAMPriority = (this.gb.Ram.Vram[1, baseAddress] & (1 << 7)) != 0;
+                this.tileCache[n].YFlip = (this.gb.Ram.Vram[1, baseAddress] & (1 << 6)) != 0;
+                this.tileCache[n].XFlip = (this.gb.Ram.Vram[1, baseAddress] & (1 << 5)) != 0;
+                this.tileCache[n].VramBank = (this.gb.Ram.Vram[1, baseAddress] >> 3) & 1;
+                this.tileCache[n].PaletteIndex = paletteIndex;
 
-                // TODO: Fill this in for both CGB and DMG
-                // TODO: Do this by reference somehow? It's silly filtering it over and over again.
-                this.tiles[n].MappedPalette = new[]
-                {
-                    GPU.FilterCGB(this.PalCgbBackground[this.tiles[n].PaletteIndex, 0], this.gb.UseFilter),
-                    GPU.FilterCGB(this.PalCgbBackground[this.tiles[n].PaletteIndex, 1], this.gb.UseFilter),
-                    GPU.FilterCGB(this.PalCgbBackground[this.tiles[n].PaletteIndex, 2], this.gb.UseFilter),
-                    GPU.FilterCGB(this.PalCgbBackground[this.tiles[n].PaletteIndex, 3], this.gb.UseFilter),
-                };
-
-                this.BackgroundCacheDirty = false;
+                // DMG doesn't use this cached palette
+                this.tileCache[n].MappedPalette[0] = this.ColourCache[this.PalCgbBackground[paletteIndex, 0]];
+                this.tileCache[n].MappedPalette[1] = this.ColourCache[this.PalCgbBackground[paletteIndex, 1]];
+                this.tileCache[n].MappedPalette[2] = this.ColourCache[this.PalCgbBackground[paletteIndex, 2]];
+                this.tileCache[n].MappedPalette[3] = this.ColourCache[this.PalCgbBackground[paletteIndex, 3]];
             }
         }
 
@@ -627,10 +512,6 @@
             }
         }
 
-        private static byte PackByte(int val0, int val1, int val2, int val3) => (byte)(((val0 & 3) << 0) | ((val1 & 3) << 2) | ((val2 & 3) << 4) | ((val3 & 3) << 6));
-
-        private static int[] UnpackByte(byte value) => new int[] { (value >> 0) & 3, (value >> 2) & 3, (value >> 4) & 3, (value >> 6) & 3 };
-
         private void RenderScanline()
         {
             bool[] bgIsTransparent = new bool[256];
@@ -641,17 +522,18 @@
             // Tiles
             if (this.gb.IsCgb || this.LCDCFlag(LCDC.BGEnabled) || this.renderingWindow)
             {
-                // Regenerate the background cache if the tile maps have been touched since our last scanline
-                if (this.BackgroundCacheDirty)
-                {
-                    this.CacheBackgrounds();
-                }
-
                 byte x;
                 byte y;
                 int tileDataAddress;
                 LCDC tilemapFlag;
                 int tileNum;
+
+                // Invalidate the tile cache if it's dirty
+                if (this.BackgroundCacheDirty)
+                {
+                    this.tileCacheList.Clear();
+                    this.BackgroundCacheDirty = false;
+                }
 
                 for (int i = 0; i < 160; i++)
                 {
@@ -682,6 +564,9 @@
                         tileNum += 1024;
                     }
 
+                    // Add this tile to the cache if it isn't already there
+                    this.CacheTile(tileNum);
+
                     // The tilemap is always in vram bank 0 since bank 1 contains the CGB attributes
                     // This is the actual address of the tile data
                     byte tileLookupValue = this.gb.Ram.Vram[0, 0x1800 + tileNum];
@@ -697,13 +582,13 @@
                     }
 
                     // CGB X Flip (will always be false on DMG)
-                    if (this.tiles[tileNum].XFlip)
+                    if (this.tileCache[tileNum].XFlip)
                     {
                         x = (byte)(7 - x);
                     }
 
                     // CGB Y Flip (will always be false on DMG)
-                    if (this.tiles[tileNum].YFlip)
+                    if (this.tileCache[tileNum].YFlip)
                     {
                         y = (byte)(7 - y);
                     }
@@ -715,15 +600,15 @@
                     byte shift = (byte)(7 - (x & 7));
 
                     // Grab the specific pixel from the row
-                    byte palIndex = (byte)((((this.gb.Ram.Vram[this.tiles[tileNum].VramBank, tileDataAddress + 1] >> shift) & 1) << 1) | ((this.gb.Ram.Vram[this.tiles[tileNum].VramBank, tileDataAddress] >> shift) & 1));
+                    byte palIndex = (byte)((((this.gb.Ram.Vram[this.tileCache[tileNum].VramBank, tileDataAddress + 1] >> shift) & 1) << 1) | ((this.gb.Ram.Vram[this.tileCache[tileNum].VramBank, tileDataAddress] >> shift) & 1));
 
                     // Used  later for rendering sprites
                     bgIsTransparent[i] = palIndex == 0;
-                    bgPriority[i] = this.gb.IsCgb && this.LCDCFlag(LCDC.BGEnabled) && this.tiles[tileNum].OAMPriority;
+                    bgPriority[i] = this.gb.IsCgb && this.LCDCFlag(LCDC.BGEnabled) && this.tileCache[tileNum].OAMPriority;
 
                     if (this.gb.IsCgb)
                     {
-                        this.framebuffer[(this.CurrentLine * 160) + i] = this.tiles[tileNum].MappedPalette[palIndex];
+                        this.framebuffer[(this.CurrentLine * 160) + i] = this.tileCache[tileNum].MappedPalette[palIndex];
                     }
                     else
                     {
@@ -735,23 +620,17 @@
             // Sprites
             if (this.LCDCFlag(LCDC.SpritesEnabled))
             {
-                // Regenerate the sprite cache if OAM has been touched since our last scanline
-                if (this.SpriteCacheDirty)
-                {
-                    this.CacheSprites();
-                }
-
                 byte spriteHeight = (byte)(this.LCDCFlag(LCDC.SpriteSize) ? 16 : 8);
 
-                IEnumerable<Sprite> prioritySprites;
+                IEnumerable<Sprite.StaticSprite> prioritySprites;
 
                 if (this.OAMPriorityMode)
                 {
-                    prioritySprites = this.sprites.Where(s => (byte)(this.CurrentLine - s.Y) < spriteHeight).Take(10).OrderByDescending(s => s.OamNum);
+                    prioritySprites = this.spriteCache.Where(s => (byte)(this.CurrentLine - s.Y) < spriteHeight).Take(10).OrderByDescending(s => s.OamNum).Select(s => s.Static);
                 }
                 else
                 {
-                    prioritySprites = this.sprites.Where(s => (byte)(this.CurrentLine - s.Y) < spriteHeight).Take(10).OrderBy(s => s.X).Reverse();
+                    prioritySprites = this.spriteCache.Where(s => (byte)(this.CurrentLine - s.Y) < spriteHeight).Take(10).OrderBy(s => s.X).Reverse().Select(s => s.Static);
                 }
 
                 foreach (var currentSprite in prioritySprites)
@@ -813,7 +692,6 @@
             int transferTime = 4 + (32 * (this.gb.Cpu.fSpeed ? 2 : 1));
 
             this.BackgroundCacheDirty = true;
-            this.SpriteCacheDirty = true;
 
             // Transfer 0x10 bytes and increment stuff
             if (size > 0)
@@ -846,7 +724,7 @@
         {
             if (this.gb.IsCgb)
             {
-                Array.Fill(this.framebuffer, FilterCGB(0xFFFFFF, this.gb.UseFilter));
+                Array.Fill(this.framebuffer, this.ColourCache[0x7FFF]);
             }
             else
             {
@@ -863,29 +741,11 @@
 
         private bool LCDCFlag(LCDC flag) => (this.control & (byte)flag) != 0;
 
-        private struct Sprite
-        {
-            public byte Y;
-
-            public byte X;
-
-            public byte TileNum;
-            public byte OamNum;
-
-            public bool Priority;
-            public bool YFlip; // Vertical
-            public bool XFlip; // Horizontal
-            public int VramBank; // TODO: Test me
-            public int PaletteIndex;
-
-            public int[] MappedPalette;
-        }
-
         private struct Tile
         {
-            public bool OAMPriority; // TODO: Implement me
-            public bool YFlip; // Vertical // TODO: Implement me
-            public bool XFlip; // Horizontal // TODO: Implement me
+            public bool OAMPriority;
+            public bool YFlip; // Vertical
+            public bool XFlip; // Horizontal
             public int VramBank;
             public int PaletteIndex;
 

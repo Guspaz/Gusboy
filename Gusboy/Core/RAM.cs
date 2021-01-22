@@ -340,7 +340,6 @@
                         if (this.Gpu.CanAccessOAM(isDma))
                         {
                             this.oam[i - 0xFE00] = value; // Object Attribute Memory (FEA0-FEFF unusable)
-                            this.Gpu.SpriteCacheDirty = true;
                         }
 
                         break;
@@ -625,8 +624,6 @@
                             {
                                 this.Gpu.PalCgbSprites[a, b] = (this.Gpu.PalCgbSprites[a, b] & 0x00FF) | (value << 8);
                             }
-
-                            this.Gpu.SpriteCacheDirty = true;
 
                             if (this.spritePaletteAutoIncrement)
                             {
