@@ -78,7 +78,6 @@
             this.Controls.Add(this.statusStrip);
             this.Controls.Add(this.txt_messages);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
-            this.KeyPreview = true;
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.MaximizeBox = false;
             this.Name = "Gusboy";
@@ -88,8 +87,6 @@
             this.DragDrop += new System.Windows.Forms.DragEventHandler(this.Gusboy_DragDrop);
             this.DragEnter += new System.Windows.Forms.DragEventHandler(this.Gusboy_DragEnter);
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.Gusboy_Paint);
-            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Gusboy_KeyDown);
-            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Gusboy_KeyUp);
             this.statusStrip.ResumeLayout(false);
             this.statusStrip.PerformLayout();
             this.ResumeLayout(false);

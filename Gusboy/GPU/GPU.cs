@@ -528,7 +528,6 @@
                             }
 
                             this.drawFramebuffer();
-                            this.ClearFramebuffer();
 
                             // Increment LY at the end of HBLANK
                             this.CurrentLine++;
@@ -562,14 +561,24 @@
                     else if (this.mode == GPUMode.VBLANK)
                     {
                         // We're in VBLANK, next is either OAM or more VBLANK
-                        if (this.CurrentLine == 153)
+                        if (this.CurrentLine == 152)
+                        {
+                            // The LY counter only spends 4 cycles set to 153
+                            this.remainingCycles = 4;
+
+                            this.CurrentLine++;
+                        }
+                        else if (this.CurrentLine == 153)
+                        {
+                            // We spend the rest of line 153 with LY=0
+                            this.remainingCycles = this.TIME_VBLANK - 4;
+                            this.CurrentLine = 0;
+                        }
+                        else if (this.CurrentLine == 0)
                         {
                             // End of the line, top of the screen OAM
                             this.mode = GPUMode.OAM;
                             this.remainingCycles = this.TIME_OAM;
-
-                            // Reset LY at the end of the last line of VBLANK
-                            this.CurrentLine = 0;
 
                             if (this.CheckModeFlag(GPUMode.OAM))
                             {

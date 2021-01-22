@@ -29,7 +29,7 @@ namespace Gusboy
 
         internal bool UseFilter { get; } = true;
 
-        internal bool UseBios { get; set; } = true;
+        internal bool UseBios { get; set; } = false;
 
         internal CPU Cpu { get; }
 

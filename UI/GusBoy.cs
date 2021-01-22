@@ -32,6 +32,9 @@ namespace Gusboy
 
         private readonly int[] framebuffer = new int[160 * 144];
         private readonly DirectBitmap screenBuffer = new DirectBitmap(160, 144);
+        private readonly BufferedGraphics graphicsBuffer;
+
+        private readonly WinInput input;
 
         private GusboyWaveProvider audioSource;
         private WaveOutEvent outputDevice;
@@ -52,6 +55,25 @@ namespace Gusboy
             {
                 this.InitGameboy(args[1]);
             }
+
+            // Poll input at 250Hz
+            // TODO: Do something hacky to stop the textbox from getting keyboard focus.
+            this.input = new WinInput(this, this.OnKeyDown, this.OnKeyUp, 4);
+
+            foreach (Keys key in this.keymap.Keys)
+            {
+                this.input.Subscribe(key);
+            }
+
+            using (Graphics graphics = this.CreateGraphics())
+            {
+                this.graphicsBuffer = BufferedGraphicsManager.Current.Allocate(graphics, new Rectangle { Width = 160 * 3, Height = 144 * 3 });
+            }
+
+            this.graphicsBuffer.Graphics.CompositingMode = CompositingMode.SourceCopy;
+            this.graphicsBuffer.Graphics.CompositingQuality = CompositingQuality.HighSpeed;
+            this.graphicsBuffer.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
+            this.graphicsBuffer.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
         }
 
         public bool AddMessage(string message, bool deletePrevious = false)
@@ -83,33 +105,67 @@ namespace Gusboy
             return true;
         }
 
-        protected override bool ProcessCmdKey(ref Message msg, Keys keyData) => false;
+        private void OnKeyUp(Keys key)
+        {
+            if (this.ContainsFocus)
+            {
+                if (this.keymap.ContainsKey(key))
+                {
+                    this.gb.KeyUp(this.keymap[key]);
+                }
+            }
+        }
+
+        private void OnKeyDown(Keys key)
+        {
+            if (this.ContainsFocus)
+            {
+                if (this.keymap.ContainsKey(key))
+                {
+                    this.gb.KeyDown(this.keymap[key]);
+                }
+            }
+        }
 
         private bool DrawFramebuffer()
         {
             // Immediately copy the framebuffer as fast as possible
             this.framebuffer.CopyTo(this.screenBuffer.Bits, 0);
 
-            this.frames++;
-
             this.Invalidate(new Rectangle(0, 0, 160 * 4, 144 * 4), false);
 
-            Application.DoEvents();
-
-            if (this.frames % 120 == 0)
+            // Draw if we can, don't care if it fails (like if it's been disposed)
+            try
             {
-                double timeElapsed = (double)(System.Diagnostics.Stopwatch.GetTimestamp() - this.clockTicks) / System.Diagnostics.Stopwatch.Frequency;
-                double framerate = 120 / timeElapsed;
-                double clockspeed = (this.gb.CpuTicks - this.cpuTicks) / 1000000.0 / timeElapsed;
-
-                // Because NAudio might be a different thread, use invoke to touch the control
-                if (!this.statusStrip.IsDisposed)
+                if (this.InvokeRequired && !this.IsDisposed)
                 {
-                    this.statusStrip.Invoke(new Action<string>(text => { this.statusStrip.Items[0].Text = text; }), $"Clockspeed: {clockspeed,5:N} MHz  Framerate: {framerate,2:N} Hz");
+                    this.Invoke(new Action(() => { this.Update(); }));
+                }
+                else if (!this.IsDisposed)
+                {
+                    this.Update();
                 }
 
-                this.cpuTicks = this.gb.CpuTicks;
-                this.clockTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+                this.frames++;
+
+                if (this.frames % 120 == 0)
+                {
+                    double timeElapsed = (double)(System.Diagnostics.Stopwatch.GetTimestamp() - this.clockTicks) / System.Diagnostics.Stopwatch.Frequency;
+                    double framerate = 120 / timeElapsed;
+                    double clockspeed = (this.gb.CpuTicks - this.cpuTicks) / 1000000.0 / timeElapsed;
+
+                    // Because NAudio might be a different thread, use invoke to touch the control
+                    if (!this.statusStrip.IsDisposed)
+                    {
+                        this.statusStrip.Invoke(new Action<string>(text => { this.statusStrip.Items[0].Text = text; }), $"Clockspeed: {clockspeed,5:N} MHz  Framerate: {framerate,2:N} Hz");
+                    }
+
+                    this.cpuTicks = this.gb.CpuTicks;
+                    this.clockTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+                }
+            }
+            catch
+            {
             }
 
             return true;
@@ -126,33 +182,9 @@ namespace Gusboy
         {
             if (this.framebuffer != null)
             {
-                e.Graphics.CompositingMode = CompositingMode.SourceCopy;
-                e.Graphics.CompositingQuality = CompositingQuality.HighSpeed;
-                e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-                e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
-                e.Graphics.DrawImage(this.screenBuffer.Bitmap, 0, 0, 160 * 3, 144 * 3);
+                this.graphicsBuffer.Graphics.DrawImage(this.screenBuffer.Bitmap, 0, 0, 160 * 3, 144 * 3);
+                this.graphicsBuffer.Render(e.Graphics);
             }
-        }
-
-        private void Gusboy_KeyDown(object sender, KeyEventArgs e)
-        {
-            // This event-based input is laggy. Should probably switch to polling using the WinInput class.
-            if (this.keymap.ContainsKey(e.KeyCode))
-            {
-                this.gb.KeyDown(this.keymap[e.KeyCode]);
-            }
-
-            e.Handled = true;
-        }
-
-        private void Gusboy_KeyUp(object sender, KeyEventArgs e)
-        {
-            if (this.keymap.ContainsKey(e.KeyCode))
-            {
-                this.gb.KeyUp(this.keymap[e.KeyCode]);
-            }
-
-            e.Handled = true;
         }
 
         private void Gusboy_DragEnter(object sender, DragEventArgs e)

@@ -34,9 +34,14 @@
 
             this.ReadHeader(romFile);
 
+            this.PrintInfo();
+
             if (romFile.Length != this.hRomSize)
             {
-                throw new Exception($"ROM file size did not match header ROM size: {romFile.Length} != {this.hRomSize}");
+                this.gb.MessageCallback($"Malformed ROM file, invalid size header ({romFile.Length} != {this.hRomSize}), using compatibility mode");
+                byte[] oldRomFile = romFile;
+                romFile = new byte[0x80_0000];
+                Array.Copy(oldRomFile, 0, romFile, 0, oldRomFile.Length);
             }
 
             byte[] sram = new byte[this.hRamSize];
@@ -62,8 +67,6 @@
                 // Treat unknown as MBC5 for now
                 _ => new MBC5(romFile, sram, ramPath),
             };
-
-            this.PrintInfo();
         }
 
         // Special case, this mapper needs to influence outside the ROM, so it gets its own property.

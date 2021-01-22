@@ -1,77 +1,56 @@
 ﻿namespace Gusboy
 {
+    using System;
+    using System.Collections.Generic;
     using System.Runtime.InteropServices;
     using System.Windows.Forms;
 
-    public static class WinInput
+    public class WinInput
     {
         private const int IS_DOWN = 0x8000;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0052:Remove unread private members", Justification = "It is used, it triggers the callback.")]
+        private readonly System.Threading.Timer inputTimer;
+        private readonly Dictionary<Keys, bool> subscribedKeys = new Dictionary<Keys, bool>();
+        private readonly Action<Keys> keyDownCallback;
+        private readonly Action<Keys> keyUpCallback;
+        private readonly Control control;
 
-        public static byte PollKeys10()
+        public WinInput(Control control, Action<Keys> keyDownCallback, Action<Keys> keyUpCallback, int interval)
         {
-            byte result = 0;
+            this.keyDownCallback = keyDownCallback;
+            this.keyUpCallback = keyUpCallback;
+            this.control = control;
 
-            // A button
-            if (!IsKeyDown(Keys.A))
-            {
-                result |= 0x01;
-            }
-
-            // B button
-            if (!IsKeyDown(Keys.B))
-            {
-                result |= 0x02;
-            }
-
-            // Select button
-            if (!IsKeyDown(Keys.Space))
-            {
-                result |= 0x04;
-            }
-
-            // Select button
-            if (!IsKeyDown(Keys.Enter))
-            {
-                result |= 0x08;
-            }
-
-            return result;
+            this.inputTimer = new System.Threading.Timer(this.Tick, null, 0, interval);
         }
 
-        public static byte PollKeys20()
+        public void Subscribe(Keys key)
         {
-            byte result = 0;
-
-            // Right button
-            if (!IsKeyDown(Keys.Right))
-            {
-                result |= 0x01;
-            }
-
-            // Left button
-            if (!IsKeyDown(Keys.Left))
-            {
-                result |= 0x02;
-            }
-
-            // Up button
-            if (!IsKeyDown(Keys.Up))
-            {
-                result |= 0x04;
-            }
-
-            // Down button
-            if (!IsKeyDown(Keys.Down))
-            {
-                result |= 0x08;
-            }
-
-            return result;
+            this.subscribedKeys.Add(key, false);
         }
 
         [DllImport("user32.dll")]
         private static extern short GetAsyncKeyState(Keys vKey);
 
-        private static bool IsKeyDown(Keys key) => (GetAsyncKeyState(key) & IS_DOWN) > 0;
+        private static bool IsKeyDown(Keys key) => (GetAsyncKeyState(key) & IS_DOWN) != 0;
+
+        private void Tick(object stateInfo)
+        {
+            foreach (KeyValuePair<Keys, bool> key in this.subscribedKeys)
+            {
+                bool currentState = IsKeyDown(key.Key);
+
+                if (currentState && !key.Value)
+                {
+                    this.control.Invoke(this.keyDownCallback, key.Key);
+                    this.subscribedKeys[key.Key] = currentState;
+                }
+                else if (key.Value && !currentState)
+                {
+                    this.control.Invoke(this.keyUpCallback, key.Key);
+                    this.subscribedKeys[key.Key] = currentState;
+                }
+            }
+        }
     }
 }
