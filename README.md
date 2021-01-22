@@ -23,6 +23,4 @@ In no particular order
   - Maybe a first attempt would use reference parameters for registers
 - Try to move more of the GPU code into the cache functions
 - Phase out Gshort and just use integers directly, which would be much easier if the CPU was rewritten to reduce the number of references
-- Change the input to poll at intervals rather than relying on Windows events. The WinForms key events are... unreliable, and laggy.
-- Improve frame pacing, which got a bit problematic when I added double buffering
 - Other general improvements, there's always more that can be done
