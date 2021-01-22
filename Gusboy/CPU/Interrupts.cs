@@ -30,6 +30,8 @@
 
         public void InterruptTick()
         {
+            // TODO: Pokemon Yellow stalls for a while on the surf bit, possibly interrupts?
+
             if (this.rInterruptEnable > 0 && this.rInterruptFlags > 0)
             {
                 // Get the set of interrupts that have fired and are enabled

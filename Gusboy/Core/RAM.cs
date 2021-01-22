@@ -622,7 +622,7 @@
                             }
                             else
                             {
-                                this.Gpu.PalCgbSprites[a, b] = (this.Gpu.PalCgbSprites[a, b] & 0x00FF) | (value << 8);
+                                this.Gpu.PalCgbSprites[a, b] = (this.Gpu.PalCgbSprites[a, b] & 0x00FF) | ((value & 0b0111_1111) << 8);
                             }
 
                             if (this.spritePaletteAutoIncrement)
