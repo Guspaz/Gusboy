@@ -26,15 +26,15 @@
 
         public bool fPrepareSwitch { get; set; }
 
-        public int rPC { get; set; }
+        public ushort rPC { get; set; }
 
         // 16-bit registers
-        public Gshort rSP { get; set; }
+        public ushort rSP { get; set; }
 
         // 16-bit registers
-        private int rAF
+        private ushort rAF
         {
-            get => (this.rA << 8) | this.rF;
+            get => (ushort)((this.rA << 8) | this.rF);
 
             set
             {
@@ -101,7 +101,7 @@
             set => this.SetFlag(value, 4);
         }
 
-        public void InitGbs(byte rA, int rSP)
+        public void InitGbs(byte rA, ushort rSP)
         {
             this.rA = rA;
             this.rSP = rSP;

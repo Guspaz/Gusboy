@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Runtime.CompilerServices;
 
     /// <summary>
     /// Largely implemented from https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware .
@@ -204,6 +205,7 @@
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private double HighPass(double input, int channel)
         {
             double output = input - this.capacitor[channel - 1];

@@ -1,8 +1,7 @@
 ﻿namespace Gusboy
 {
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
+    using System.Runtime.CompilerServices;
 
     /// <summary>
     /// Main implementation.
@@ -476,7 +475,7 @@
                         // Extend VRAM cycle based on what we did rendering the scanline. We'll subtract it from HBLANK.
                         // TODO: Validate these exact timings somehow, pan docs isn't precise exacty
                         // TODO: This is breaking too much stuff, my timing is too far off to use this.
-                        //this.remainingCycles += this.delayTicks * (this.gb.Cpu.fSpeed ? 2 : 1);
+                        // this.remainingCycles += this.delayTicks * (this.gb.Cpu.fSpeed ? 2 : 1);
                     }
                     else
                     {
@@ -486,7 +485,7 @@
 
                         // We extended VBLANK to do rendering so we must steal from HBLANK.
                         // TODO: This is breaking too much stuff, my timing is too far off to use this.
-                        //this.remainingCycles -= this.delayTicks * (this.gb.Cpu.fSpeed ? 2 : 1);
+                        // this.remainingCycles -= this.delayTicks * (this.gb.Cpu.fSpeed ? 2 : 1);
                         this.delayTicks = 0;
 
                         // TODO: We should also be able to start this if it started during hblank.
@@ -523,9 +522,9 @@
             bool[] bgPriority = new bool[256];
 
             // TODO: CGB handles BGEnabled differently
-            RenderScanlineTiles(bgIsTransparent, bgPriority);
+            this.RenderScanlineTiles(bgIsTransparent, bgPriority);
 
-            RenderScanlineSprites(bgIsTransparent, bgPriority);
+            this.RenderScanlineSprites(bgIsTransparent, bgPriority);
         }
 
         private void HdmaTick()
@@ -574,6 +573,7 @@
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool CheckModeFlag(GPUMode mode)
         {
             return ((this.lcdcStat & 0b0000_1000) != 0 && mode == GPUMode.HBLANK)
@@ -581,6 +581,7 @@
                 || ((this.lcdcStat & 0b0010_0000) != 0 && mode == GPUMode.OAM);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool LCDCFlag(LCDC flag) => (this.control & (byte)flag) != 0;
     }
 }

@@ -1,6 +1,7 @@
 ﻿namespace Gusboy
 {
     using System.Collections.Generic;
+    using System.Runtime.CompilerServices;
 
     /// <summary>
     /// Background tile stuff.
@@ -12,13 +13,13 @@
         private const int TILE_ROW_BYTES = 2;
 
         private readonly Tile[] tileCache = new Tile[32 * 32 * 2];
-        private readonly HashSet<int> tileCacheList = new HashSet<int>();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CacheTile(int n)
         {
-            if (!this.tileCacheList.Contains(n))
+            if (this.tileCache[n].Dirty)
             {
-                this.tileCacheList.Add(n);
+                this.tileCache[n].Dirty = false;
 
                 int ramValue = this.gb.Ram.Vram[1, 0x1800 | n];
                 int paletteIndex = ramValue & 0b111;
@@ -51,7 +52,11 @@
                 // Invalidate the tile cache if it's dirty
                 if (this.BackgroundCacheDirty)
                 {
-                    this.tileCacheList.Clear();
+                    for (int i = 0; i < this.tileCache.Length; i++)
+                    {
+                        this.tileCache[i].Dirty = true;
+                    }
+
                     this.BackgroundCacheDirty = false;
                 }
 
@@ -63,6 +68,8 @@
                 bool precomputeRenderingWindow = this.LCDCFlag(LCDC.WindowEnable)
                             && this.CurrentLine >= this.startWinY
                             && this.WinX <= WINDOW_MAX_X;
+
+                int precomputeCurrentLineOffset = this.CurrentLine * 160;
 
                 for (int i = 0; i < 160; i++)
                 {
@@ -141,11 +148,11 @@
 
                     if (this.gb.IsCgb)
                     {
-                        this.framebuffer[(this.CurrentLine * 160) + i] = this.tileCache[tileNum].MappedPalette[palIndex];
+                        this.framebuffer[precomputeCurrentLineOffset + i] = this.tileCache[tileNum].MappedPalette[palIndex];
                     }
                     else
                     {
-                        this.framebuffer[(this.CurrentLine * 160) + i] = this.palBg[this.palBgMap[palIndex]];
+                        this.framebuffer[precomputeCurrentLineOffset + i] = this.palBg[this.palBgMap[palIndex]];
                     }
                 }
             }
@@ -153,6 +160,8 @@
 
         private struct Tile
         {
+            public bool Dirty;
+
             public bool OAMPriority;
             public bool YFlip; // Vertical
             public bool XFlip; // Horizontal

@@ -1,5 +1,7 @@
 ﻿namespace Gusboy
 {
+    using System.Runtime.CompilerServices;
+
     public abstract class Channel
     {
 #pragma warning disable SA1401 // There is a large performance impact in debug mode if these are properties
@@ -22,9 +24,17 @@
 
         public bool RightEnable { get; set; }
 
-        public double OutputLeft => (this.ChannelEnable && this.LeftEnable) ? this.DigitalOutput / 100.0 : 0;
+        public double OutputLeft
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => (this.ChannelEnable && this.LeftEnable) ? this.DigitalOutput / 100.0 : 0;
+        }
 
-        public double OutputRight => (this.ChannelEnable && this.RightEnable) ? this.DigitalOutput / 100.0 : 0;
+        public double OutputRight
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => (this.ChannelEnable && this.RightEnable) ? this.DigitalOutput / 100.0 : 0;
+        }
 
         protected abstract int DigitalOutput { get; }
 
@@ -46,6 +56,7 @@
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ClockTick()
         {
             if (this.frequencyTimer > 0)

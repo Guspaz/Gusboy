@@ -1,5 +1,7 @@
 ﻿namespace Gusboy
 {
+    using System.Runtime.CompilerServices;
+
     public class NoiseChannel : Channel
     {
         // Converted to m-cycles
@@ -22,7 +24,11 @@
 
         public int ClockShift { get; set; }
 
-        protected override int DigitalOutput => (~this.rLFSR & 0b1) * this.volume;
+        protected override int DigitalOutput
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => (~this.rLFSR & 0b1) * this.volume;
+        }
 
         protected override int LengthWidth => 64;
 

@@ -1,5 +1,7 @@
 ﻿namespace Gusboy
 {
+    using System.Runtime.CompilerServices;
+
     public class SquareChannel : Channel
     {
         private readonly byte[,] squareDuty = new byte[,]
@@ -37,7 +39,11 @@
 
         public bool NegateDirty { get; set; } = false;
 
-        protected override int DigitalOutput => this.squareDuty[this.Duty, this.DutyStep] * this.volume;
+        protected override int DigitalOutput
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => this.squareDuty[this.Duty, this.DutyStep] * this.volume;
+        }
 
         protected override int LengthWidth => 64;
 

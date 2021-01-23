@@ -1,5 +1,7 @@
 ﻿namespace Gusboy
 {
+    using System.Runtime.CompilerServices;
+
     public class RAM
     {
         private readonly Gameboy gb;
@@ -33,6 +35,7 @@
 
         public byte this[int i, bool isDma = false]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 // Block access to everything but HRAM during DMA, unless it's the DMA itself.
@@ -692,13 +695,14 @@
             }
         }
 
-        public void SetShort(int address, Gshort value)
+        public void SetShort(int address, int value)
         {
-            this[address] = value.Lo;
-            this[address + 1] = value.Hi;
+            this[address] = (byte)value;
+            this[address + 1] = (byte)(value >> 8);
         }
 
-        public Gshort GetShort(int address) => (ushort)((this[address + 1] << 8) + this[address]);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ushort GetShort(int address) => (ushort)((this[address + 1] << 8) + this[address]);
 
         internal void ClearRAM()
         {

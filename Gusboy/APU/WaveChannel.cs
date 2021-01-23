@@ -1,5 +1,7 @@
 ﻿namespace Gusboy
 {
+    using System.Runtime.CompilerServices;
+
     public class WaveChannel : Channel
     {
         private readonly int[] volumeFactor = { 4, 0, 1, 2 };
@@ -14,7 +16,11 @@
 
         public int Frequency { get; set; }
 
-        protected override int DigitalOutput => this.SampleBuffer >> this.volumeFactor[this.Volume];
+        protected override int DigitalOutput
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => this.SampleBuffer >> this.volumeFactor[this.Volume];
+        }
 
         protected override int LengthWidth => 256;
 

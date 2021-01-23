@@ -291,9 +291,9 @@
         {
             public readonly string Mnemonic;
             public readonly int OperandLength;
-            public readonly Func<Gshort, int> Func;
+            public readonly Func<ushort, int> Func;
 
-            public Opcode(string name, int paramLength, Func<Gshort, int> func)
+            public Opcode(string name, int paramLength, Func<ushort, int> func)
             {
                 this.Mnemonic = name;
                 this.OperandLength = paramLength;
