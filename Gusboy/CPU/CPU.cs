@@ -53,7 +53,7 @@ namespace Gusboy
 
             this.rPC++;
 
-            ushort operand = 0;
+            int operand = 0;
 
             if (this.instruction.OperandLength != 0)
             {
@@ -72,7 +72,7 @@ namespace Gusboy
                 sw.Write($" OP: {System.String.Format(instruction.Mnemonic, (int)operand)}\n");
 #endif
 
-            this.rPC += (ushort)this.instruction.OperandLength;
+            this.rPC += this.instruction.OperandLength;
             this.Ticks += this.instruction.Func(operand);
         }
 

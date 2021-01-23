@@ -11,23 +11,25 @@
 
         private static bool HalfCarryAdd(byte target, byte value, int carry = 0) => ((target & 0xF) + (value & 0xF) + carry) > 0xF;
 
-        private static bool HalfCarryAdd(ushort target, ushort value) => ((target & 0xFFF) + (value & 0xFFF)) > 0xFFF;
+        private static bool HalfCarryAdd(byte target, int value, int carry = 0) => ((target & 0xF) + (value & 0xF) + carry) > 0xF;
 
-        private int Crash(ushort operand) => throw new Exception($"Executed illegal instruction at address 0x{this.rPC:X4}");
+        private static bool HalfCarryAdd(int target, int value) => ((target & 0xFFF) + (value & 0xFFF)) > 0xFFF;
+
+        private int Crash(int operand) => throw new Exception($"Executed illegal instruction at address 0x{this.rPC:X4}");
 
 #pragma warning disable SA1300 // Element should begin with upper-case letter
 #pragma warning disable IDE1006 // Naming Styles
-        private int ext(ushort operand) => this.extendedOpcodes[(byte)operand].Func();
+        private int ext(int operand) => this.extendedOpcodes[(byte)operand].Func();
 
-        private int nop(ushort operand) => 4;
+        private int nop(int operand) => 4;
 
-        private int jp_nn(ushort operand)
+        private int jp_nn(int operand)
         {
             this.rPC = operand;
             return 16;
         }
 
-        private int jp_nz_nn(ushort operand)
+        private int jp_nz_nn(int operand)
         {
             if (!this.fZ)
             {
@@ -40,7 +42,7 @@
             }
         }
 
-        private int jp_z_nn(ushort operand)
+        private int jp_z_nn(int operand)
         {
             if (this.fZ)
             {
@@ -53,7 +55,7 @@
             }
         }
 
-        private int jp_nc_nn(ushort operand)
+        private int jp_nc_nn(int operand)
         {
             if (!this.fC)
             {
@@ -66,7 +68,7 @@
             }
         }
 
-        private int jp_c_nn(ushort operand)
+        private int jp_c_nn(int operand)
         {
             if (this.fC)
             {
@@ -79,7 +81,7 @@
             }
         }
 
-        private int call_nn(ushort operand)
+        private int call_nn(int operand)
         {
             this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = operand;
@@ -87,7 +89,7 @@
             return 24;
         }
 
-        private int call_nz_nn(ushort operand)
+        private int call_nz_nn(int operand)
         {
             if (!this.fZ)
             {
@@ -102,7 +104,7 @@
             }
         }
 
-        private int call_z_nn(ushort operand)
+        private int call_z_nn(int operand)
         {
             if (this.fZ)
             {
@@ -117,7 +119,7 @@
             }
         }
 
-        private int call_nc_nn(ushort operand)
+        private int call_nc_nn(int operand)
         {
             if (!this.fC)
             {
@@ -132,7 +134,7 @@
             }
         }
 
-        private int call_c_nn(ushort operand)
+        private int call_c_nn(int operand)
         {
             if (this.fC)
             {
@@ -147,7 +149,7 @@
             }
         }
 
-        private int rl_a(ushort operand)
+        private int rl_a(int operand)
         {
             bool oldFC = this.fC;
 
@@ -165,7 +167,7 @@
             return 4;
         }
 
-        private int rr_a(ushort operand)
+        private int rr_a(int operand)
         {
             bool oldFC = this.fC;
 
@@ -183,7 +185,7 @@
             return 4;
         }
 
-        private int scf(ushort operand)
+        private int scf(int operand)
         {
             this.fN = false;
             this.fH = false;
@@ -192,7 +194,7 @@
             return 4;
         }
 
-        private int ccf(ushort operand)
+        private int ccf(int operand)
         {
             this.fN = false;
             this.fH = false;
@@ -201,14 +203,14 @@
             return 4;
         }
 
-        private int ret(ushort operand)
+        private int ret(int operand)
         {
             this.rPC = this.Ram.GetShort(this.rSP);
             this.rSP += 2;
             return 16;
         }
 
-        private int reti(ushort operand)
+        private int reti(int operand)
         {
             this.rPC = this.Ram.GetShort(this.rSP);
             this.rSP += 2;
@@ -216,7 +218,7 @@
             return 16;
         }
 
-        private int ret_nz(ushort operand)
+        private int ret_nz(int operand)
         {
             if (!this.fZ)
             {
@@ -230,7 +232,7 @@
             }
         }
 
-        private int ret_z(ushort operand)
+        private int ret_z(int operand)
         {
             if (this.fZ)
             {
@@ -244,7 +246,7 @@
             }
         }
 
-        private int ret_nc(ushort operand)
+        private int ret_nc(int operand)
         {
             if (!this.fC)
             {
@@ -258,7 +260,7 @@
             }
         }
 
-        private int ret_c(ushort operand)
+        private int ret_c(int operand)
         {
             if (this.fC)
             {
@@ -272,7 +274,7 @@
             }
         }
 
-        private int xor_a(ushort operand)
+        private int xor_a(int operand)
         {
             this.rA ^= this.rA;
             this.fZ = this.rA == 0;
@@ -283,7 +285,7 @@
             return 4;
         }
 
-        private int xor_b(ushort operand)
+        private int xor_b(int operand)
         {
             this.rA ^= this.rB;
             this.fZ = this.rA == 0;
@@ -294,7 +296,7 @@
             return 4;
         }
 
-        private int xor_c(ushort operand)
+        private int xor_c(int operand)
         {
             this.rA ^= this.rC;
             this.fZ = this.rA == 0;
@@ -305,7 +307,7 @@
             return 4;
         }
 
-        private int xor_d(ushort operand)
+        private int xor_d(int operand)
         {
             this.rA ^= this.rD;
             this.fZ = this.rA == 0;
@@ -316,7 +318,7 @@
             return 4;
         }
 
-        private int xor_e(ushort operand)
+        private int xor_e(int operand)
         {
             this.rA ^= this.rE;
             this.fZ = this.rA == 0;
@@ -327,7 +329,7 @@
             return 4;
         }
 
-        private int xor_h(ushort operand)
+        private int xor_h(int operand)
         {
             this.rA ^= this.rH;
             this.fZ = this.rA == 0;
@@ -338,7 +340,7 @@
             return 4;
         }
 
-        private int xor_l(ushort operand)
+        private int xor_l(int operand)
         {
             this.rA ^= this.rL;
             this.fZ = this.rA == 0;
@@ -349,7 +351,7 @@
             return 4;
         }
 
-        private int xor_phl(ushort operand)
+        private int xor_phl(int operand)
         {
             this.rA ^= this.Ram[this.rHL];
             this.fZ = this.rA == 0;
@@ -360,117 +362,117 @@
             return 8;
         }
 
-        private int ld_bc_nn(ushort operand)
+        private int ld_bc_nn(int operand)
         {
-            this.rBC = (ushort)operand;
+            this.rBC = operand;
             return 12;
         }
 
-        private int ld_de_nn(ushort operand)
+        private int ld_de_nn(int operand)
         {
-            this.rDE = (ushort)operand;
+            this.rDE = operand;
             return 12;
         }
 
-        private int ld_hl_nn(ushort operand)
+        private int ld_hl_nn(int operand)
         {
-            this.rHL = (ushort)operand;
+            this.rHL = operand;
             return 12;
         }
 
-        private int ld_sp_nn(ushort operand)
+        private int ld_sp_nn(int operand)
         {
-            this.rSP = (ushort)operand;
+            this.rSP = operand;
             return 12;
         }
 
-        private int ld_pnn_sp(ushort operand)
+        private int ld_pnn_sp(int operand)
         {
             this.Ram.SetShort(operand, this.rSP); // TODO: Check that SetShort works here
             return 20;
         }
 
-        private int ld_sp_hl(ushort operand)
+        private int ld_sp_hl(int operand)
         {
-            this.rSP = (ushort)this.rHL;
+            this.rSP = this.rHL;
             return 8;
         }
 
-        private int ld_a_pnn(ushort operand)
+        private int ld_a_pnn(int operand)
         {
             this.rA = this.Ram[operand];
             return 16;
         }
 
-        private int ldd_phl_a(ushort operand)
+        private int ldd_phl_a(int operand)
         {
             this.Ram[this.rHL] = this.rA;
             this.rHL--;
             return 8;
         }
 
-        private int ldd_a_phl(ushort operand)
+        private int ldd_a_phl(int operand)
         {
             this.rA = this.Ram[this.rHL];
             this.rHL--;
             return 8;
         }
 
-        private int ld_pbc_a(ushort operand)
+        private int ld_pbc_a(int operand)
         {
             this.Ram[this.rBC] = this.rA;
             return 8;
         }
 
-        private int ld_pde_a(ushort operand)
+        private int ld_pde_a(int operand)
         {
             this.Ram[this.rDE] = this.rA;
             return 8;
         }
 
-        private int ld_phl_a(ushort operand)
+        private int ld_phl_a(int operand)
         {
             this.Ram[this.rHL] = this.rA;
             return 8;
         }
 
-        private int ld_phl_b(ushort operand)
+        private int ld_phl_b(int operand)
         {
             this.Ram[this.rHL] = this.rB;
             return 8;
         }
 
-        private int ld_phl_c(ushort operand)
+        private int ld_phl_c(int operand)
         {
             this.Ram[this.rHL] = this.rC;
             return 8;
         }
 
-        private int ld_phl_d(ushort operand)
+        private int ld_phl_d(int operand)
         {
             this.Ram[this.rHL] = this.rD;
             return 8;
         }
 
-        private int ld_phl_e(ushort operand)
+        private int ld_phl_e(int operand)
         {
             this.Ram[this.rHL] = this.rE;
             return 8;
         }
 
-        private int ld_phl_h(ushort operand)
+        private int ld_phl_h(int operand)
         {
             this.Ram[this.rHL] = this.rH;
             return 8;
         }
 
-        private int ld_phl_l(ushort operand)
+        private int ld_phl_l(int operand)
         {
             this.Ram[this.rHL] = this.rL;
             return 8;
         }
 
-        private int dec_a(ushort operand)
+        private int dec_a(int operand)
         {
             this.fH = HalfCarrySub(this.rA, 1);
 
@@ -481,7 +483,7 @@
             return 4;
         }
 
-        private int dec_b(ushort operand)
+        private int dec_b(int operand)
         {
             this.fH = HalfCarrySub(this.rB, 1);
 
@@ -492,7 +494,7 @@
             return 4;
         }
 
-        private int dec_c(ushort operand)
+        private int dec_c(int operand)
         {
             this.fH = HalfCarrySub(this.rC, 1);
 
@@ -503,7 +505,7 @@
             return 4;
         }
 
-        private int dec_d(ushort operand)
+        private int dec_d(int operand)
         {
             this.fH = HalfCarrySub(this.rD, 1);
 
@@ -514,7 +516,7 @@
             return 4;
         }
 
-        private int dec_e(ushort operand)
+        private int dec_e(int operand)
         {
             this.fH = HalfCarrySub(this.rE, 1);
 
@@ -525,7 +527,7 @@
             return 4;
         }
 
-        private int dec_h(ushort operand)
+        private int dec_h(int operand)
         {
             this.fH = HalfCarrySub(this.rH, 1);
 
@@ -536,7 +538,7 @@
             return 4;
         }
 
-        private int dec_l(ushort operand)
+        private int dec_l(int operand)
         {
             this.fH = HalfCarrySub(this.rL, 1);
 
@@ -547,7 +549,7 @@
             return 4;
         }
 
-        private int dec_phl(ushort operand)
+        private int dec_phl(int operand)
         {
             this.fH = HalfCarrySub(this.Ram[this.rHL], 1);
 
@@ -558,7 +560,7 @@
             return 12;
         }
 
-        private int sub_a_a(ushort operand)
+        private int sub_a_a(int operand)
         {
             this.fH = HalfCarrySub(this.rA, this.rA);
             this.fC = false; // this.rA > this.rA;
@@ -571,7 +573,7 @@
             return 4;
         }
 
-        private int sub_a_b(ushort operand)
+        private int sub_a_b(int operand)
         {
             this.fH = HalfCarrySub(this.rA, this.rB);
             this.fC = this.rB > this.rA;
@@ -584,7 +586,7 @@
             return 4;
         }
 
-        private int sub_a_c(ushort operand)
+        private int sub_a_c(int operand)
         {
             this.fH = HalfCarrySub(this.rA, this.rC);
             this.fC = this.rC > this.rA;
@@ -597,7 +599,7 @@
             return 4;
         }
 
-        private int sub_a_d(ushort operand)
+        private int sub_a_d(int operand)
         {
             this.fH = HalfCarrySub(this.rA, this.rD);
             this.fC = this.rD > this.rA;
@@ -610,7 +612,7 @@
             return 4;
         }
 
-        private int sub_a_e(ushort operand)
+        private int sub_a_e(int operand)
         {
             this.fH = HalfCarrySub(this.rA, this.rE);
             this.fC = this.rE > this.rA;
@@ -623,7 +625,7 @@
             return 4;
         }
 
-        private int sub_a_h(ushort operand)
+        private int sub_a_h(int operand)
         {
             this.fH = HalfCarrySub(this.rA, this.rH);
             this.fC = this.rH > this.rA;
@@ -636,7 +638,7 @@
             return 4;
         }
 
-        private int sub_a_l(ushort operand)
+        private int sub_a_l(int operand)
         {
             this.fH = HalfCarrySub(this.rA, this.rL);
             this.fC = this.rL > this.rA;
@@ -649,7 +651,7 @@
             return 4;
         }
 
-        private int sub_a_phl(ushort operand)
+        private int sub_a_phl(int operand)
         {
             this.fH = HalfCarrySub(this.rA, this.Ram[this.rHL]);
             this.fC = this.Ram[this.rHL] > this.rA;
@@ -662,7 +664,7 @@
             return 8;
         }
 
-        private int sub_a_n(ushort operand)
+        private int sub_a_n(int operand)
         {
             this.fH = HalfCarrySub(this.rA, (byte)operand);
             this.fC = (byte)operand > this.rA;
@@ -675,7 +677,7 @@
             return 8;
         }
 
-        private int sbc_a_a(ushort operand)
+        private int sbc_a_a(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarrySub(this.rA, this.rA, carry);
@@ -689,7 +691,7 @@
             return 4;
         }
 
-        private int sbc_a_b(ushort operand)
+        private int sbc_a_b(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarrySub(this.rA, this.rB, carry);
@@ -703,7 +705,7 @@
             return 4;
         }
 
-        private int sbc_a_c(ushort operand)
+        private int sbc_a_c(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarrySub(this.rA, this.rC, carry);
@@ -717,7 +719,7 @@
             return 4;
         }
 
-        private int sbc_a_d(ushort operand)
+        private int sbc_a_d(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarrySub(this.rA, this.rD, carry);
@@ -731,7 +733,7 @@
             return 4;
         }
 
-        private int sbc_a_e(ushort operand)
+        private int sbc_a_e(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarrySub(this.rA, this.rE, carry);
@@ -745,7 +747,7 @@
             return 4;
         }
 
-        private int sbc_a_h(ushort operand)
+        private int sbc_a_h(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarrySub(this.rA, this.rH, carry);
@@ -759,7 +761,7 @@
             return 4;
         }
 
-        private int sbc_a_l(ushort operand)
+        private int sbc_a_l(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarrySub(this.rA, this.rL, carry);
@@ -773,7 +775,7 @@
             return 4;
         }
 
-        private int sbc_a_n(ushort operand)
+        private int sbc_a_n(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarrySub(this.rA, (byte)operand, carry);
@@ -787,7 +789,7 @@
             return 8; // WAS 4
         }
 
-        private int sbc_a_phl(ushort operand)
+        private int sbc_a_phl(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarrySub(this.rA, this.Ram[this.rHL], carry);
@@ -801,7 +803,7 @@
             return 8; // WAS 4
         }
 
-        private int cp_a(ushort operand)
+        private int cp_a(int operand)
         {
             this.fZ = true; // this.rA == this.rA;
             this.fN = true;
@@ -811,7 +813,7 @@
             return 4;
         }
 
-        private int cp_b(ushort operand)
+        private int cp_b(int operand)
         {
             this.fZ = this.rA == this.rB;
             this.fN = true;
@@ -821,7 +823,7 @@
             return 4;
         }
 
-        private int cp_c(ushort operand)
+        private int cp_c(int operand)
         {
             this.fZ = this.rA == this.rC;
             this.fN = true;
@@ -831,7 +833,7 @@
             return 4;
         }
 
-        private int cp_d(ushort operand)
+        private int cp_d(int operand)
         {
             this.fZ = this.rA == this.rD;
             this.fN = true;
@@ -841,7 +843,7 @@
             return 4;
         }
 
-        private int cp_e(ushort operand)
+        private int cp_e(int operand)
         {
             this.fZ = this.rA == this.rE;
             this.fN = true;
@@ -851,7 +853,7 @@
             return 4;
         }
 
-        private int cp_h(ushort operand)
+        private int cp_h(int operand)
         {
             this.fZ = this.rA == this.rH;
             this.fN = true;
@@ -861,7 +863,7 @@
             return 4;
         }
 
-        private int cp_l(ushort operand)
+        private int cp_l(int operand)
         {
             this.fZ = this.rA == this.rL;
             this.fN = true;
@@ -871,7 +873,7 @@
             return 4;
         }
 
-        private int cp_phl(ushort operand)
+        private int cp_phl(int operand)
         {
             this.fZ = this.rA == this.Ram[this.rHL];
             this.fN = true;
@@ -881,7 +883,7 @@
             return 8;
         }
 
-        private int cp_n(ushort operand)
+        private int cp_n(int operand)
         {
             this.fZ = this.rA == (byte)operand;
             this.fN = true;
@@ -891,31 +893,31 @@
             return 8;
         }
 
-        private int dec_bc(ushort operand)
+        private int dec_bc(int operand)
         {
             this.rBC--;
             return 8;
         }
 
-        private int dec_de(ushort operand)
+        private int dec_de(int operand)
         {
             this.rDE--;
             return 8;
         }
 
-        private int dec_hl(ushort operand)
+        private int dec_hl(int operand)
         {
             this.rHL--;
             return 8;
         }
 
-        private int dec_sp(ushort operand)
+        private int dec_sp(int operand)
         {
             this.rSP--;
             return 8;
         }
 
-        private int inc_a(ushort operand)
+        private int inc_a(int operand)
         {
             this.fH = HalfCarryAdd(this.rA, 1);
 
@@ -926,7 +928,7 @@
             return 4;
         }
 
-        private int inc_b(ushort operand)
+        private int inc_b(int operand)
         {
             this.fH = HalfCarryAdd(this.rB, 1);
 
@@ -937,7 +939,7 @@
             return 4;
         }
 
-        private int inc_c(ushort operand)
+        private int inc_c(int operand)
         {
             this.fH = HalfCarryAdd(this.rC, 1);
 
@@ -948,7 +950,7 @@
             return 4;
         }
 
-        private int inc_d(ushort operand)
+        private int inc_d(int operand)
         {
             this.fH = HalfCarryAdd(this.rD, 1);
 
@@ -959,7 +961,7 @@
             return 4;
         }
 
-        private int inc_e(ushort operand)
+        private int inc_e(int operand)
         {
             this.fH = HalfCarryAdd(this.rE, 1);
 
@@ -970,7 +972,7 @@
             return 4;
         }
 
-        private int inc_h(ushort operand)
+        private int inc_h(int operand)
         {
             this.fH = HalfCarryAdd(this.rH, 1);
 
@@ -981,7 +983,7 @@
             return 4;
         }
 
-        private int inc_l(ushort operand)
+        private int inc_l(int operand)
         {
             this.fH = HalfCarryAdd(this.rL, 1);
 
@@ -992,7 +994,7 @@
             return 4;
         }
 
-        private int inc_phl(ushort operand)
+        private int inc_phl(int operand)
         {
             this.fH = HalfCarryAdd(this.Ram[this.rHL], 1);
 
@@ -1003,7 +1005,7 @@
             return 12;
         }
 
-        private int inc_bc(ushort operand)
+        private int inc_bc(int operand)
         {
             this.CheckOAMBug(this.rB);
 
@@ -1011,7 +1013,7 @@
             return 8;
         }
 
-        private int inc_de(ushort operand)
+        private int inc_de(int operand)
         {
             this.CheckOAMBug(this.rD);
 
@@ -1019,7 +1021,7 @@
             return 8;
         }
 
-        private int inc_hl(ushort operand)
+        private int inc_hl(int operand)
         {
             this.CheckOAMBug(this.rH);
 
@@ -1027,7 +1029,7 @@
             return 8;
         }
 
-        private int inc_sp(ushort operand)
+        private int inc_sp(int operand)
         {
             // Doesn't count for OAM bug for some reason?
             // this.CheckOAMBug((byte)(this.rSP >> 8));
@@ -1035,11 +1037,11 @@
             return 8;
         }
 
-        private int jr_nz_dn(ushort operand)
+        private int jr_nz_dn(int operand)
         {
             if (!this.fZ)
             {
-                this.rPC += (ushort)(sbyte)(byte)operand;
+                this.rPC += (sbyte)(byte)operand;
                 return 12;
             }
             else
@@ -1048,11 +1050,11 @@
             }
         }
 
-        private int jr_z_dn(ushort operand)
+        private int jr_z_dn(int operand)
         {
             if (this.fZ)
             {
-                this.rPC += (ushort)(sbyte)(byte)operand;
+                this.rPC += (sbyte)(byte)operand;
                 return 12;
             }
             else
@@ -1061,11 +1063,11 @@
             }
         }
 
-        private int jr_nc_dn(ushort operand)
+        private int jr_nc_dn(int operand)
         {
             if (!this.fC)
             {
-                this.rPC += (ushort)(sbyte)(byte)operand;
+                this.rPC += (sbyte)(byte)operand;
                 return 12;
             }
             else
@@ -1074,11 +1076,11 @@
             }
         }
 
-        private int jr_c_dn(ushort operand)
+        private int jr_c_dn(int operand)
         {
             if (this.fC)
             {
-                this.rPC += (ushort)(sbyte)(byte)operand;
+                this.rPC += (sbyte)(byte)operand;
                 return 12;
             }
             else
@@ -1087,93 +1089,93 @@
             }
         }
 
-        private int jr_dn(ushort operand)
+        private int jr_dn(int operand)
         {
-            this.rPC += (ushort)(sbyte)(byte)operand;
+            this.rPC += (sbyte)(byte)operand;
             return 12;
         }
 
-        private int di(ushort operand)
+        private int di(int operand)
         {
             this.fInterruptMasterEnable = false;
             return 4;
         }
 
-        private int ei(ushort operand)
+        private int ei(int operand)
         {
             this.fInterruptMasterEnable = true;
             return 4;
         }
 
-        private int ldh_pn_a(ushort operand)
+        private int ldh_pn_a(int operand)
         {
             this.Ram[operand + 0xFF00] = this.rA;
             return 12;
         }
 
-        private int ldh_a_pn(ushort operand)
+        private int ldh_a_pn(int operand)
         {
             this.rA = this.Ram[operand + 0xFF00];
             return 12;
         }
 
-        private int ld_a_n(ushort operand)
+        private int ld_a_n(int operand)
         {
             this.rA = (byte)operand;
             return 8;
         }
 
-        private int ld_b_n(ushort operand)
+        private int ld_b_n(int operand)
         {
             this.rB = (byte)operand;
             return 8;
         }
 
-        private int ld_c_n(ushort operand)
+        private int ld_c_n(int operand)
         {
             this.rC = (byte)operand;
             return 8;
         }
 
-        private int ld_d_n(ushort operand)
+        private int ld_d_n(int operand)
         {
             this.rD = (byte)operand;
             return 8;
         }
 
-        private int ld_e_n(ushort operand)
+        private int ld_e_n(int operand)
         {
             this.rE = (byte)operand;
             return 8;
         }
 
-        private int ld_h_n(ushort operand)
+        private int ld_h_n(int operand)
         {
             this.rH = (byte)operand;
             return 8;
         }
 
-        private int ld_l_n(ushort operand)
+        private int ld_l_n(int operand)
         {
             this.rL = (byte)operand;
             return 8;
         }
 
-        private int ld_phl_n(ushort operand)
+        private int ld_phl_n(int operand)
         {
             this.Ram[this.rHL] = (byte)operand;
 
             return 12;
         }
 
-        private int ld_pnn_a(ushort operand)
+        private int ld_pnn_a(int operand)
         {
             this.Ram[operand] = this.rA;
 
             return 16;
         }
 
-        private int ldi_a_phl(ushort operand)
+        private int ldi_a_phl(int operand)
         {
             this.rA = this.Ram[this.rHL];
             this.rHL++;
@@ -1181,7 +1183,7 @@
             return 8;
         }
 
-        private int ldi_phl_a(ushort operand)
+        private int ldi_phl_a(int operand)
         {
             this.Ram[this.rHL] = this.rA;
             this.rHL++;
@@ -1189,14 +1191,14 @@
             return 8;
         }
 
-        private int ld_pc_a(ushort operand)
+        private int ld_pc_a(int operand)
         {
             this.Ram[0xFF00 + this.rC] = this.rA;
 
             return 8; // TODO: Was 12? "ld   (FF00+C),A"
         }
 
-        private int ld_a_pc(ushort operand)
+        private int ld_a_pc(int operand)
         {
             this.rA = this.Ram[0xFF00 + this.rC];
 
@@ -1204,313 +1206,313 @@
         }
 
         // Register copies
-        private int ld_a_b(ushort operand)
+        private int ld_a_b(int operand)
         {
             this.rA = this.rB;
             return 4;
         }
 
-        private int ld_a_c(ushort operand)
+        private int ld_a_c(int operand)
         {
             this.rA = this.rC;
             return 4;
         }
 
-        private int ld_a_d(ushort operand)
+        private int ld_a_d(int operand)
         {
             this.rA = this.rD;
             return 4;
         }
 
-        private int ld_a_e(ushort operand)
+        private int ld_a_e(int operand)
         {
             this.rA = this.rE;
             return 4;
         }
 
-        private int ld_a_h(ushort operand)
+        private int ld_a_h(int operand)
         {
             this.rA = this.rH;
             return 4;
         }
 
-        private int ld_a_l(ushort operand)
+        private int ld_a_l(int operand)
         {
             this.rA = this.rL;
             return 4;
         }
 
-        private int ld_a_phl(ushort operand)
+        private int ld_a_phl(int operand)
         {
             this.rA = this.Ram[this.rHL];
             return 8;
         }
 
-        private int ld_a_pbc(ushort operand)
+        private int ld_a_pbc(int operand)
         {
             this.rA = this.Ram[this.rBC];
             return 8;
         }
 
-        private int ld_a_pde(ushort operand)
+        private int ld_a_pde(int operand)
         {
             this.rA = this.Ram[this.rDE];
             return 8;
         }
 
-        private int ld_b_a(ushort operand)
+        private int ld_b_a(int operand)
         {
             this.rB = this.rA;
             return 4;
         }
 
-        private int ld_b_c(ushort operand)
+        private int ld_b_c(int operand)
         {
             this.rB = this.rC;
             return 4;
         }
 
-        private int ld_b_d(ushort operand)
+        private int ld_b_d(int operand)
         {
             this.rB = this.rD;
             return 4;
         }
 
-        private int ld_b_e(ushort operand)
+        private int ld_b_e(int operand)
         {
             this.rB = this.rE;
             return 4;
         }
 
-        private int ld_b_h(ushort operand)
+        private int ld_b_h(int operand)
         {
             this.rB = this.rH;
             return 4;
         }
 
-        private int ld_b_l(ushort operand)
+        private int ld_b_l(int operand)
         {
             this.rB = this.rL;
             return 4;
         }
 
-        private int ld_b_phl(ushort operand)
+        private int ld_b_phl(int operand)
         {
             this.rB = this.Ram[this.rHL];
             return 8;
         }
 
-        private int ld_c_a(ushort operand)
+        private int ld_c_a(int operand)
         {
             this.rC = this.rA;
             return 4;
         }
 
-        private int ld_c_b(ushort operand)
+        private int ld_c_b(int operand)
         {
             this.rC = this.rB;
             return 4;
         }
 
-        private int ld_c_d(ushort operand)
+        private int ld_c_d(int operand)
         {
             this.rC = this.rD;
             return 4;
         }
 
-        private int ld_c_e(ushort operand)
+        private int ld_c_e(int operand)
         {
             this.rC = this.rE;
             return 4;
         }
 
-        private int ld_c_h(ushort operand)
+        private int ld_c_h(int operand)
         {
             this.rC = this.rH;
             return 4;
         }
 
-        private int ld_c_l(ushort operand)
+        private int ld_c_l(int operand)
         {
             this.rC = this.rL;
             return 4;
         }
 
-        private int ld_c_phl(ushort operand)
+        private int ld_c_phl(int operand)
         {
             this.rC = this.Ram[this.rHL];
             return 8;
         }
 
-        private int ld_d_a(ushort operand)
+        private int ld_d_a(int operand)
         {
             this.rD = this.rA;
             return 4;
         }
 
-        private int ld_d_b(ushort operand)
+        private int ld_d_b(int operand)
         {
             this.rD = this.rB;
             return 4;
         }
 
-        private int ld_d_c(ushort operand)
+        private int ld_d_c(int operand)
         {
             this.rD = this.rC;
             return 4;
         }
 
-        private int ld_d_e(ushort operand)
+        private int ld_d_e(int operand)
         {
             this.rD = this.rE;
             return 4;
         }
 
-        private int ld_d_h(ushort operand)
+        private int ld_d_h(int operand)
         {
             this.rD = this.rH;
             return 4;
         }
 
-        private int ld_d_l(ushort operand)
+        private int ld_d_l(int operand)
         {
             this.rD = this.rL;
             return 4;
         }
 
-        private int ld_d_phl(ushort operand)
+        private int ld_d_phl(int operand)
         {
             this.rD = this.Ram[this.rHL];
             return 8;
         }
 
-        private int ld_e_a(ushort operand)
+        private int ld_e_a(int operand)
         {
             this.rE = this.rA;
             return 4;
         }
 
-        private int ld_e_b(ushort operand)
+        private int ld_e_b(int operand)
         {
             this.rE = this.rB;
             return 4;
         }
 
-        private int ld_e_c(ushort operand)
+        private int ld_e_c(int operand)
         {
             this.rE = this.rC;
             return 4;
         }
 
-        private int ld_e_d(ushort operand)
+        private int ld_e_d(int operand)
         {
             this.rE = this.rD;
             return 4;
         }
 
-        private int ld_e_h(ushort operand)
+        private int ld_e_h(int operand)
         {
             this.rE = this.rH;
             return 4;
         }
 
-        private int ld_e_l(ushort operand)
+        private int ld_e_l(int operand)
         {
             this.rE = this.rL;
             return 4;
         }
 
-        private int ld_e_phl(ushort operand)
+        private int ld_e_phl(int operand)
         {
             this.rE = this.Ram[this.rHL];
             return 8;
         }
 
-        private int ld_h_a(ushort operand)
+        private int ld_h_a(int operand)
         {
             this.rH = this.rA;
             return 4;
         }
 
-        private int ld_h_b(ushort operand)
+        private int ld_h_b(int operand)
         {
             this.rH = this.rB;
             return 4;
         }
 
-        private int ld_h_c(ushort operand)
+        private int ld_h_c(int operand)
         {
             this.rH = this.rC;
             return 4;
         }
 
-        private int ld_h_d(ushort operand)
+        private int ld_h_d(int operand)
         {
             this.rH = this.rD;
             return 4;
         }
 
-        private int ld_h_e(ushort operand)
+        private int ld_h_e(int operand)
         {
             this.rH = this.rE;
             return 4;
         }
 
-        private int ld_h_l(ushort operand)
+        private int ld_h_l(int operand)
         {
             this.rH = this.rL;
             return 4;
         }
 
-        private int ld_h_phl(ushort operand)
+        private int ld_h_phl(int operand)
         {
             this.rH = this.Ram[this.rHL];
             return 8;
         }
 
-        private int ld_l_a(ushort operand)
+        private int ld_l_a(int operand)
         {
             this.rL = this.rA;
             return 4;
         }
 
-        private int ld_l_b(ushort operand)
+        private int ld_l_b(int operand)
         {
             this.rL = this.rB;
             return 4;
         }
 
-        private int ld_l_c(ushort operand)
+        private int ld_l_c(int operand)
         {
             this.rL = this.rC;
             return 4;
         }
 
-        private int ld_l_d(ushort operand)
+        private int ld_l_d(int operand)
         {
             this.rL = this.rD;
             return 4;
         }
 
-        private int ld_l_e(ushort operand)
+        private int ld_l_e(int operand)
         {
             this.rL = this.rE;
             return 4;
         }
 
-        private int ld_l_h(ushort operand)
+        private int ld_l_h(int operand)
         {
             this.rL = this.rH;
             return 4;
         }
 
-        private int ld_l_phl(ushort operand)
+        private int ld_l_phl(int operand)
         {
             this.rL = this.Ram[this.rHL];
             return 8;
         }
 
-        private int or_a(ushort operand)
+        private int or_a(int operand)
         {
             this.rA |= this.rA;
             this.fZ = this.rA == 0;
@@ -1521,7 +1523,7 @@
             return 4;
         }
 
-        private int or_b(ushort operand)
+        private int or_b(int operand)
         {
             this.rA |= this.rB;
             this.fZ = this.rA == 0;
@@ -1532,7 +1534,7 @@
             return 4;
         }
 
-        private int or_c(ushort operand)
+        private int or_c(int operand)
         {
             this.rA |= this.rC;
             this.fZ = this.rA == 0;
@@ -1543,7 +1545,7 @@
             return 4;
         }
 
-        private int or_d(ushort operand)
+        private int or_d(int operand)
         {
             this.rA |= this.rD;
             this.fZ = this.rA == 0;
@@ -1554,7 +1556,7 @@
             return 4;
         }
 
-        private int or_e(ushort operand)
+        private int or_e(int operand)
         {
             this.rA |= this.rE;
             this.fZ = this.rA == 0;
@@ -1565,7 +1567,7 @@
             return 4;
         }
 
-        private int or_h(ushort operand)
+        private int or_h(int operand)
         {
             this.rA |= this.rH;
             this.fZ = this.rA == 0;
@@ -1576,7 +1578,7 @@
             return 4;
         }
 
-        private int or_l(ushort operand)
+        private int or_l(int operand)
         {
             this.rA |= this.rL;
             this.fZ = this.rA == 0;
@@ -1587,7 +1589,7 @@
             return 4;
         }
 
-        private int or_phl(ushort operand)
+        private int or_phl(int operand)
         {
             this.rA |= this.Ram[this.rHL];
             this.fZ = this.rA == 0;
@@ -1598,7 +1600,7 @@
             return 8;
         }
 
-        private int cpl(ushort operand)
+        private int cpl(int operand)
         {
             this.rA = (byte)(~this.rA);
             this.fN = true;
@@ -1607,14 +1609,13 @@
             return 4;
         }
 
-        private int add_sp_dn(ushort operand)
+        private int add_sp_dn(int operand)
         {
             // Weird instruction. Flags based on *unsigned* math, results based on *signed* math.
             this.fH = HalfCarryAdd((byte)this.rSP, (byte)operand);
             this.fC = (((byte)this.rSP + (byte)operand) & 0x100) == 0x100;
 
-            // TODO: This is, uh, roundabout? Figure out a better way.
-            this.rSP = (ushort)(this.rSP + (sbyte)(byte)operand);
+            this.rSP += (sbyte)(byte)operand;
 
             this.fZ = false;
             this.fN = false;
@@ -1622,13 +1623,13 @@
             return 16;
         }
 
-        private int ldhl_spdn(ushort operand)
+        private int ldhl_spdn(int operand)
         {
             // Weird instruction. Flags based on *unsigned* math, results based on *signed* math.
             this.fH = HalfCarryAdd((byte)this.rSP, (byte)operand);
             this.fC = (((byte)this.rSP + (byte)operand) & 0x100) == 0x100;
 
-            this.rHL = (ushort)(this.rSP + (sbyte)(byte)operand);
+            this.rHL = this.rSP + (sbyte)(byte)operand;
 
             this.fZ = false;
             this.fN = false;
@@ -1636,7 +1637,7 @@
             return 12;
         }
 
-        private int and_a(ushort operand)
+        private int and_a(int operand)
         {
             this.rA &= this.rA;
             this.fZ = this.rA == 0;
@@ -1647,7 +1648,7 @@
             return 4;
         }
 
-        private int and_b(ushort operand)
+        private int and_b(int operand)
         {
             this.rA &= this.rB;
             this.fZ = this.rA == 0;
@@ -1658,7 +1659,7 @@
             return 4;
         }
 
-        private int and_c(ushort operand)
+        private int and_c(int operand)
         {
             this.rA &= this.rC;
             this.fZ = this.rA == 0;
@@ -1669,7 +1670,7 @@
             return 4;
         }
 
-        private int and_d(ushort operand)
+        private int and_d(int operand)
         {
             this.rA &= this.rD;
             this.fZ = this.rA == 0;
@@ -1680,7 +1681,7 @@
             return 4;
         }
 
-        private int and_e(ushort operand)
+        private int and_e(int operand)
         {
             this.rA &= this.rE;
             this.fZ = this.rA == 0;
@@ -1691,7 +1692,7 @@
             return 4;
         }
 
-        private int and_h(ushort operand)
+        private int and_h(int operand)
         {
             this.rA &= this.rH;
             this.fZ = this.rA == 0;
@@ -1702,7 +1703,7 @@
             return 4;
         }
 
-        private int and_l(ushort operand)
+        private int and_l(int operand)
         {
             this.rA &= this.rL;
             this.fZ = this.rA == 0;
@@ -1713,7 +1714,7 @@
             return 4;
         }
 
-        private int and_phl(ushort operand)
+        private int and_phl(int operand)
         {
             this.rA &= this.Ram[this.rHL];
             this.fZ = this.rA == 0;
@@ -1724,7 +1725,7 @@
             return 8;
         }
 
-        private int and_n(ushort operand)
+        private int and_n(int operand)
         {
             this.rA &= (byte)operand;
             this.fZ = this.rA == 0;
@@ -1735,7 +1736,7 @@
             return 8;
         }
 
-        private int xor_n(ushort operand)
+        private int xor_n(int operand)
         {
             this.rA ^= (byte)operand;
             this.fZ = this.rA == 0;
@@ -1746,7 +1747,7 @@
             return 8;
         }
 
-        private int or_n(ushort operand)
+        private int or_n(int operand)
         {
             this.rA |= (byte)operand;
             this.fZ = this.rA == 0;
@@ -1757,7 +1758,7 @@
             return 8;
         }
 
-        private int rst_0(ushort operand)
+        private int rst_0(int operand)
         {
             this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = 0x00;
@@ -1765,7 +1766,7 @@
             return 16;
         }
 
-        private int rst_8(ushort operand)
+        private int rst_8(int operand)
         {
             this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = 0x08;
@@ -1773,7 +1774,7 @@
             return 16;
         }
 
-        private int rst_10(ushort operand)
+        private int rst_10(int operand)
         {
             this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = 0x10;
@@ -1781,7 +1782,7 @@
             return 16;
         }
 
-        private int rst_18(ushort operand)
+        private int rst_18(int operand)
         {
             this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = 0x18;
@@ -1789,7 +1790,7 @@
             return 16;
         }
 
-        private int rst_20(ushort operand)
+        private int rst_20(int operand)
         {
             this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = 0x20;
@@ -1797,7 +1798,7 @@
             return 16;
         }
 
-        private int rst_28(ushort operand)
+        private int rst_28(int operand)
         {
             this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = 0x28;
@@ -1805,7 +1806,7 @@
             return 16;
         }
 
-        private int rst_30(ushort operand)
+        private int rst_30(int operand)
         {
             this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = 0x30;
@@ -1813,7 +1814,7 @@
             return 16;
         }
 
-        private int rst_38(ushort operand)
+        private int rst_38(int operand)
         {
             this.Ram.SetShort(this.rSP - 2, this.rPC);
             this.rPC = 0x38;
@@ -1821,7 +1822,7 @@
             return 16;
         }
 
-        private int add_a_a(ushort operand)
+        private int add_a_a(int operand)
         {
             this.fH = HalfCarryAdd(this.rA, this.rA);
 
@@ -1834,7 +1835,7 @@
             return 4;
         }
 
-        private int add_a_b(ushort operand)
+        private int add_a_b(int operand)
         {
             this.fH = HalfCarryAdd(this.rA, this.rB);
 
@@ -1847,7 +1848,7 @@
             return 4;
         }
 
-        private int add_a_c(ushort operand)
+        private int add_a_c(int operand)
         {
             this.fH = HalfCarryAdd(this.rA, this.rC);
 
@@ -1860,7 +1861,7 @@
             return 4;
         }
 
-        private int add_a_d(ushort operand)
+        private int add_a_d(int operand)
         {
             this.fH = HalfCarryAdd(this.rA, this.rD);
 
@@ -1873,7 +1874,7 @@
             return 4;
         }
 
-        private int add_a_e(ushort operand)
+        private int add_a_e(int operand)
         {
             this.fH = HalfCarryAdd(this.rA, this.rE);
 
@@ -1886,7 +1887,7 @@
             return 4;
         }
 
-        private int add_a_h(ushort operand)
+        private int add_a_h(int operand)
         {
             this.fH = HalfCarryAdd(this.rA, this.rH);
 
@@ -1899,7 +1900,7 @@
             return 4;
         }
 
-        private int add_a_l(ushort operand)
+        private int add_a_l(int operand)
         {
             this.fH = HalfCarryAdd(this.rA, this.rL);
 
@@ -1912,7 +1913,7 @@
             return 4;
         }
 
-        private int add_a_phl(ushort operand)
+        private int add_a_phl(int operand)
         {
             this.fH = HalfCarryAdd(this.rA, this.Ram[this.rHL]);
 
@@ -1925,7 +1926,7 @@
             return 8;
         }
 
-        private int add_a_n(ushort operand)
+        private int add_a_n(int operand)
         {
             this.fH = HalfCarryAdd(this.rA, (byte)operand);
 
@@ -1938,7 +1939,7 @@
             return 8;
         }
 
-        private int adc_a_a(ushort operand)
+        private int adc_a_a(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarryAdd(this.rA, this.rA, carry);
@@ -1952,7 +1953,7 @@
             return 4;
         }
 
-        private int adc_a_b(ushort operand)
+        private int adc_a_b(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarryAdd(this.rA, this.rB, carry);
@@ -1966,7 +1967,7 @@
             return 4;
         }
 
-        private int adc_a_c(ushort operand)
+        private int adc_a_c(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarryAdd(this.rA, this.rC, carry);
@@ -1980,7 +1981,7 @@
             return 4;
         }
 
-        private int adc_a_d(ushort operand)
+        private int adc_a_d(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarryAdd(this.rA, this.rD, carry);
@@ -1994,7 +1995,7 @@
             return 4;
         }
 
-        private int adc_a_e(ushort operand)
+        private int adc_a_e(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarryAdd(this.rA, this.rE, carry);
@@ -2008,7 +2009,7 @@
             return 4;
         }
 
-        private int adc_a_h(ushort operand)
+        private int adc_a_h(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarryAdd(this.rA, this.rH, carry);
@@ -2022,7 +2023,7 @@
             return 4;
         }
 
-        private int adc_a_l(ushort operand)
+        private int adc_a_l(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarryAdd(this.rA, this.rL, carry);
@@ -2036,7 +2037,7 @@
             return 4;
         }
 
-        private int adc_a_n(ushort operand)
+        private int adc_a_n(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarryAdd(this.rA, (byte)operand, carry);
@@ -2050,7 +2051,7 @@
             return 8;
         }
 
-        private int adc_a_phl(ushort operand)
+        private int adc_a_phl(int operand)
         {
             int carry = this.fC ? 1 : 0;
             this.fH = HalfCarryAdd(this.rA, this.Ram[this.rHL], carry);
@@ -2064,67 +2065,67 @@
             return 8;
         }
 
-        private int push_bc(ushort operand)
+        private int push_bc(int operand)
         {
             this.Ram.SetShort(this.rSP - 2, this.rBC);
             this.rSP -= 2;
             return 16;
         }
 
-        private int push_de(ushort operand)
+        private int push_de(int operand)
         {
             this.Ram.SetShort(this.rSP - 2, this.rDE);
             this.rSP -= 2;
             return 16;
         }
 
-        private int push_hl(ushort operand)
+        private int push_hl(int operand)
         {
             this.Ram.SetShort(this.rSP - 2, this.rHL);
             this.rSP -= 2;
             return 16;
         }
 
-        private int push_af(ushort operand)
+        private int push_af(int operand)
         {
             this.Ram.SetShort(this.rSP - 2, this.rAF);
             this.rSP -= 2;
             return 16;
         }
 
-        private int pop_bc(ushort operand)
+        private int pop_bc(int operand)
         {
-            this.rBC = (ushort)this.Ram.GetShort(this.rSP);
+            this.rBC = this.Ram.GetShort(this.rSP);
             this.rSP += 2;
             return 12;
         }
 
-        private int pop_de(ushort operand)
+        private int pop_de(int operand)
         {
-            this.rDE = (ushort)this.Ram.GetShort(this.rSP);
+            this.rDE = this.Ram.GetShort(this.rSP);
             this.rSP += 2;
             return 12;
         }
 
-        private int pop_hl(ushort operand)
+        private int pop_hl(int operand)
         {
-            this.rHL = (ushort)this.Ram.GetShort(this.rSP);
+            this.rHL = this.Ram.GetShort(this.rSP);
             this.rSP += 2;
             return 12;
         }
 
-        private int pop_af(ushort operand)
+        private int pop_af(int operand)
         {
             // Special case, lower four bits of F are always 0
-            this.rAF = (ushort)(this.Ram.GetShort(this.rSP) & 0xFFF0);
+            this.rAF = this.Ram.GetShort(this.rSP) & 0xFFF0;
 
             this.rSP += 2;
             return 12;
         }
 
-        private int add_hl_bc(ushort operand)
+        private int add_hl_bc(int operand)
         {
-            this.fH = HalfCarryAdd((ushort)this.rHL, (ushort)this.rBC);
+            this.fH = HalfCarryAdd(this.rHL, this.rBC);
 
             int result = this.rHL + this.rBC;
             this.rHL = result;
@@ -2134,9 +2135,9 @@
             return 8;
         }
 
-        private int add_hl_de(ushort operand)
+        private int add_hl_de(int operand)
         {
-            this.fH = HalfCarryAdd((ushort)this.rHL, (ushort)this.rDE);
+            this.fH = HalfCarryAdd(this.rHL, this.rDE);
 
             int result = this.rHL + this.rDE;
             this.rHL = result;
@@ -2146,9 +2147,9 @@
             return 8;
         }
 
-        private int add_hl_hl(ushort operand)
+        private int add_hl_hl(int operand)
         {
-            this.fH = HalfCarryAdd((ushort)this.rHL, (ushort)this.rHL);
+            this.fH = HalfCarryAdd(this.rHL, this.rHL);
 
             int result = this.rHL + this.rHL;
             this.rHL = result;
@@ -2158,9 +2159,9 @@
             return 8;
         }
 
-        private int add_hl_sp(ushort operand)
+        private int add_hl_sp(int operand)
         {
-            this.fH = HalfCarryAdd((ushort)this.rHL, (ushort)this.rSP);
+            this.fH = HalfCarryAdd(this.rHL, this.rSP);
 
             // fH = ((rHL & 0xFFF) + (rSP & 0xFFF)) > 0xFFF;
             int result = this.rHL + this.rSP;
@@ -2171,13 +2172,13 @@
             return 8;
         }
 
-        private int jp_hl(ushort operand)
+        private int jp_hl(int operand)
         {
-            this.rPC = (ushort)this.rHL;
+            this.rPC = this.rHL;
             return 4;
         }
 
-        private int rlc_a(ushort operand)
+        private int rlc_a(int operand)
         {
             this.fC = (this.rA & 0x80) == 0x80;
 
@@ -2194,7 +2195,7 @@
             return 4;
         }
 
-        private int rrc_a(ushort operand)
+        private int rrc_a(int operand)
         {
             this.fC = (this.rA & 0x01) == 0x01;
 
@@ -2211,7 +2212,7 @@
             return 4;
         }
 
-        private int stop(ushort operand)
+        private int stop(int operand)
         {
             this.fStop = true;
 
@@ -2232,7 +2233,7 @@
             return 0; // WAS 4
         }
 
-        private int halt(ushort operand)
+        private int halt(int operand)
         {
             this.fHalt = true;
 
@@ -2244,16 +2245,15 @@
 
             if (!this.fInterruptMasterEnable && (this.rInterruptEnable & this.rInterruptFlags & 0x1f) != 0)
             {
-                // HALT bug. Just disabling halt isn't accurate, but is probably close enough
                 this.fHaltBug = true;
             }
 
             return 0; // WAS 4
         }
 
-        private int daa(ushort operand)
+        private int daa(int operand)
         {
-            ushort a = this.rA;
+            int a = this.rA;
 
             if (!this.fN)
             {
@@ -2271,7 +2271,7 @@
             {
                 if (this.fH)
                 {
-                    a = (ushort)((a - 6) & 0xFF);
+                    a = (a - 6) & 0xFF;
                 }
 
                 if (this.fC)

@@ -306,7 +306,7 @@
 
         public byte hHeaderChecksum { get; set; }
 
-        public ushort hGlobalChecksum { get; set; }
+        public int hGlobalChecksum { get; set; }
 #pragma warning restore IDE1006 // Naming Styles
 #pragma warning restore SA1300 // Element should begin with upper-case letter
 
@@ -353,7 +353,7 @@
 
             this.hHeaderChecksum = romFile[OFFSET_HEADER_CHECKSUM];
 
-            this.hGlobalChecksum = (ushort)((romFile[OFFSET_GLOBAL_CHECKSUM] << 8) | romFile[OFFSET_GLOBAL_CHECKSUM + 1]);
+            this.hGlobalChecksum = (romFile[OFFSET_GLOBAL_CHECKSUM] << 8) | romFile[OFFSET_GLOBAL_CHECKSUM + 1];
         }
     }
 }
