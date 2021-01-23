@@ -31,7 +31,7 @@
 
         private long oldCpuTicks;
         private int pendingApuTicks;
-        private int timer = 0; // Can be set to 0 to run at uncapped framerate, but this has major side effects, only use for benchmarking
+        private int timer = 1; // Can be set to 0 to run at uncapped framerate, but this has major side effects, only use for benchmarking
         private int frameSequencerTimer;
         private int frameSequencerStep;
 
