@@ -1,5 +1,6 @@
 ﻿namespace Gusboy
 {
+    using System;
     using System.Runtime.CompilerServices;
 
     public class RAM
@@ -44,7 +45,7 @@
                     return 0xFF;
                 }
 
-                switch (i)
+                switch ((ushort)i)
                 {
                     case <= 0x7FFF:
                         return this.Rom[i]; // Cartridge ROM
@@ -61,12 +62,13 @@
                     case >= 0xD000 and <= 0xDFFF:
                         return this.wram[this.wramBank, i - 0xD000]; // System RAM, bank 0 maps to 1
 
-                    case >= 0xE000 and <= 0xEDFF:
-                        return this.wram[0, i - 0xE000]; // System RAM (mirror)
+                    case >= 0xE000 and <= 0xEFFF:
+                        return this.wram[0, i - 0xE000]; // System RAM (mirror), would be more accurate to & with sram
 
                     case >= 0xF000 and <= 0xFDFF:
                         return this.wram[this.wramBank, i - 0xF000]; // System RAM (mirror), bank 0 maps to 1
 
+                    // OAM actually ends at FE9F, but FEA0-FEFF still trigger the OAM bug
                     case >= 0xFE00 and <= 0xFEFF:
                         if (this.Gpu.CanAccessOAM(isDma))
                         {
@@ -131,7 +133,7 @@
                         return this.Apu.NR14;
 
                     case 0xFF15:
-                        return 0xFF;
+                        return RAM.Unsupported(0xFF); // Unused APU register
 
                     case 0xFF16:
                         return this.Apu.NR21;
@@ -185,7 +187,7 @@
                         return this.Apu.NR52;
 
                     case >= 0xFF27 and <= 0xFF2F:
-                        return 0xFF; // Unused sound bytes
+                        return 0xFF; // Unused APU registers
 
                     case >= 0xFF30 and <= 0xFF3F:
                         return this.Apu.WaveEnabled ? 0xFF : this.Apu.WaveTable[i - 0xFF30];
@@ -226,16 +228,27 @@
                     case 0xFF4B:
                         return this.Gpu.WinX;
 
-                    // TODO: Optimize this to make the switch contiguous again
+                    case 0xFF4C:
+                        return RAM.Unsupported(0xFF);
+
                     case 0xFF4D:
                         return this.gb.IsCgb ? (byte)(((this.Cpu.fSpeed ? 1 : 0) << 7) | (this.Cpu.fPrepareSwitch ? 1 : 0) | 0b0111_1110) : 0xFF;
+
+                    case 0xFF4E:
+                        return RAM.Unsupported(0xFF);
 
                     case 0xFF4F:
                         return this.gb.IsCgb ? (byte)(this.VramBank | 0x1111_1110) : 0xFF;
 
+                    case >= 0xFF50 and <= 0xFF54:
+                        return RAM.Unsupported(0xFF); // TODO: HDMA stuff here
+
                     case 0xFF55:
                         // Since we copy instantly, always signal done
                         return 0xFF; // this.gb.Gpu.HDMA5Control;
+
+                    case >= 0xFF56 and <= 0xFF67:
+                        return RAM.Unsupported(0xFF);
 
                     case 0xFF68:
                         return 0xFF; // TODO: Check if this is supposed to be readable?
@@ -286,24 +299,20 @@
                     case 0xFF6C:
                         return this.Gpu.OAMPriorityMode ? 0 : 1; // NOTE: This is inverted to default to DMG mode.
 
+                    case >= 0xFF6D and <= 0xFF6F:
+                        return RAM.Unsupported(0xFF);
+
                     case 0xFF70:
                         return this.gb.IsCgb ? (byte)(this.wramBank | 0x1111_1000) : 0xFF;
 
-                    case >= 0xFF4C and <= 0xFF7F:
+                    case >= 0xFF71 and <= 0xFF7F:
                         return RAM.Unsupported(0xFF); // Unsupported/unused (mostly CGB stuff)
 
                     case >= 0xFF80 and <= 0xFFFE:
                         return this.hram[i - 0xFF80]; // High RAM
 
                     case 0xFFFF:
-                        return this.Cpu.rInterruptEnable; // (byte)(cpu.interruptEnable | 0b1110_0000);
-
-                    default:
-                        // Just to shut up the compiler suggesting this be made into a switch expression
-                        if (true)
-                        {
-                            return 0xFF;
-                        }
+                        return this.Cpu.rInterruptEnable;
                 }
             }
 
@@ -315,9 +324,9 @@
                     return;
                 }
 
-                switch (i)
+                switch ((ushort)i)
                 {
-                    case >= 0x0000 and <= 0x7FFF:
+                    case <= 0x7FFF:
                         this.Rom[i] = value; // Cartridge ROM
                         break;
 
@@ -346,7 +355,7 @@
                         this.wram[this.wramBank, i - 0xD000] = value; // System RAM
                         break;
 
-                    case >= 0xE000 and <= 0xEDFF:
+                    case >= 0xE000 and <= 0xEFFF:
                         this.wram[0, i - 0xE000] = value; // System RAM (mirror)
                         break;
 
@@ -557,6 +566,10 @@
                         this.Gpu.WinX = value;
                         break;
 
+                    case 0xFF4C:
+                        RAM.Unsupported(0xFF);
+                        break;
+
                     case 0xFF4D:
                         if (this.gb.IsCgb)
                         {
@@ -565,8 +578,7 @@
 
                         break;
 
-                    // TODO: Restore contiguity
-                    case >= 0xFF4C and <= 0xFF4E:
+                    case 0xFF4E:
                         RAM.Unsupported(0xFF);
                         break;
 
@@ -600,6 +612,10 @@
 
                     case 0xFF55:
                         this.gb.Gpu.HDMA5Control = value;
+                        break;
+
+                    case >= 0xFF56 and <= 0xFF67:
+                        RAM.Unsupported(0xFF);
                         break;
 
                     case 0xFF68:
@@ -666,7 +682,10 @@
                         this.Gpu.OAMPriorityMode = (value & 1) == 1; // NOTE: This is inverted so that it defaults to DMG behaviour.
                         break;
 
-                    // TODO: Make contiguous again for performance
+                    case >= 0xFF6D and <= 0xFF6F:
+                        RAM.Unsupported(0xFF);
+                        break;
+
                     case 0xFF70:
                         if (this.gb.IsCgb)
                         {
@@ -680,8 +699,8 @@
 
                         break;
 
-                    case >= 0xFF51 and <= 0xFF7F:
-                        RAM.Unsupported(0xFF); // Unsupported/unused (mostly CGB stuff)
+                    case >= 0xFF71 and <= 0xFF7F:
+                        RAM.Unsupported(0xFF); // Unsupported/unused
                         break;
 
                     case >= 0xFF80 and <= 0xFFFE:
