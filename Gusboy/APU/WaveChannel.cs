@@ -28,7 +28,7 @@
             }
 
             // Per Binji: "The trick is to add a 6 cycle delay to the wave period whenever it is triggered." Dunno if this is actually needed.
-            this.frequencyTimer = (2048 - this.Frequency) * 2; // + 6;
+            this.frequencyTimer = 2048 - this.Frequency; // * 2; // Removed to convert to m-cycles (dividing by two because we double-tick wave)
 
             this.wavePosition = 0;
         }
@@ -49,7 +49,7 @@
                 this.SampleBuffer = this.WaveTable[this.wavePosition >> 1] & 0b0000_1111;
             }
 
-            return (2048 - this.Frequency) * 2;
+            return 2048 - this.Frequency; // * 2; // Removed to convert to m-cycles (dividing by two because we double-tick wave)
         }
     }
 }

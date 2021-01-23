@@ -2,7 +2,9 @@
 {
     public class NoiseChannel : Channel
     {
-        private readonly int[] divisor = { 8, 16, 32, 48, 64, 80, 96, 112 };
+        // Converted to m-cycles
+        // private readonly int[] divisor = { 8, 16, 32, 48, 64, 80, 96, 112 };
+        private readonly int[] divisor = { 2, 4, 8, 12, 16, 20, 24, 28 };
 
         private int volumeTimer;
         private int volume;

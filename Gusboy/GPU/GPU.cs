@@ -531,7 +531,11 @@
 
                 if (this.mode == GPUMode.OAM)
                 {
-                    this.CurrentOam++;
+                    // TODO: This timing is wrong because we advance 4 m-cycles at a time and tick twice as often for GBC
+                    // this.CurrentOam++;
+
+                    // TODO: Backup less accurate version but will still allow *something* in OAM to be corrupted.
+                    this.CurrentOam = 4;
                 }
                 else
                 {

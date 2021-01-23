@@ -51,7 +51,9 @@
             }
 
             // When triggering a square channel, the low two bits of the frequency timer are NOT modified.
-            this.frequencyTimer = (this.frequencyTimer & 0b11) | (((2048 - this.Frequency) * 4) & ~0b11);
+            // TODO: Moving to m-cycles may have broken this last-two-bits behaviour? Removed it for now.
+            // this.frequencyTimer = (this.frequencyTimer & 0b11) | (((2048 - this.Frequency) * 4) & ~0b11);
+            this.frequencyTimer = 2048 - this.Frequency;
 
             // Volume/sweep timer treat a period of 0 as 8
             this.volumeTimer = this.InitialVolumeTimer == 0 ? 8 : this.InitialVolumeTimer;
@@ -148,7 +150,7 @@
                 this.DutyStep = 0;
             }
 
-            return (2048 - this.Frequency) * 4;
+            return 2048 - this.Frequency; // Removing the * 4 for m-cycle conversion
         }
     }
 }
