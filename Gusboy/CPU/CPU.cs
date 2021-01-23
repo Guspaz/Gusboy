@@ -12,8 +12,8 @@ namespace Gusboy
         private Opcode instruction;
 
 #if ENABLE_TRACING
-            private FileStream log;
-            private StreamWriter sw;
+            private System.IO.FileStream log;
+            private System.IO.StreamWriter sw;
 #endif
 
         public CPU(Gameboy gameBoy)
@@ -23,8 +23,8 @@ namespace Gusboy
             this.extendedOpcodes = this.GenerateExtendedOpcodes();
 
 #if ENABLE_TRACING
-                log = File.Create("trace.log");
-                sw = new StreamWriter(log);
+                log = System.IO.File.Create("trace.log");
+                sw = new System.IO.StreamWriter(log);
                 sw.AutoFlush = true;
 #endif
         }
@@ -36,10 +36,13 @@ namespace Gusboy
         public void Tick()
         {
 #if ENABLE_TRACING
-                sw.Write($"A:{rA:X2} F:{(fZ ? "Z" : "-")}{(fN ? "N" : "-")}{(fH ? "H" : "-")}{(fC ? "C" : "-")} BC:{rBC:X4} DE:{rDE:x4} HL:{rHL:x4} SP:{rSP:x4} PC:{rPC:x4}\n");
+                sw.Write($"A:{rA:X2} F:{(fZ ? "Z" : "-")}{(fN ? "N" : "-")}{(fH ? "H" : "-")}{(fC ? "C" : "-")} BC:{rBC:X4} DE:{rDE:x4} HL:{rHL:x4} SP:{(int)rSP:x4} M: {(int)this.gb.Gpu.mode} IME: {(fInterruptMasterEnable ? 1 : 0)} IF: {rInterruptFlags:X2} IE: {rInterruptEnable:X2} BNK: {(this.gb.Rom.mapper as MBC5).GetBank():X2} PC:{rPC:x4}");
                 //sw.Write($"{ram.rom.bankNumber:X2} A:{rA:X2} F:{(fZ ? "Z" : "-")}{(fN ? "N" : "-")}{(fH ? "H" : "-")}{(fC ? "C" : "-")} BC:{rBC:X4} DE:{rDE:x4} HL:{rHL:x4} SP:{rSP:x4} PC:{rPC:x4} ");
 #endif
 
+            // if ((this.gb.Rom.mapper as MBC5).GetBank() == 0x3E && rPC == 0x5A9D)
+            // {
+            // }
             this.instruction = this.opcodes[this.Ram[this.rPC]];
 
             if (this.fHaltBug)
@@ -66,7 +69,7 @@ namespace Gusboy
             }
 
 #if ENABLE_TRACING
-                //sw.Write($" OP: {String.Format(instruction.mnemonic, operand)}\n");
+                sw.Write($" OP: {System.String.Format(instruction.Mnemonic, (int)operand)}\n");
 #endif
 
             this.rPC += this.instruction.OperandLength;
@@ -100,6 +103,17 @@ namespace Gusboy
                 this.rInterruptEnable = 0x00;
                 this.rInterruptFlags = 0x01;
                 this.rDIV = 0xABCC;
+            }
+        }
+
+        public void CheckOAMBug(byte value)
+        {
+            // This is just an extremely rough approximation. We don't simulate the corruption values or the numbers of read/writes.
+            // Value of FEXX in a 16-bit register and in mode 2 and we also don't corrupt the first two rows
+            // Some of this check is redundant with the RAM check. Don't check CGB, though, RAM class will.
+            if (value == 0xFE && this.gb.Gpu.CurrentOam > 2)
+            {
+                this.Ram[0xFE42] = 0x42;
             }
         }
     }

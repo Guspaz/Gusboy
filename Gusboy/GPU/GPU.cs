@@ -40,7 +40,8 @@
         private bool renderingWindow = false;
         private byte currentLineCompare;
         private byte hdmaControl;
-        private int remainingCycles = 4; // Start at one M-Cycle since we will immediately decrement it
+        private int remainingCycles = 0;
+        private int delayTicks = 0; // Some things while drawing the scanline stall the LCD clock and eats into HBLANK
 
         private int hdmaSource;
         private int hdmaDestination;
@@ -114,6 +115,8 @@
 
         // TODO: Replace jagged array with multi-dimensional array
         public int[][] PalObjMap { get; } = new int[4][];
+
+        public byte CurrentOam { get; set; }
 
         public bool IsDmaActive { get; set; }
 
@@ -340,18 +343,29 @@
             // https://www.reddit.com/r/Gameboy/comments/a1c8h0/what_happens_when_a_gameboy_screen_is_disabled/eap4f8c/
             if (!this.LCDCFlag(LCDC.LCDPower))
             {
-                this.CurrentLine = 0; // Reset rLY to 0
+                this.internalCurrentLine = 0; // Reset rLY to 0 but bypass the coincidence check
                 this.gpuTicks = 0; // Reset GPU clock
                 this.mode = GPUMode.HBLANK; // Reset mode to 0
 
                 // Clear framebuffer
-                if (!this.LCDCFlag(LCDC.LCDPower))
-                {
-                    this.ClearFramebuffer();
-                    this.drawFramebuffer();
+                this.ClearFramebuffer();
+                this.drawFramebuffer();
 
-                    // Used to skip the first frame after re-enabling it
-                    this.lcdWasOff = true;
+                // Used to skip the first frame after re-enabling it
+                this.lcdWasOff = true;
+            }
+            else if (this.lcdWasOff)
+            {
+                // Turning on the screen sets the LY=LYC coincidence bit in BGB, but doesn't seem to fire an interrupt?
+                if (this.CurrentLine == this.rLYC)
+                {
+                    // Set match bit
+                    this.lcdcStat |= 0b0000_0100;
+                }
+                else
+                {
+                    // Clear match bit
+                    this.lcdcStat &= 0xFB;
                 }
             }
         }
@@ -384,7 +398,7 @@
             {
                 this.remainingCycles -= 4;
 
-                if (this.remainingCycles == 0)
+                if (this.remainingCycles <= 0)
                 {
                     // Mode change required
                     if (this.mode == GPUMode.HBLANK)
@@ -488,14 +502,19 @@
                         // In a real system this would start drawing bit-by-bit here, but we're just going to do it all in one shot up front.
                         this.RenderScanline();
 
-                        // TODO: We should add cycles to VRAM (and subtract them from HBLANK after that) depending on how many sprites are
-                        // on this line... and scrollX, I think?
+                        // Extend VRAM cycle based on what we did rendering the scanline. We'll subtract it from HBLANK.
+                        // TODO: Validate these exact timings somehow, pan docs isn't precise exacty
+                        this.remainingCycles += this.delayTicks * (this.gb.Cpu.fSpeed ? 2 : 1);
                     }
                     else
                     {
                         // We're in VRAM, next is HBLANK
                         this.mode = GPUMode.HBLANK;
                         this.remainingCycles = this.TIME_HBLANK;
+
+                        // We extended VBLANK to do rendering so we must steal from HBLANK.
+                        this.remainingCycles -= this.delayTicks * (this.gb.Cpu.fSpeed ? 2 : 1);
+                        this.delayTicks = 0;
 
                         // TODO: We should also be able to start this if it started during hblank.
                         if (this.hdmaInProgress)
@@ -508,6 +527,15 @@
                             this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
                         }
                     }
+                }
+
+                if (this.mode == GPUMode.OAM)
+                {
+                    this.CurrentOam++;
+                }
+                else
+                {
+                    this.CurrentOam = 0;
                 }
             }
         }
@@ -535,6 +563,11 @@
                     this.BackgroundCacheDirty = false;
                 }
 
+                // Delay HBLANK for the background scroll
+                // TODO: Should this happen if we're in the window?
+                this.delayTicks += this.ScrollX % 8;
+                bool windowDelay = false;
+
                 for (int i = 0; i < 160; i++)
                 {
                     this.renderingWindow =
@@ -548,6 +581,13 @@
                         x = (byte)(i + WINDOW_X_OFFSET - this.WinX);
                         y = this.currentWinY;
                         tilemapFlag = LCDC.WindowTileMap;
+
+                        // Delay HBLANK for the window
+                        if (!windowDelay)
+                        {
+                            this.delayTicks += 6;
+                            windowDelay = true;
+                        }
                     }
                     else
                     {
@@ -635,6 +675,16 @@
 
                 foreach (var currentSprite in prioritySprites)
                 {
+                    // Delay HBLANK for sprites
+                    if (currentSprite.X >= this.WinX)
+                    {
+                        this.delayTicks += 11 - Math.Min(5, (currentSprite.X + (255 - this.WinX)) % 8);
+                    }
+                    else
+                    {
+                        this.delayTicks += 11 - Math.Min(5, (currentSprite.X + this.ScrollX) % 8);
+                    }
+
                     // Sprite appears on this scanline, draw it.
                     for (int i = 0; i < 8; i++)
                     {

@@ -8,7 +8,7 @@
         private readonly byte[] hram = new byte[0x80];
         private readonly byte[,] wram = new byte[8, 0x1000];
 
-        private int wramBank;
+        private int wramBank = 1; // Default for DMG, CGB will update as required
         private int backgroundPaletteIndex;
         private bool backgroundPaletteAutoIncrement;
         private int spritePaletteIndex;
@@ -56,16 +56,31 @@
                         return this.wram[0, i - 0xC000]; // System RAM
 
                     case >= 0xD000 and <= 0xDFFF:
-                        return this.wram[this.wramBank == 0 ? 1 : this.wramBank, i - 0xD000]; // System RAM, bank 0 maps to 1
+                        return this.wram[this.wramBank, i - 0xD000]; // System RAM, bank 0 maps to 1
 
                     case >= 0xE000 and <= 0xEDFF:
                         return this.wram[0, i - 0xE000]; // System RAM (mirror)
 
                     case >= 0xF000 and <= 0xFDFF:
-                        return this.wram[this.wramBank == 0 ? 1 : this.wramBank, i - 0xF000]; // System RAM (mirror), bank 0 maps to 1
+                        return this.wram[this.wramBank, i - 0xF000]; // System RAM (mirror), bank 0 maps to 1
 
                     case >= 0xFE00 and <= 0xFEFF:
-                        return this.Gpu.CanAccessOAM(isDma) ? this.oam[i - 0xFE00] : 0xFF; // Object Attribute Memory (FEA0-FEFF unusable)
+                        if (this.Gpu.CanAccessOAM(isDma))
+                        {
+                            return this.oam[i - 0xFE00]; // Object Attribute Memory (FEA0-FEFF unusable)
+                        }
+                        else if (!this.gb.IsCgb)
+                        {
+                            // Trigger OAM bug (read)
+                            // This is just a rough approximation. Timing of current OAM isn't verified and real corruption value isn't calculated.
+                            if (this.Gpu.CurrentOam > 2)
+                            {
+                                // OAM number from 1-20, since I use 0 to mean "not reading OAM" so we need to subtract one
+                                this.oam[(this.Gpu.CurrentOam - 1) * 8] = 0xFF;
+                            }
+                        }
+
+                        return 0xFF;
 
                     case 0xFF00:
                         return this.gb.Input.Read();
@@ -325,7 +340,7 @@
                         break;
 
                     case >= 0xD000 and <= 0xDFFF:
-                        this.wram[this.wramBank == 0 ? 1 : this.wramBank, i - 0xD000] = value; // System RAM
+                        this.wram[this.wramBank, i - 0xD000] = value; // System RAM
                         break;
 
                     case >= 0xE000 and <= 0xEDFF:
@@ -333,13 +348,23 @@
                         break;
 
                     case >= 0xF000 and <= 0xFDFF:
-                        this.wram[this.wramBank == 0 ? 1 : this.wramBank, i - 0xF000] = value; // System RAM (mirror)
+                        this.wram[this.wramBank, i - 0xF000] = value; // System RAM (mirror)
                         break;
 
                     case >= 0xFE00 and <= 0xFEFF:
                         if (this.Gpu.CanAccessOAM(isDma))
                         {
                             this.oam[i - 0xFE00] = value; // Object Attribute Memory (FEA0-FEFF unusable)
+                        }
+                        else if (!this.gb.IsCgb)
+                        {
+                            // Trigger OAM bug (write)
+                            // This is just a rough approximation. Timing of current OAM isn't verified and real corruption value isn't calculated.
+                            if (this.Gpu.CurrentOam > 2)
+                            {
+                                // OAM number from 1-20, since I use 0 to mean "not reading OAM" so we need to subtract one
+                                this.oam[(this.Gpu.CurrentOam - 1) * 8] = 0xFF;
+                            }
                         }
 
                         break;
@@ -643,6 +668,11 @@
                         if (this.gb.IsCgb)
                         {
                             this.wramBank = value & 0b0111;
+
+                            if (this.wramBank == 0)
+                            {
+                                this.wramBank = 1;
+                            }
                         }
 
                         break;

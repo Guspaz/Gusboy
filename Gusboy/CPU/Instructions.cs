@@ -1005,24 +1005,32 @@
 
         private int inc_bc(Gshort operand)
         {
+            this.CheckOAMBug(this.rB);
+
             this.rBC++;
             return 8;
         }
 
         private int inc_de(Gshort operand)
         {
+            this.CheckOAMBug(this.rD);
+
             this.rDE++;
             return 8;
         }
 
         private int inc_hl(Gshort operand)
         {
+            this.CheckOAMBug(this.rH);
+
             this.rHL++;
             return 8;
         }
 
         private int inc_sp(Gshort operand)
         {
+            // Doesn't count for OAM bug for some reason?
+            // this.CheckOAMBug((byte)(this.rSP >> 8));
             this.rSP++;
             return 8;
         }
