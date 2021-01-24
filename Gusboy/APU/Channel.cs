@@ -27,13 +27,13 @@
         public double OutputLeft
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (this.ChannelEnable && this.LeftEnable) ? this.DigitalOutput / 100.0 : 8 / 100.0;
+            get => (this.ChannelEnable && this.LeftEnable) ? this.DigitalOutput / 100.0 : 7.5 / 100.0;
         }
 
         public double OutputRight
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (this.ChannelEnable && this.RightEnable) ? this.DigitalOutput / 100.0 : 8 / 100.0;
+            get => (this.ChannelEnable && this.RightEnable) ? this.DigitalOutput / 100.0 : 7.5 / 100.0;
         }
 
         protected abstract int DigitalOutput { get; }
