@@ -8,6 +8,7 @@
     {
         private long oldCpuTicks;
         private bool oldAndResult;
+        private bool reloadingTima;
 
 #pragma warning disable SA1300 // Element should begin with upper-case letter
 #pragma warning disable IDE1006 // Naming Styles
@@ -21,19 +22,23 @@
 #pragma warning restore IDE1006 // Naming Styles
 #pragma warning restore SA1300 // Element should begin with upper-case letter
 
-        public bool ReloadingTima { get; set; }
+        public bool ReloadingTima
+        {
+            get => this.reloadingTima;
+            set => this.reloadingTima = value;
+        }
 
         public void TimerTick()
         {
-            int newCpuTicks = (int)(this.Ticks - this.oldCpuTicks);
+            int newCpuTicks = (int)(this.Ticks - this.oldCpuTicks) >> 2;
             this.oldCpuTicks = this.Ticks;
 
-            // It takes one full M-Cycle to reload TIMA so divide by 4
-            for (int i = 0; i < newCpuTicks / 4; i++)
+            // It takes one full M-Cycle to reload TIMA so we've divided by four
+            for (int i = 0; i < newCpuTicks; i++)
             {
                 this.rDIV += 4;
 
-                if (this.ReloadingTima)
+                if (this.reloadingTima)
                 {
                     // Reload TIMA
                     this.rTIMA = this.rTMA;
@@ -42,7 +47,7 @@
                     this.TriggerInterrupt(INT_TIMER);
 
                     // Reset the state
-                    this.ReloadingTima = false;
+                    this.reloadingTima = false;
                 }
 
                 bool divBit = false;

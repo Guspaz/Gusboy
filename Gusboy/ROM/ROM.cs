@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using System.Runtime.CompilerServices;
     using System.Text;
 
     /// <summary>
@@ -72,7 +73,12 @@
         // Special case, this mapper needs to influence outside the ROM, so it gets its own property.
         public GBS Gbs { get; }
 
-        public bool IsGbs { get; set; }
+        public bool IsGbs
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get;
+            set;
+        }
 
         public byte this[int i]
         {

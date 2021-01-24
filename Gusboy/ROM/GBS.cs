@@ -2,6 +2,7 @@
 {
     using System;
     using System.Linq;
+    using System.Runtime.CompilerServices;
 
     /// <summary>
     /// A mapper that adds GBS support to the emulator.
@@ -159,6 +160,7 @@
             this.gb.Cpu.fHalt = false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool ProcedureDone() => this.gb.Cpu.rSP > this.initialStackPointer;
 
         public override byte Read(int address)
