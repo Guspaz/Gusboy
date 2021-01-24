@@ -262,11 +262,11 @@
             }
         }
 
-        private int TIME_HBLANK => this.gb.Cpu.fSpeed ? 400 : 200;
+        private int TIME_HBLANK => this.gb.Cpu.fSpeed ? 408 : 204;
 
         private int TIME_VRAM => this.gb.Cpu.fSpeed ? 344 : 172;
 
-        private int TIME_OAM => this.gb.Cpu.fSpeed ? 168 : 84;
+        private int TIME_OAM => this.gb.Cpu.fSpeed ? 160 : 80;
 
         private int TIME_VBLANK => this.gb.Cpu.fSpeed ? 912 : 456; // Time per scanline, will be 10 of these
 
