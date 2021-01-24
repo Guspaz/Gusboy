@@ -149,6 +149,26 @@
             return newFrequency;
         }
 
+        public void FakeBootstrap(int frequencyTimer, int sweepFrequency = -1, int sweepTimer = -1, int volumeTimer = -1)
+        {
+            this.frequencyTimer = frequencyTimer;
+
+            if (sweepFrequency != -1)
+            {
+                this.sweepFrequency = sweepFrequency;
+            }
+
+            if (sweepTimer != -1)
+            {
+                this.sweepTimer = sweepTimer;
+            }
+
+            if (volumeTimer != -1)
+            {
+                this.sweepTimer = sweepTimer;
+            }
+        }
+
         protected override int FrequencyTimerFire()
         {
             if (++this.DutyStep > 7)

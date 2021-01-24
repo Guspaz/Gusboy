@@ -94,6 +94,38 @@
             this.channel4.ChannelEnable = false;
         }
 
+        internal void FakeBootstrap()
+        {
+            // NOTE: As we're replicating the internal state of the APU after the bootrom, these values may need to be updated in the future
+            // TODO: This is for DMG, will need to supplement for CGB, the timers will probably be different.
+            this.channel1.ChannelEnable = true;
+            this.channel1.DacEnable = true;
+            this.channel1.Duty = 2;
+            this.channel1.DutyStep = 3;
+            this.channel1.Frequency = 1985;
+            this.channel1.InitialVolume = 15;
+            this.channel1.InitialVolumeTimer = 3;
+            this.channel1.LeftEnable = true;
+            this.channel1.RightEnable = true;
+            this.channel1.FakeBootstrap(4, 1985, 5, 1);
+
+            this.channel2.DutyStep = 2;
+            this.channel2.LeftEnable = true;
+            this.channel2.RightEnable = true;
+            this.channel2.FakeBootstrap(1309);
+
+            // TODO: Verify that channel3.RightEnable works at all
+            this.channel3.LeftEnable = true;
+            this.channel3.FakeBootstrap(569, 3);
+
+            this.channel4.LeftEnable = true;
+            this.channel4.FakeBootstrap(1);
+
+            this.leftMasterVolume = 7;
+            this.rightMasterVolume = 7;
+            this.apuPower = true;
+        }
+
         public void Tick()
         {
             this.pendingApuTicks += (int)(this.gb.Cpu.Ticks - this.oldCpuTicks);

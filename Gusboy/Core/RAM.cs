@@ -97,7 +97,7 @@
                         return RAM.Unsupported(this.gb.IsCgb ? 0x7C : 0x7E); // SC (serial data transfer)
 
                     case 0xFF03:
-                        return RAM.Unsupported(0x00); // Serial data transfer registers
+                        return RAM.Unsupported(0xFF); // Serial data transfer registers
 
                     case 0xFF04:
                         return (byte)(this.Cpu.rDIV >> 8);
@@ -297,7 +297,7 @@
                         }
 
                     case 0xFF6C:
-                        return this.Gpu.OAMPriorityMode ? 0 : 1; // NOTE: This is inverted to default to DMG mode.
+                        return !this.gb.IsCgb ? 0xFF : (this.Gpu.OAMPriorityMode ? 0 : 1); // NOTE: This is inverted to default to DMG mode.
 
                     case >= 0xFF6D and <= 0xFF6F:
                         return RAM.Unsupported(0xFF);

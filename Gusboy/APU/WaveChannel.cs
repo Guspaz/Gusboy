@@ -39,6 +39,12 @@
             this.wavePosition = 0;
         }
 
+        public void FakeBootstrap(int frequencyTimer, int wavePosition)
+        {
+            this.frequencyTimer = frequencyTimer;
+            this.wavePosition = wavePosition;
+        }
+
         protected override int FrequencyTimerFire()
         {
             if (++this.wavePosition > 31)

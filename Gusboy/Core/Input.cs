@@ -55,7 +55,7 @@
                 result |= JOY20MASK;
             }
 
-            return (byte)result;
+            return (byte)(result | 0b1100_0000);
         }
 
         public void Write(byte value)

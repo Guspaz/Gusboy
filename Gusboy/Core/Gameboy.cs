@@ -76,7 +76,6 @@ namespace Gusboy
                     this.Rom.Gbs.Tick();
                 }
 
-                // When are these actually checked? Some sources say right after instructions are executed, but putting it there would delay firing interrupts by one cycle, wouldn't it?
                 this.Cpu.InterruptTick();
             }
         }

@@ -134,25 +134,7 @@
                 this.gb.Ram[0xFF05] = 0;
                 this.gb.Ram[0xFF06] = 0;
                 this.gb.Ram[0xFF07] = 0;
-                this.gb.Ram[0xFF10] = 0x80;
-                this.gb.Ram[0xFF11] = 0xBF;
-                this.gb.Ram[0xFF12] = 0xF3;
-                this.gb.Ram[0xFF14] = 0xBF;
-                this.gb.Ram[0xFF16] = 0x3F;
-                this.gb.Ram[0xFF17] = 0x00;
-                this.gb.Ram[0xFF19] = 0xBF;
-                this.gb.Ram[0xFF1A] = 0x7F;
-                this.gb.Ram[0xFF1B] = 0xFF;
-                this.gb.Ram[0xFF1C] = 0x9F;
-                this.gb.Ram[0xFF1E] = 0xBF;
-                this.gb.Ram[0xFF20] = 0xFF;
-                this.gb.Ram[0xFF21] = 0x00;
-                this.gb.Ram[0xFF22] = 0x00;
-                this.gb.Ram[0xFF23] = 0xBF;
-                this.gb.Ram[0xFF24] = 0x77;
-                this.gb.Ram[0xFF25] = 0xF3;
-                this.gb.Ram[0xFF26] = 0xF1;
-                this.gb.Ram[0xFF40] = 0x91;
+                this.gb.Apu.FakeBootstrap();
                 this.gb.Ram[0xFF42] = 0x00;
                 this.gb.Ram[0xFF43] = 0x00;
                 this.gb.Ram[0xFF45] = 0x00;
@@ -162,6 +144,7 @@
                 this.gb.Ram[0xFF4A] = 0x00;
                 this.gb.Ram[0xFF4B] = 0x00;
                 this.gb.Ram[0xFFFF] = 0x00;
+                this.gb.Gpu.FakeBootstrap();
             }
         }
 

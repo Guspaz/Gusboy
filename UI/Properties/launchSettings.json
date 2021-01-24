@@ -1,7 +1,8 @@
 {
   "profiles": {
     "UI": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "\"H:\\Backups\\Intel\\files\\Users\\Adam\\Desktop\\gbc\\test roms\\numism.gb\""
     }
   }
 }

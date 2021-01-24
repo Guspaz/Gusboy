@@ -313,6 +313,7 @@
 
         public void SetLCDC(byte value)
         {
+            int oldControl = this.control;
             this.control = value;
 
             // https://www.reddit.com/r/Gameboy/comments/a1c8h0/what_happens_when_a_gameboy_screen_is_disabled/eap4f8c/
@@ -329,7 +330,7 @@
                 // Used to skip the first frame after re-enabling it
                 this.lcdWasOff = true;
             }
-            else if (this.lcdWasOff)
+            else if ((oldControl & 0b1000_0000) == 0 && (this.control & 0b1000_0000) != 0) // Screen was turned on
             {
                 // Turning on the screen sets the LY=LYC coincidence bit in BGB, but doesn't seem to fire an interrupt?
                 if (this.CurrentLine == this.rLYC)
@@ -534,6 +535,18 @@
             }
         }
 
+        internal void FakeBootstrap()
+        {
+            // NOTE: This may need to change in the future if the implementation is updated
+            // TODO: This is for DMG, do for CGB as well
+            this.remainingCycles = 48;
+            this.mode = GPUMode.VBLANK;
+            this.control = 0x91;
+            this.lcdWasOff = false;
+            this.ObjPal0 = 0;
+            this.ObjPal1 = 0;
+        }
+
         private void RenderScanline()
         {
             bool[] bgIsTransparent = new bool[256];
@@ -543,7 +556,7 @@
             this.RenderScanlineTiles(bgIsTransparent, bgPriority);
 
             this.RenderScanlineSprites(bgIsTransparent, bgPriority);
-        }
+        }        
 
         private void HdmaTick()
         {

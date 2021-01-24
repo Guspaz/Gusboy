@@ -77,6 +77,8 @@
             }
         }
 
+        public void FakeBootstrap(int frequencyTimer) => this.frequencyTimer = frequencyTimer;
+
         protected override int FrequencyTimerFire()
         {
             // Using a noise channel clock shift of 14 or 15 results in the LFSR receiving no clocks.
