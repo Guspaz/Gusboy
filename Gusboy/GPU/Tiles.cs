@@ -1,6 +1,6 @@
 ﻿namespace Gusboy
 {
-    using System.Collections.Generic;
+    using System;
     using System.Runtime.CompilerServices;
 
     /// <summary>
@@ -40,8 +40,11 @@
 
         private void RenderScanlineTiles(bool[] bgIsTransparent, bool[] bgPriority)
         {
-            // Tiles
-            if (this.gb.IsCgb || this.LCDCFlag(LCDC.BGEnabled) || this.renderingWindow)
+            if (!this.gb.IsCgb && !this.LCDCFlag(LCDC.BGEnabled))
+            {
+                Array.Fill(this.framebuffer, this.palBg[this.palBgMap[0]], this.CurrentLine * 160, 160);
+            }
+            else if (this.gb.IsCgb || this.LCDCFlag(LCDC.BGEnabled) || this.renderingWindow)
             {
                 byte x;
                 byte y;

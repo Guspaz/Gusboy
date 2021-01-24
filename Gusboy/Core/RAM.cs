@@ -241,10 +241,10 @@
                         return this.gb.IsCgb ? (byte)(this.VramBank | 0x1111_1110) : 0xFF;
 
                     case >= 0xFF50 and <= 0xFF54:
-                        return RAM.Unsupported(0xFF); // TODO: HDMA stuff here
+                        return RAM.Unsupported(0xFF); // DMA stuff (is write-only)
 
                     case 0xFF55:
-                        // Since we copy instantly, always signal done
+                        // Since we copy instantly, always signal done, HDMA will require more nuanced stuff here.
                         return 0xFF; // this.gb.Gpu.HDMA5Control;
 
                     case >= 0xFF56 and <= 0xFF67:

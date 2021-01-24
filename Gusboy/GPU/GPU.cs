@@ -342,6 +342,16 @@
                     // Clear match bit
                     this.lcdcStat &= 0xFB;
                 }
+
+                // Start immediately at the beginning of the scanline (treat this as the first cycle of OAM)
+                this.mode = GPUMode.OAM;
+                this.remainingCycles = this.TIME_OAM - 4;
+                this.internalCurrentLine = 0;
+
+                // Reset window
+                this.renderingWindow = false;
+                this.startWinY = this.WinY;
+                this.currentWinY = 0;
             }
         }
 

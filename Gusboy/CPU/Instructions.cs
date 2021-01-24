@@ -388,7 +388,7 @@
 
         private int ld_pnn_sp(int operand)
         {
-            this.Ram.SetShort(operand, this.rSP); // TODO: Check that SetShort works here
+            this.Ram.SetShort(operand, this.rSP);
             return 20;
         }
 
