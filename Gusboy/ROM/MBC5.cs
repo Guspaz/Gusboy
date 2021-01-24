@@ -6,6 +6,8 @@
         private byte rROMB1 = 0;
         private byte rRAMB = 0;
 
+        private byte openBus;
+
         public MBC5(byte[] romFile, byte[] sram, string ramPath)
             : base(romFile, sram, ramPath)
         {
@@ -18,14 +20,14 @@
                 // Only the first 14 bits of the address are wired up to the ROM chips
                 address &= 0b0011_1111_1111_1111;
 
-                return this.RomFile[address & this.RomAddressMask];
+                return this.openBus = this.RomFile[address & this.RomAddressMask];
             }
             else if (address >= 0x4000 && address <= 0x7FFF)
             {
                 // Only the first 14 bits of the address are wired up to the ROM chips
                 address &= 0b0011_1111_1111_1111;
 
-                return this.RomFile[((this.rROMB1 << 22) | (this.rROMB0 << 14) | address) & this.RomAddressMask];
+                return this.openBus = this.RomFile[((this.rROMB1 << 22) | (this.rROMB0 << 14) | address) & this.RomAddressMask];
             }
             else if (address >= 0xA000 && address <= 0xBFFF)
             {
@@ -34,7 +36,12 @@
                     // Only the first 13 bits of the address are wired up to the RAM chips
                     address &= 0b0001_1111_1111_1111;
 
-                    return this.Sram[(address | (this.rRAMB << 13)) & this.RamAddressMask];
+                    return this.openBus = this.Sram[(address | (this.rRAMB << 13)) & this.RamAddressMask];
+                }
+                else
+                {
+                    // Simulate an open SRAM bus
+                    return this.openBus;
                 }
             }
 

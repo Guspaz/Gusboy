@@ -2,7 +2,7 @@
   "profiles": {
     "UI": {
       "commandName": "Project",
-      "commandLineArgs": "\"H:\\Backups\\Intel\\files\\Users\\Adam\\Desktop\\gbc\\test roms\\numism.gb\""
+      "commandLineArgs": "\"H:\\Backups\\Intel\\files\\Users\\Adam\\Desktop\\gbc\\zelda_dx.gbc\""
     }
   }
 }

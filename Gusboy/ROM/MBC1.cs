@@ -12,6 +12,8 @@
         private byte rBANK2 = 0;
         private bool rMODE = false;
 
+        private byte openBus;
+
         public MBC1(byte[] romFile, byte[] sram, string ramPath)
             : base(romFile, sram, ramPath)
         {
@@ -40,11 +42,11 @@
 
                 if (this.rMODE)
                 {
-                    return this.RomFile[((this.rBANK2 << this.bank2RomShift) | address) & this.RomAddressMask];
+                    return this.openBus = this.RomFile[((this.rBANK2 << this.bank2RomShift) | address) & this.RomAddressMask];
                 }
                 else
                 {
-                    return this.RomFile[address & this.RomAddressMask];
+                    return this.openBus = this.RomFile[address & this.RomAddressMask];
                 }
             }
             else if (address >= 0x4000 && address <= 0x7FFF)
@@ -52,7 +54,7 @@
                 // Only the first 14 bits of the address are wired up to the ROM chips
                 address &= 0b0011_1111_1111_1111;
 
-                return this.RomFile[((this.rBANK2 << this.bank2RomShift) | (this.rBANK1 << 14) | address) & this.RomAddressMask];
+                return this.openBus = this.RomFile[((this.rBANK2 << this.bank2RomShift) | (this.rBANK1 << 14) | address) & this.RomAddressMask];
             }
             else if (address >= 0xA000 && address <= 0xBFFF)
             {
@@ -63,12 +65,16 @@
 
                     if (this.rMODE)
                     {
-                        return this.Sram[((this.rBANK2 << 13) | address) & this.RamAddressMask];
+                        return this.openBus = this.Sram[((this.rBANK2 << 13) | address) & this.RamAddressMask];
                     }
                     else
                     {
-                        return this.Sram[address & this.RamAddressMask];
+                        return this.openBus = this.Sram[address & this.RamAddressMask];
                     }
+                }
+                else
+                {
+                    return this.openBus;
                 }
             }
 
