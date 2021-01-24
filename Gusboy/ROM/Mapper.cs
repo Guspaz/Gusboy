@@ -1,11 +1,15 @@
 ﻿namespace Gusboy
 {
+    using System;
+    using System.Diagnostics;
     using System.IO;
 
     public abstract class Mapper
     {
         private readonly string ramPath;
         private bool ramg;
+        private long lastSramSave;
+        private bool sramDirty;
 
         public Mapper(byte[] romFile, byte[] sram, string ramPath)
         {
@@ -41,9 +45,8 @@
             {
                 if (!value & this.ramg)
                 {
-                    // RAM access was enabled and is being disabled, dump the RAM to disk
-                    // TODO: Implement a minimum interval here, some games toggle ramg super rapidly.
-                    // this.SaveSRAM();
+                    // RAM access was enabled and is being disabled, try to save
+                    this.SaveSRAM();
                 }
 
                 this.ramg = value;
@@ -54,13 +57,19 @@
 
         public abstract void Write(int address, byte value);
 
-        public void SaveSRAM()
+        // This function should be called periodically, such as once per vblank
+        internal void SaveSRAM()
         {
-            if (this.Sram?.Length > 0)
+            // Require at least one second between saving sram to disk
+            if (this.sramDirty && this.Sram?.Length > 0 && Stopwatch.GetTimestamp() - this.lastSramSave > Stopwatch.Frequency)
             {
-                // RAM access was enabled and is being disabled, dump the RAM to disk
+                // It's been at least a second, it's OK to save
                 File.WriteAllBytes(this.ramPath, this.Sram);
+                this.sramDirty = false;
+                this.lastSramSave = Stopwatch.GetTimestamp();
             }
         }
+
+        protected void DirtySram() => this.sramDirty = true;
     }
 }

@@ -39,13 +39,23 @@
 
             if (romFile.Length != this.hRomSize)
             {
-                this.gb.MessageCallback($"Malformed ROM file, invalid size header ({romFile.Length} != {this.hRomSize}), using compatibility mode");
+                this.gb.MessageCallback($"Malformed ROM file, invalid ROM size header ({romFile.Length} != {this.hRomSize}), using compatibility mode");
                 byte[] oldRomFile = romFile;
                 romFile = new byte[0x80_0000];
                 Array.Copy(oldRomFile, 0, romFile, 0, oldRomFile.Length);
             }
 
-            byte[] sram = new byte[this.hRamSize];
+            byte[] sram;
+
+            if (this.hRamSize == 0 && this.hType.ToString().Contains("_RAM"))
+            {
+                sram = new byte[this.ramSizeTable[1]];
+                this.gb.MessageCallback($"Malformed ROM file, invalid RAM size header (mapper is {this.hType} but RAM size is 0), using compatibility mode");
+            }
+            else
+            {
+                sram = new byte[this.hRamSize];
+            }
 
             string ramPath = Path.Combine(Path.GetDirectoryName(filepath), Path.GetFileNameWithoutExtension(filepath)) + ".sav";
 

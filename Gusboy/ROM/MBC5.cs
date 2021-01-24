@@ -71,6 +71,8 @@
                     address &= 0b0001_1111_1111_1111;
 
                     this.Sram[(address | (this.rRAMB << 13)) & this.RamAddressMask] = value;
+
+                    this.DirtySram();
                 }
             }
         }

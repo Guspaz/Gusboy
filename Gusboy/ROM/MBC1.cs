@@ -119,6 +119,8 @@
                     {
                         this.Sram[address & this.RamAddressMask] = value;
                     }
+
+                    this.DirtySram();
                 }
             }
         }

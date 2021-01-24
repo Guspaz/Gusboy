@@ -415,7 +415,12 @@
                                 this.lcdWasOff = false;
                             }
 
+                            // Notify the parent application that there is a new frame to draw
                             this.drawFramebuffer();
+
+                            // Have the mapper write the SRAM to disk if needed
+                            // This has nothing to do with the GPU but the vblank interval is convenient
+                            this.gb.Rom.SaveSRAM();
 
                             // Increment LY at the end of HBLANK
                             this.CurrentLine++;

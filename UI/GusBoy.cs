@@ -16,7 +16,7 @@ namespace Gusboy
     /// </summary>
     public partial class Gusboy : Form
     {
-        private const int SAMPLE_RATE = 48000;
+        private const int SAMPLE_RATE = 47663; // Let NAudio resample, this aligns our 1MHz APU clock to get pretty close to the 59.7275Hz the real hardware needs
 
         private readonly Dictionary<Keys, Input.Keys> keymap = new Dictionary<Keys, Input.Keys>
         {
@@ -135,7 +135,7 @@ namespace Gusboy
             // Immediately copy the framebuffer as fast as possible
             this.framebuffer.CopyTo(this.screenBuffer.Bits, 0);
 
-            this.Invalidate(new Rectangle(0, 0, 160 * 4, 144 * 4), false);
+            this.Invalidate(new Rectangle(0, 0, 160 * 3, 144 * 3), false);
 
             // Draw if we can, don't care if it fails (like if it's been disposed)
             try
@@ -219,7 +219,7 @@ namespace Gusboy
                 this.gb = new Gameboy(this.AddMessage, this.DrawFramebuffer, this.framebuffer, SAMPLE_RATE, filePath);
 
                 this.audioSource = new GusboyWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(SAMPLE_RATE, 2), this.gb);
-                this.outputDevice = new WaveOutEvent() { DesiredLatency = 200, NumberOfBuffers = 10 };
+                this.outputDevice = new WaveOutEvent() { DesiredLatency = 100, NumberOfBuffers = 50 }; // 2ms buffers
                 this.outputDevice.Init(this.audioSource);
                 this.outputDevice.Play();
             }
