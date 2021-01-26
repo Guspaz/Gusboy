@@ -7,7 +7,7 @@ It's still a work-in-progress, and I had no idea what I was doing at the start, 
 
 GBS file support is in too, it will detect GBS files and use a custom mapper to play them (left/right controls which song plays). There is also a separate music player UI that can be used for GBS files.
 
-The UI depends on NAudio and WinForms, but the emulator itself should be platform-independent. It interfaces with the UI through a fairly thin API. Video is handled via an int32 framebuffer and a callback function to notify the application that the Gameboy has finished rendering a frame (it hit its vblank). Audio is handled by a float buffer that the application can consume as desired. Input is handled by KeyUp and KeyDown methods that the application can call. It's left up to the application to wire itself up to that and call the emulator's tick function in a loop.
+The UI depends on NAudio and WinForms, but the emulator itself should be platform-independent (a cross-platform OpenTK ui is in the works) It interfaces with the UI through a fairly thin API. Video is handled via an int32 framebuffer and a callback function to notify the application that the Gameboy has finished rendering a frame (it hit its vblank). Audio is handled by a float buffer that the application can consume as desired. Input is handled by KeyUp and KeyDown methods that the application can call. It's left up to the application to wire itself up to that and call the emulator's tick function in a loop.
 
 Speed control is left up to the application. You can either loop the emulator until it notifies you that a frame is ready, and then halt emulation until the next vsync, synchronizing to video, or you can drain the audio buffer at the same speed as playback, synchronizing to audio. The included UI does the latter, every time NAudio wants to read more audio data, the emulator is run until its internal audio buffer has enough data to satisfy NAudio's read request. You get smooth audio at the expense of frame pacing (which needs work even if we have audio sync).
 
@@ -15,12 +15,12 @@ Speed control is left up to the application. You can either loop the emulator un
 
 In no particular order
 
-- Rework GPU caching mechanisms to only rebuild the parts of the cache that have been invalidated instead of the whole thing
-  - I believe this is the major reason why HDMA support is too slow to enable right now
-- Refactor APU to have less repeated code and figure out how to simplify the properties
-  - Partially complete, though.
+- Implement cross-platform UI in OpenTK (in progress)
+- Improve GPU caching mechanism to be more granular
+- Implement real HDMA (currently faked as GDMA)
+- Simplify APU if possible
 - Rewrite the CPU execution unit to not have a dedicated function for each and every opcode
   - Maybe a first attempt would use reference parameters for registers
 - Try to move more of the GPU code into the cache functions
-- Phase out Gshort and just use integers directly, which would be much easier if the CPU was rewritten to reduce the number of references
+- In general, pass more tests
 - Other general improvements, there's always more that can be done
