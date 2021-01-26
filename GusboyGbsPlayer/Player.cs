@@ -13,7 +13,7 @@
     {
         private const int SAMPLE_RATE = 48000;
         private Gameboy gb;
-        private GusboyWaveProvider audioSource;
+        private GusboyVisualWaveProvider audioSource;
 
         private string title;
         private string author;
@@ -122,7 +122,7 @@
 
                 this.gb = new Gameboy(this.AddMessage, this.DrawFramebuffer, null, SAMPLE_RATE, filePath);
 
-                this.audioSource = new GusboyWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(SAMPLE_RATE, 2), this.gb, this.waveformPainter1, 200);
+                this.audioSource = new GusboyVisualWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(SAMPLE_RATE, 2), this.gb, this.waveformPainter1, 200);
                 this.outputDevice = new WaveOutEvent() { DesiredLatency = 200, NumberOfBuffers = 10 };
                 this.outputDevice.Init(this.audioSource);
                 this.outputDevice.Play();

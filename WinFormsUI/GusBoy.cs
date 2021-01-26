@@ -57,7 +57,6 @@ namespace Gusboy
             }
 
             // Poll input at 250Hz
-            // TODO: Do something hacky to stop the textbox from getting keyboard focus.
             this.input = new WinInput(this, this.OnKeyDown, this.OnKeyUp, 4);
 
             foreach (Keys key in this.keymap.Keys)

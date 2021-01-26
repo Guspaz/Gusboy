@@ -330,8 +330,10 @@
                 // Used to skip the first frame after re-enabling it
                 this.lcdWasOff = true;
             }
-            else if ((oldControl & 0b1000_0000) == 0 && (this.control & 0b1000_0000) != 0) // Screen was turned on
+            else if ((oldControl & 0b1000_0000) == 0 && (this.control & 0b1000_0000) != 0)
             {
+                // Screen was turned on
+
                 // Turning on the screen sets the LY=LYC coincidence bit in BGB, but doesn't seem to fire an interrupt?
                 if (this.CurrentLine == this.rLYC)
                 {
@@ -561,7 +563,7 @@
             this.RenderScanlineTiles(bgIsTransparent, bgPriority);
 
             this.RenderScanlineSprites(bgIsTransparent, bgPriority);
-        }        
+        }
 
         private void HdmaTick()
         {

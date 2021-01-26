@@ -9,7 +9,7 @@
     /// <summary>
     /// Uses NAudio to directly drive emulation speed.
     /// </summary>
-    public class GusboyWaveProvider : IWaveProvider
+    public class GusboyVisualWaveProvider : IWaveProvider
     {
         private readonly WaveFormat waveFormat;
         private readonly Gameboy gb;
@@ -19,7 +19,7 @@
         private readonly int bufferSkip;
         private readonly int queueLength;
 
-        public GusboyWaveProvider(WaveFormat waveFormat, Gameboy gb, WaveformPainter painter, int bufferLength)
+        public GusboyVisualWaveProvider(WaveFormat waveFormat, Gameboy gb, WaveformPainter painter, int bufferLength)
         {
             this.waveFormat = waveFormat;
             this.gb = gb;
@@ -42,13 +42,11 @@
                 this.gb.Tick();
             }
 
-            // TODO: The 960 should be dynamic based on the sample rate and buffer size
             foreach (float sample in this.gb.AudioBuffer.Where((x, i) => i % this.bufferSkip == 0))
             {
                 // Use a queue to delay the sample display to line up with the audio lag
                 this.sampleQueue.Enqueue(sample);
 
-                // TODO: Calculate this, it should be bufferLength / 500 * sampleRate / 960
                 if (this.sampleQueue.Count > this.queueLength)
                 {
                     this.painter.AddMax(this.sampleQueue.Dequeue() * 3);
