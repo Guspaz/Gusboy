@@ -2,10 +2,10 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.ComponentModel;
     using System.Diagnostics;
     using System.IO;
     using Gusboy;
-    using NAudio.Wave;
     using OpenTK.Graphics.OpenGL;
     using OpenTK.Windowing.Common;
     using OpenTK.Windowing.Desktop;
@@ -13,7 +13,12 @@
 
     internal class Window : GameWindow
     {
-        private const int SAMPLE_RATE = 47663; // Let NAudio resample, this aligns our 1MHz APU clock to get pretty close to the 59.7275Hz the real hardware needs
+        private const int SAMPLE_RATE = 32768; // This rate is divisible by the gameboy CPU clock and will result in the correct clockspeed.
+        private const int DESIRED_BUFFER_LENGTH = (SAMPLE_RATE * 2) / 512; // ~2ms per buffer
+        private const int MAX_FRAMEQUEUE_LENGTH = 1;
+        private const double MIN_FRAMERATE = 59.25;
+        private const double MAX_FRAMERATE = 60.25;
+        private const double DYNAMIC_REFRESH_FACTOR = 1.00001;
 
         private readonly Dictionary<Keys, Input.Keys> keymap = new Dictionary<Keys, Input.Keys>
         {
@@ -27,15 +32,22 @@
             { Keys.Right, Input.Keys.Right },
         };
 
+        // The buffer the gameboy renders directly into
         private readonly int[] framebuffer = new int[160 * 144];
-        private readonly int[] screenbuffer = new int[160 * 144];
+
+        private readonly Queue<int[]> screenbuffers = new Queue<int[]>();
+        private readonly Queue<int[]> unusedbuffers = new Queue<int[]>();
+
+        private readonly BackgroundWorker fillAudioBuffer = new BackgroundWorker();
+
+        // The most recently rendered frame
+        private readonly int[] lastFrame = new int[160 * 144];
 
         private Gameboy gb;
+        private GusboyAudio audio;
 
         private long lastFrameTick;
         private long frameCount;
-        private GusboyWaveProvider audioSource;
-        private WaveOutEvent outputDevice;
 
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
             : base(gameWindowSettings, nativeWindowSettings)
@@ -58,6 +70,23 @@
             GL.DepthFunc(DepthFunction.Lequal);
             GL.Enable(EnableCap.Texture2D);
             GL.ClearColor(1, 1, 1, 1);
+
+            this.audio = new GusboyAudio(SAMPLE_RATE);
+
+            this.fillAudioBuffer.DoWork += this.FillAudioBuffer_DoWork;
+
+            base.OnLoad();
+        }
+
+        protected override void OnUpdateFrame(FrameEventArgs args)
+        {
+            base.OnUpdateFrame(args);
+
+            // I don't understand why, but OpenAL's ProcessedBuffers doesn't seem to be updated often enough to do this synchronously.
+            if (!this.fillAudioBuffer.IsBusy)
+            {
+                this.fillAudioBuffer.RunWorkerAsync();
+            }
         }
 
         protected override void OnKeyDown(KeyboardKeyEventArgs e)
@@ -69,6 +98,8 @@
                     this.gb.KeyDown(this.keymap[e.Key]);
                 }
             }
+
+            base.OnKeyDown(e);
         }
 
         protected override void OnKeyUp(KeyboardKeyEventArgs e)
@@ -80,10 +111,36 @@
                     this.gb.KeyUp(this.keymap[e.Key]);
                 }
             }
+
+            base.OnKeyUp(e);
         }
 
         protected override void OnRenderFrame(FrameEventArgs args)
         {
+            this.frameCount++;
+
+            if (this.frameCount == 600)
+            {
+                // This code can go here (measures the emulator output framerate) or in OnRenderFrame (measures the present framerate).
+                Console.WriteLine($"Framerate: {this.frameCount / ((double)(Stopwatch.GetTimestamp() - this.lastFrameTick) / Stopwatch.Frequency):0.000}");
+                this.lastFrameTick = Stopwatch.GetTimestamp();
+                this.frameCount = 0;
+            }
+
+            // Default to the most recent frame if there is nothing new
+            int[] dequeuedFrame = null;
+
+            if (this.screenbuffers.Count > 0)
+            {
+                dequeuedFrame = this.screenbuffers.Dequeue();
+            }
+            else if (this.gb != null && this.RenderFrequency > MIN_FRAMERATE)
+            {
+                // Slightly decrease the update rate here, as we're consuming frames too fast.
+                this.RenderFrequency /= DYNAMIC_REFRESH_FACTOR;
+                Console.WriteLine($"Buffer empty, new render target: {this.RenderFrequency:0.000}");
+            }
+
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             int id = GL.GenTexture();
@@ -98,7 +155,7 @@
                 0,
                 PixelFormat.Bgra,
                 PixelType.UnsignedByte,
-                this.screenbuffer);
+                dequeuedFrame ?? this.lastFrame);
 
             GL.TexParameter(
                 TextureTarget.Texture2D,
@@ -124,6 +181,11 @@
 
             GL.DeleteTexture(id);
             this.SwapBuffers();
+
+            if (dequeuedFrame != null)
+            {
+                this.unusedbuffers.Enqueue(dequeuedFrame);
+            }
         }
 
         protected override void OnFileDrop(FileDropEventArgs e)
@@ -134,38 +196,57 @@
             }
         }
 
+        private void FillAudioBuffer_DoWork(object sender, DoWorkEventArgs e)
+        {
+            while (this.audio.HasEmptyBuffers() && this.gb != null)
+            {
+                while (this.gb.AudioBuffer.Count < DESIRED_BUFFER_LENGTH)
+                {
+                    this.gb.Tick();
+                }
+
+                this.audio.AddSamples(this.gb.AudioBuffer.ToArray());
+                this.gb.AudioBuffer.Clear();
+            }
+        }
+
         private void InitGameboy(string filePath)
         {
             if (File.Exists(filePath))
             {
-                if (this.outputDevice != null)
-                {
-                    this.outputDevice.Stop();
-                    this.outputDevice.Dispose();
-                }
-
                 this.gb = new Gameboy(this.MessageCallback, this.DrawFramebuffer, this.framebuffer, SAMPLE_RATE, filePath);
-
-                this.audioSource = new GusboyWaveProvider(WaveFormat.CreateIeeeFloatWaveFormat(SAMPLE_RATE, 2), this.gb);
-                this.outputDevice = new WaveOutEvent() { DesiredLatency = 100, NumberOfBuffers = 50 }; // 2ms buffers
-                this.outputDevice.Init(this.audioSource);
-                this.outputDevice.Play();
             }
         }
 
         private bool DrawFramebuffer()
         {
-            // Double buffer for smoothness, but we're not going to v-sync unless there is VRR on the monitor
-            Array.Copy(this.framebuffer, this.screenbuffer, this.framebuffer.Length);
-
-            this.frameCount++;
-
-            if (this.frameCount == 60)
+            // If the buffer chain is full, drop the frame
+            if (this.screenbuffers.Count <= MAX_FRAMEQUEUE_LENGTH)
             {
-                // This code can go here (measures the emulator output framerate) or in OnRenderFrame (measures the present framerate).
-                // Console.WriteLine($"Framerate: {this.frameCount / ((double)(Stopwatch.GetTimestamp() - this.lastFrameTick) / Stopwatch.Frequency)}");
-                this.lastFrameTick = Stopwatch.GetTimestamp();
-                this.frameCount = 0;
+                int[] copybuffer;
+
+                if (this.unusedbuffers.Count > 0)
+                {
+                    copybuffer = this.unusedbuffers.Dequeue();
+                }
+                else
+                {
+                    copybuffer = new int[this.framebuffer.Length];
+                }
+
+                Array.Copy(this.framebuffer, copybuffer, this.framebuffer.Length);
+                Array.Copy(this.framebuffer, this.lastFrame, this.framebuffer.Length);
+                this.screenbuffers.Enqueue(copybuffer);
+            }
+            else
+            {
+                // The queue is already full, drop the frame
+                // Slightly increase the update rate here, as it's not consuming fast enough
+                if (this.RenderFrequency < MAX_FRAMERATE)
+                {
+                    this.RenderFrequency *= DYNAMIC_REFRESH_FACTOR;
+                    Console.WriteLine($"Buffer full, new render target: {this.RenderFrequency:0.000}");
+                }
             }
 
             return true;

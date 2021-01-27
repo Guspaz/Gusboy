@@ -16,7 +16,7 @@ namespace Gusboy
     /// </summary>
     public partial class Gusboy : Form
     {
-        private const int SAMPLE_RATE = 47663; // Let NAudio resample, this aligns our 1MHz APU clock to get pretty close to the 59.7275Hz the real hardware needs
+        private const int SAMPLE_RATE = 32768; // Let NAudio resample, this aligns our 1MHz APU clock to get pretty close to the 59.7275Hz the real hardware needs
 
         private readonly Dictionary<Keys, Input.Keys> keymap = new Dictionary<Keys, Input.Keys>
         {

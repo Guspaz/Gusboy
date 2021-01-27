@@ -5,7 +5,7 @@
     using System.Linq;
 
     /// <summary>
-    /// Sprite stuff
+    /// Sprite stuff.
     /// </summary>
     public partial class GPU
     {

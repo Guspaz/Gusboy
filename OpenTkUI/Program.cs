@@ -13,10 +13,12 @@
             var settings = new GameWindowSettings()
             {
                 RenderFrequency = 59.7275,
-                UpdateFrequency = 59.7275,
+                UpdateFrequency = 119.4552,
+
+                // IsMultiThreaded = true,
             };
 
-            // Pretty much all the OpenTK code is borrowed from https://github.com/BluestormDNA/ProjectPSX and modified for my needs.
+            // Pretty much all the OpenTK GL code is borrowed from https://github.com/BluestormDNA/ProjectPSX and modified for my needs.
             var nativeWindow = new NativeWindowSettings()
             {
                 API = ContextAPI.OpenGL,
@@ -28,6 +30,7 @@
 
             var window = new Window(settings, nativeWindow)
             {
+                // V-sync is super broken in windowed mode?
                 VSync = VSyncMode.Off,
             };
 
