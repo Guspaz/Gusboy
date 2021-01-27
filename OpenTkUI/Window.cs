@@ -15,7 +15,7 @@
     {
         private const int SAMPLE_RATE = 32768; // This rate is divisible by the gameboy CPU clock and will result in the correct clockspeed.
         private const int DESIRED_BUFFER_LENGTH = (SAMPLE_RATE * 2) / 512; // ~2ms per buffer
-        private const int MAX_FRAMEQUEUE_LENGTH = 1;
+        private const int MAX_FRAMEQUEUE_LENGTH = 2;
         private const double MIN_FRAMERATE = 59.25;
         private const double MAX_FRAMERATE = 60.25;
         private const double DYNAMIC_REFRESH_FACTOR = 1.00001;
@@ -134,11 +134,10 @@
             {
                 dequeuedFrame = this.screenbuffers.Dequeue();
             }
-            else if (this.gb != null && this.RenderFrequency > MIN_FRAMERATE)
+            else
             {
-                // Slightly decrease the update rate here, as we're consuming frames too fast.
-                this.RenderFrequency /= DYNAMIC_REFRESH_FACTOR;
-                Console.WriteLine($"Buffer empty, new render target: {this.RenderFrequency:0.000}");
+                // Slow down refresh to increase the buffer
+                this.AdjustDynamicRate(false);
             }
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -196,6 +195,29 @@
             }
         }
 
+        private void AdjustDynamicRate(bool increase)
+        {
+            if (this.gb == null)
+            {
+                return;
+            }
+
+            if (increase && this.RenderFrequency < MAX_FRAMERATE)
+            {
+                // Slightly increase the update rate here, as the frames are accumulating too fast
+                this.RenderFrequency *= DYNAMIC_REFRESH_FACTOR;
+                this.UpdateFrequency = this.RenderFrequency * 2;
+                // Console.WriteLine($"Buffer full, new render target: {this.RenderFrequency:0.000}");
+            }
+            else if (!increase && this.RenderFrequency > MIN_FRAMERATE)
+            {
+                // Slightly decrease the update rate here, as we're consuming frames too fast.
+                this.RenderFrequency /= DYNAMIC_REFRESH_FACTOR;
+                this.UpdateFrequency = this.RenderFrequency * 2;
+                // Console.WriteLine($"Buffer empty, new render target: {this.RenderFrequency:0.000}");
+            }
+        }
+
         private void FillAudioBuffer_DoWork(object sender, DoWorkEventArgs e)
         {
             while (this.audio.HasEmptyBuffers() && this.gb != null)
@@ -221,7 +243,7 @@
         private bool DrawFramebuffer()
         {
             // If the buffer chain is full, drop the frame
-            if (this.screenbuffers.Count <= MAX_FRAMEQUEUE_LENGTH)
+            if (this.screenbuffers.Count < MAX_FRAMEQUEUE_LENGTH)
             {
                 int[] copybuffer;
 
@@ -240,13 +262,8 @@
             }
             else
             {
-                // The queue is already full, drop the frame
-                // Slightly increase the update rate here, as it's not consuming fast enough
-                if (this.RenderFrequency < MAX_FRAMERATE)
-                {
-                    this.RenderFrequency *= DYNAMIC_REFRESH_FACTOR;
-                    Console.WriteLine($"Buffer full, new render target: {this.RenderFrequency:0.000}");
-                }
+                // Speed up to decrease the buffer
+                this.AdjustDynamicRate(true);
             }
 
             return true;
