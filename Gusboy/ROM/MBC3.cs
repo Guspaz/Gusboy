@@ -16,8 +16,6 @@
         private byte rRTCDH;
         private bool rLatch;
 
-        private byte openBus;
-
         private Gameboy gb;
 
         public MBC3(byte[] romFile, byte[] sram, string ramPath, Gameboy gb)
@@ -38,14 +36,14 @@
                 // Only the first 14 bits of the address are wired up to the ROM chips
                 address &= 0b0011_1111_1111_1111;
 
-                return this.openBus = this.RomFile[address & this.RomAddressMask];
+                return this.RomFile[address & this.RomAddressMask];
             }
             else if (address >= 0x4000 && address <= 0x7FFF)
             {
                 // Only the first 14 bits of the address are wired up to the ROM chips
                 address &= 0b0011_1111_1111_1111;
 
-                return this.openBus = this.RomFile[((this.rROMB << 14) | address) & this.RomAddressMask];
+                return this.RomFile[((this.rROMB << 14) | address) & this.RomAddressMask];
             }
             else if (address >= 0xA000 && address <= 0xBFFF)
             {
@@ -63,16 +61,14 @@
                             0x0A => this.rRTCH,
                             0x0B => this.rRTCDL,
                             0x0C => this.rRTCDH,
-                            _ => this.openBus,
+                            _ => 0xFF,
                         };
                     }
                     else if ( this.rRAMB >= 0x00 && this.rRAMB <= 0x03 && this.Sram.Length > 0)
                     {
-                        return this.openBus = this.Sram[(address | (this.rRAMB << 13)) & this.RamAddressMask];
+                        return this.Sram[(address | (this.rRAMB << 13)) & this.RamAddressMask];
                     }
                 }
-
-                return this.openBus;
             }
 
             return 0xFF;
@@ -87,8 +83,8 @@
             }
             else if (address >= 0x2000 && address <= 0x3FFF)
             {
-                // BANK1: 5 bits
-                value &= 0b0001_1111;
+                // ROMB: 7 bits
+                value &= 0b0111_1111;
 
                 // MBC3 does not allow ROMB to be 0
                 this.rROMB = value == 0 ? 1 : value;
@@ -144,10 +140,10 @@
                                 this.gb.Cpu.RtcHours = value;
                                 break;
                             case 0x0B:
-                                this.gb.Cpu.RtcDays = (this.gb.Cpu.RtcDays & 0b1_0000_0000) | value;
+                                this.gb.Cpu.RtcDays = (ushort)((this.gb.Cpu.RtcDays & 0b1_0000_0000) | value);
                                 break;
                             case 0x0C:
-                                this.gb.Cpu.RtcDays = (this.gb.Cpu.RtcDays & 0b1111_1111) | ((value & 0b0000_0001) << 8);
+                                this.gb.Cpu.RtcDays = (ushort)((this.gb.Cpu.RtcDays & 0b1111_1111) | ((value & 0b0000_0001) << 8));
                                 this.gb.Cpu.RtcCarry = (value & 0b1000_0000) != 0;
                                 this.gb.Cpu.EnableRTC = (value & 0b0100_0000) == 0;
                                 break;
@@ -162,31 +158,5 @@
                 }
             }
         }
-
-        //private (int Seconds, int Minutes, int Hours, int Days, bool Carry) CalculateTime()
-        //{
-        //    int tickSeconds = (int)((this.gb.Cpu.RtcTicks - this.tickOffset) / (8192 * 256));
-        //    int offsetSeconds = this.secondOffset + (this.minuteOffset * 60) + (this.hourOffset * 60 * 60) + (this.dayOffset * 60 * 60 * 24);
-        //    int totalSeconds = this.rHalt ? offsetSeconds : tickSeconds + offsetSeconds;
-
-        //    int days = totalSeconds / (60 * 60 * 24);
-        //    bool carryBit = false;
-
-        //    totalSeconds -= days * 60 * 60 * 24;
-
-        //    if (days > 511)
-        //    {
-        //        carryBit = true;
-        //        days -= 511;
-        //    }
-
-        //    int hours = (byte)(totalSeconds / (60 * 60));
-        //    totalSeconds -= this.rRTCH * (60 * 60);
-
-        //    int minutes = (byte)(totalSeconds / 60);
-        //    totalSeconds -= this.rRTCM * 60;
-
-        //    return (totalSeconds, minutes, hours, days, carryBit);
-        //}
     }
 }

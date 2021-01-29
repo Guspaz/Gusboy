@@ -48,6 +48,7 @@
             int newCpuTicks = (int)(this.Ticks - this.oldCpuTicks) >> 2;
             this.oldCpuTicks = this.Ticks;
 
+            // Thanks to Natt Akuma for simplifying this logic
             if (this.EnableRTC)
             {
                 // Increment the RTC clock at 2 MHz
@@ -57,45 +58,28 @@
                 if (this.rtcClock >= 64)
                 {
                     this.rtcClock -= 64;
-                    this.RtcSubseconds++;
+                    this.RtcSubseconds = (this.RtcSubseconds + 1) & 32767;
 
-                    if (this.RtcSubseconds == 32768)
+                    if (this.RtcSubseconds == 0)
                     {
                         this.RtcSubseconds = 0;
-                        this.RtcSeconds++;
+                        this.RtcSeconds = (this.RtcSeconds + 1) & 63;
 
-                        if (this.RtcSeconds == 64)
+                        if (this.RtcSeconds == 60)
                         {
                             this.RtcSeconds = 0;
-                        }
-                        else if (this.RtcSeconds == 60)
-                        {
-                            this.RtcSeconds = 0;
-                            this.RtcMinutes++;
+                            this.RtcMinutes = (this.RtcMinutes + 1) & 63;
 
-                            if (this.RtcMinutes == 64)
+                            if (this.RtcMinutes == 60)
                             {
                                 this.RtcMinutes = 0;
-                            }
-                            else if (this.RtcMinutes == 60)
-                            {
-                                this.RtcMinutes = 0;
-                                this.RtcHours++;
+                                this.RtcHours = (this.RtcHours + 1) & 31;
 
-                                if (this.RtcHours == 32)
+                                if (this.RtcHours == 24)
                                 {
                                     this.RtcHours = 0;
-                                }
-                                else if (this.RtcHours == 24 )
-                                {
-                                    this.RtcHours = 0;
-                                    this.RtcDays++;
-
-                                    if (this.RtcDays == 512)
-                                    {
-                                        this.RtcDays = 0;
-                                        this.RtcCarry = true;
-                                    }
+                                    this.RtcDays = (this.RtcDays + 1) & 511;
+                                    this.RtcCarry |= this.RtcDays == 0;
                                 }
                             }
                         }
