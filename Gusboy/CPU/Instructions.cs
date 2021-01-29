@@ -2216,11 +2216,11 @@
         {
             this.fStop = true;
 
-            // Work around buggy software? ROMs will hard-lock the gameboy if they halt with interrupts disabled. Blargg's cpu_instrs test appears to do this right before test 3.
-            if (this.rInterruptEnable == 0)
+            // Work around buggy software? ROMs will hard-lock the gameboy if they halt with interrupts disabled.
+            /*if (this.rInterruptEnable == 0)
             {
                 this.rInterruptEnable = 0x1f;
-            }
+            }*/
 
             if (this.fPrepareSwitch)
             {

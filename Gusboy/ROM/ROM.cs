@@ -68,6 +68,12 @@
                 CartridgeType.MBC1_RAM or
                 CartridgeType.MBC1_RAM_BATTERY => new MBC1(romFile, sram, ramPath),
 
+                CartridgeType.MBC3 or
+                CartridgeType.MBC3_RAM or
+                CartridgeType.MBC3_RAM_BATTERY or
+                CartridgeType.MBC3_TIMER_BATTERY or
+                CartridgeType.MBC3_TIMER_RAM_BATTERY => new MBC3(romFile, sram, ramPath, this.gb),
+
                 CartridgeType.MBC5 or
                 CartridgeType.MBC5_RAM or
                 CartridgeType.MBC5_RAM_BATTERY or
