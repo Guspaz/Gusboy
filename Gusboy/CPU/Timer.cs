@@ -10,6 +10,7 @@
         private bool oldAndResult;
         private bool reloadingTima;
         private uint rtcMultiplier;
+        private bool rtcSupported;
 
 #pragma warning disable SA1300 // Element should begin with upper-case letter
 #pragma warning disable IDE1006 // Naming Styles
@@ -29,11 +30,13 @@
             set => this.reloadingTima = value;
         }
 
-        public bool EnableRTC
+        public bool RtcTimerActive
         {
             get => this.rtcMultiplier > 0;
             set => this.rtcMultiplier = value ? this.fSpeedTimerMultiplier : 0;
         }
+
+        public bool RtcSupported { set => this.rtcSupported = value; }
 
         public RtcCounter RtcCounter { get; } = new RtcCounter();
 
@@ -42,8 +45,11 @@
             uint newCpuTicks = (uint)(this.Ticks - this.oldCpuTicks) >> 2;
             this.oldCpuTicks = this.Ticks;
 
-            // Increment the RTC clock at 2 MHz
-            this.RtcCounter.AddTicks(newCpuTicks * this.rtcMultiplier);
+            if (this.rtcSupported)
+            {
+                // Increment the RTC clock at 2 MHz
+                this.RtcCounter.AddTicks(newCpuTicks * this.rtcMultiplier);
+            }
 
             // It takes one full M-Cycle to reload TIMA so we've divided by four
             for (int i = 0; i < newCpuTicks; i++)

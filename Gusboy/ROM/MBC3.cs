@@ -22,11 +22,10 @@
             : base(romFile, sram, ramPath)
         {
             this.gb = gb;
-            this.gb.Cpu.EnableRTC = true;
+            this.gb.Cpu.RtcSupported = this.gb.Cpu.RtcTimerActive = true;
 
             // TODO: Implement RTC save/load (with real-world timestamp to increment time while closed)
             // TODO: Test ROM/RAM banking
-            // TODO: Test open bus behaviour
         }
 
         public override byte Read(int address)
@@ -109,7 +108,7 @@
                     this.rRTCM = (byte)this.gb.Cpu.RtcCounter.Minutes;
                     this.rRTCH = (byte)this.gb.Cpu.RtcCounter.Hours;
                     this.rRTCDL = (byte)this.gb.Cpu.RtcCounter.Days; // This will get the first 8 bits
-                    this.rRTCDH = (byte)((this.gb.Cpu.RtcCounter.Days > 255 ? 1 : 0) | (this.gb.Cpu.EnableRTC ? 0 : 0b0100_0000) | ((this.gb.Cpu.RtcCounter.Overflow & 0b1) << 7));
+                    this.rRTCDH = (byte)((this.gb.Cpu.RtcCounter.Days > 255 ? 1 : 0) | (this.gb.Cpu.RtcTimerActive ? 0 : 0b0100_0000) | ((this.gb.Cpu.RtcCounter.Overflow & 0b1) << 7));
                 }
 
                 this.rLatch = newLatch;
@@ -145,7 +144,7 @@
                             case 0x0C:
                                 this.gb.Cpu.RtcCounter.Days = (ushort)((this.gb.Cpu.RtcCounter.Days & 0b1111_1111) | ((value & 0b0000_0001) << 8));
                                 this.gb.Cpu.RtcCounter.Overflow = (byte)((value & 0b1000_0000) >> 7);
-                                this.gb.Cpu.EnableRTC = (value & 0b0100_0000) == 0;
+                                this.gb.Cpu.RtcTimerActive = (value & 0b0100_0000) == 0;
                                 break;
                         }
                     }
