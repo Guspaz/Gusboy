@@ -9,7 +9,7 @@
         private long oldCpuTicks;
         private bool oldAndResult;
         private bool reloadingTima;
-        private int rtcClock;
+        private uint rtcMultiplier;
 
 #pragma warning disable SA1300 // Element should begin with upper-case letter
 #pragma warning disable IDE1006 // Naming Styles
@@ -29,63 +29,21 @@
             set => this.reloadingTima = value;
         }
 
-        public bool EnableRTC { get; set; }
+        public bool EnableRTC
+        {
+            get => this.rtcMultiplier > 0;
+            set => this.rtcMultiplier = value ? this.fSpeedTimerMultiplier : 0;
+        }
 
-        public int RtcSubseconds { get; set; }
-
-        public int RtcSeconds { get; set; }
-
-        public int RtcMinutes { get; set; }
-
-        public int RtcHours { get; set; }
-
-        public int RtcDays { get; set; }
-
-        public bool RtcCarry { get; set; }
+        public RtcCounter RtcCounter { get; } = new RtcCounter();
 
         public void TimerTick()
         {
-            int newCpuTicks = (int)(this.Ticks - this.oldCpuTicks) >> 2;
+            uint newCpuTicks = (uint)(this.Ticks - this.oldCpuTicks) >> 2;
             this.oldCpuTicks = this.Ticks;
 
-            // Thanks to Natt Akuma for simplifying this logic
-            if (this.EnableRTC)
-            {
-                // Increment the RTC clock at 2 MHz
-                this.rtcClock += this.fSpeed ? newCpuTicks : newCpuTicks << 1;
-
-                // Tick the rtc counter at 32,768 (2097152 / 32768 = 64)
-                if (this.rtcClock >= 64)
-                {
-                    this.rtcClock -= 64;
-                    this.RtcSubseconds = (this.RtcSubseconds + 1) & 32767;
-
-                    if (this.RtcSubseconds == 0)
-                    {
-                        this.RtcSubseconds = 0;
-                        this.RtcSeconds = (this.RtcSeconds + 1) & 63;
-
-                        if (this.RtcSeconds == 60)
-                        {
-                            this.RtcSeconds = 0;
-                            this.RtcMinutes = (this.RtcMinutes + 1) & 63;
-
-                            if (this.RtcMinutes == 60)
-                            {
-                                this.RtcMinutes = 0;
-                                this.RtcHours = (this.RtcHours + 1) & 31;
-
-                                if (this.RtcHours == 24)
-                                {
-                                    this.RtcHours = 0;
-                                    this.RtcDays = (this.RtcDays + 1) & 511;
-                                    this.RtcCarry |= this.RtcDays == 0;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            // Increment the RTC clock at 2 MHz
+            this.RtcCounter.AddTicks(newCpuTicks * this.rtcMultiplier);
 
             // It takes one full M-Cycle to reload TIMA so we've divided by four
             for (int i = 0; i < newCpuTicks; i++)

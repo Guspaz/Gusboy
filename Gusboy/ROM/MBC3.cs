@@ -105,11 +105,11 @@
                 if (newLatch && !this.rLatch)
                 {
                     // LATCH
-                    this.rRTCS = (byte)this.gb.Cpu.RtcSeconds;
-                    this.rRTCM = (byte)this.gb.Cpu.RtcMinutes;
-                    this.rRTCH = (byte)this.gb.Cpu.RtcHours;
-                    this.rRTCDL = (byte)this.gb.Cpu.RtcDays; // This will get the first 8 bits
-                    this.rRTCDH = (byte)((this.gb.Cpu.RtcDays > 255 ? 1 : 0) | (this.gb.Cpu.EnableRTC ? 0 : 0b0100_0000) | (this.gb.Cpu.RtcCarry ? 0b1000_0000 : 0));
+                    this.rRTCS = (byte)this.gb.Cpu.RtcCounter.Seconds;
+                    this.rRTCM = (byte)this.gb.Cpu.RtcCounter.Minutes;
+                    this.rRTCH = (byte)this.gb.Cpu.RtcCounter.Hours;
+                    this.rRTCDL = (byte)this.gb.Cpu.RtcCounter.Days; // This will get the first 8 bits
+                    this.rRTCDH = (byte)((this.gb.Cpu.RtcCounter.Days > 255 ? 1 : 0) | (this.gb.Cpu.EnableRTC ? 0 : 0b0100_0000) | ((this.gb.Cpu.RtcCounter.Overflow & 0b1) << 7));
                 }
 
                 this.rLatch = newLatch;
@@ -128,23 +128,23 @@
                         {
                             case 0x08:
                                 value &= 0b0011_1111;
-                                this.gb.Cpu.RtcSeconds = value;
-                                this.gb.Cpu.RtcSubseconds = 0;
+                                this.gb.Cpu.RtcCounter.Seconds = value;
+                                this.gb.Cpu.RtcCounter.SubSeconds = 0;
                                 break;
                             case 0x09:
                                 value &= 0b0011_1111;
-                                this.gb.Cpu.RtcMinutes = value;
+                                this.gb.Cpu.RtcCounter.Minutes = value;
                                 break;
                             case 0x0A:
                                 value &= 0b0001_1111;
-                                this.gb.Cpu.RtcHours = value;
+                                this.gb.Cpu.RtcCounter.Hours = value;
                                 break;
                             case 0x0B:
-                                this.gb.Cpu.RtcDays = (ushort)((this.gb.Cpu.RtcDays & 0b1_0000_0000) | value);
+                                this.gb.Cpu.RtcCounter.Days = (ushort)((this.gb.Cpu.RtcCounter.Days & 0b1_0000_0000) | value);
                                 break;
                             case 0x0C:
-                                this.gb.Cpu.RtcDays = (ushort)((this.gb.Cpu.RtcDays & 0b1111_1111) | ((value & 0b0000_0001) << 8));
-                                this.gb.Cpu.RtcCarry = (value & 0b1000_0000) != 0;
+                                this.gb.Cpu.RtcCounter.Days = (ushort)((this.gb.Cpu.RtcCounter.Days & 0b1111_1111) | ((value & 0b0000_0001) << 8));
+                                this.gb.Cpu.RtcCounter.Overflow = (byte)((value & 0b1000_0000) >> 7);
                                 this.gb.Cpu.EnableRTC = (value & 0b0100_0000) == 0;
                                 break;
                         }

@@ -18,17 +18,31 @@
         private byte rH;
         private byte rL;
 
+        // Internal flags
+        private bool fSpeedInternal;
+
+        // Flags
         public bool fHalt { get; set; }
 
         public bool fStop { get; set; }
 
-        public bool fSpeed { get; set; }
+        public bool fSpeed
+        {
+            get => this.fSpeedInternal;
+            set
+            {
+                this.fSpeedInternal = value;
+                this.fSpeedTimerMultiplier = this.fSpeed ? 1 : 2;
+            }
+        }
+
+        public uint fSpeedTimerMultiplier { get; set; } = 2;
 
         public bool fPrepareSwitch { get; set; }
 
+        // 16-bit registers
         public int rPC { get; set; }
 
-        // 16-bit registers
         public int rSP { get; set; }
 
         // 16-bit registers
