@@ -178,6 +178,11 @@
                             this.accumulationBufferLeft += this.HighPass((this.channel1.OutputLeft + this.channel2.OutputLeft + this.channel3.OutputLeft + this.channel4.OutputLeft) / 4 * (this.leftMasterVolume + 1), 1);
                             this.accumulationBufferRight += this.HighPass((this.channel1.OutputRight + this.channel2.OutputRight + this.channel3.OutputRight + this.channel4.OutputRight) / 4 * (this.rightMasterVolume + 1), 2);
                         }
+                        else
+                        {
+                            this.accumulationBufferLeft += this.HighPass(7.5 / 100, 1);
+                            this.accumulationBufferRight += this.HighPass(7.5 / 100, 1);
+                        }
 
                         this.superSampleTimer = SUPERSAMPLE_MODULO;
                     }
@@ -191,6 +196,7 @@
                         }
                         else
                         {
+                            // TODO: Something else here?
                             this.Buffer.Add(0);
                             this.Buffer.Add(0);
                         }

@@ -3,6 +3,7 @@
     using System;
     using System.Diagnostics;
     using System.IO;
+    using System.Linq;
 
     public abstract class Mapper
     {
@@ -61,10 +62,18 @@
         internal void SaveSRAM()
         {
             // Require at least one second between saving sram to disk
+            // TODO: Flag SRAM as dirty on RTC change
             if (this.sramDirty && this.Sram?.Length > 0 && Stopwatch.GetTimestamp() - this.lastSramSave > Stopwatch.Frequency)
             {
                 // It's been at least a second, it's OK to save
-                File.WriteAllBytes(this.ramPath, this.Sram);
+                byte[] fileToSave = this.Sram;
+
+                if (this is MBC3)
+                {
+                    fileToSave = fileToSave.Concat((this as MBC3).GetState()).ToArray();
+                }
+
+                File.WriteAllBytes(this.ramPath, fileToSave);
                 this.sramDirty = false;
                 this.lastSramSave = Stopwatch.GetTimestamp();
             }
