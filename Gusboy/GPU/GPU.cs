@@ -106,7 +106,6 @@
             LCDPower = 1 << 7,
         }
 
-        // TODO: Replace jagged array with multi-dimensional array
         public int[][] PalObjMap { get; } = new int[4][];
 
         public byte CurrentOam { get; set; }
@@ -559,7 +558,6 @@
             bool[] bgIsTransparent = new bool[256];
             bool[] bgPriority = new bool[256];
 
-            // TODO: CGB handles BGEnabled differently
             this.RenderScanlineTiles(bgIsTransparent, bgPriority);
 
             this.RenderScanlineSprites(bgIsTransparent, bgPriority);

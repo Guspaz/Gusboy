@@ -13,9 +13,7 @@
             var settings = new GameWindowSettings()
             {
                 RenderFrequency = 59.7275,
-                //UpdateFrequency = 512,
-
-                //IsMultiThreaded = true,
+                UpdateFrequency = 59.7275 * 2,
             };
 
             // Pretty much all the OpenTK GL code is borrowed from https://github.com/BluestormDNA/ProjectPSX and modified for my needs.

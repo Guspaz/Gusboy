@@ -1195,14 +1195,14 @@
         {
             this.Ram[0xFF00 + this.rC] = this.rA;
 
-            return 8; // TODO: Was 12? "ld   (FF00+C),A"
+            return 8;
         }
 
         private int ld_a_pc(int operand)
         {
             this.rA = this.Ram[0xFF00 + this.rC];
 
-            return 8; // TODO: Was 12? "ld   A,(FF00+C)"
+            return 8;
         }
 
         // Register copies

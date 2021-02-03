@@ -5,6 +5,8 @@
     using System.ComponentModel;
     using System.Diagnostics;
     using System.IO;
+    using System.Linq;
+    using System.Runtime;
     using Gusboy;
     using OpenTK.Graphics.OpenGL;
     using OpenTK.Windowing.Common;
@@ -14,11 +16,10 @@
     internal class Window : GameWindow
     {
         private const int SAMPLE_RATE = 32768; // This rate is divisible by the gameboy CPU clock and will result in the correct clockspeed.
-        private const int DESIRED_BUFFER_LENGTH = (SAMPLE_RATE * 2) / 512; // ~2ms per buffer
+        private const int DESIRED_BUFFER_LENGTH = (SAMPLE_RATE * 2) / 1024; // ~1ms per buffer
         private const int MAX_FRAMEQUEUE_LENGTH = 2;
-        private const double MIN_FRAMERATE = 59.25;
-        private const double MAX_FRAMERATE = 60.25;
-        private const double DYNAMIC_REFRESH_FACTOR = 1.00001;
+        private const double DYNAMIC_REFRESH_FACTOR = 1.0001;
+        private const int MIN_BUFFER = 50;
 
         private readonly Dictionary<Keys, Input.Keys> keymap = new Dictionary<Keys, Input.Keys>
         {
@@ -35,10 +36,9 @@
         // The buffer the gameboy renders directly into
         private readonly int[] framebuffer = new int[160 * 144];
 
+        // The buffer queues
         private readonly Queue<int[]> screenbuffers = new Queue<int[]>();
         private readonly Queue<int[]> unusedbuffers = new Queue<int[]>();
-
-        private readonly BackgroundWorker fillAudioBuffer = new BackgroundWorker();
 
         // The most recently rendered frame
         private readonly int[] lastFrame = new int[160 * 144];
@@ -46,13 +46,63 @@
         private Gameboy gb;
         private GusboyAudio audio;
 
-        private long lastFrameTick;
+        private int ticksPerFrame = (int)((1 / 59.7275) * Stopwatch.Frequency); // Doesn't need to be exact because we're going to vary it to keep the buffer full.
+
         private long frameCount;
+
+        private List<float> frameTimes = new List<float>();
+        private long nextRenderTick;
+
+        private BackgroundWorker renderThread = new BackgroundWorker();
 
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
             : base(gameWindowSettings, nativeWindowSettings)
         {
-            this.MakeCurrent();
+        }
+
+        public override void Run()
+        {
+            this.OnLoad();
+            this.OnResize(new ResizeEventArgs(this.Size));
+
+            // Do some things to try to avoid spikes
+            // Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
+            // Process.GetCurrentProcess().ProcessorAffinity = (IntPtr)0x4; // Only run on core 3
+            // System.Threading.Thread.CurrentThread.Priority = System.Threading.ThreadPriority.Highest;
+
+            this.renderThread.DoWork += this.RenderThread_DoWork;
+
+            // Wait for something to initialize the gameboy
+            while (this.gb == null)
+            {
+                this.ProcessEvents();
+
+                if (!this.Exists || this.IsExiting)
+                {
+                    this.DestroyWindow();
+                    return;
+                }
+            }
+
+            GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
+
+            this.Context.MakeNoneCurrent();
+
+            this.renderThread.RunWorkerAsync();
+
+            while (true)
+            {
+                // TODO: Call this less often, closer to once or twice per frame.
+                this.ProcessEvents();
+
+                this.OnUpdateFrame(default);
+
+                if (!this.Exists || this.IsExiting)
+                {
+                    this.DestroyWindow();
+                    return;
+                }
+            }
         }
 
         protected override void OnLoad()
@@ -64,28 +114,20 @@
                 this.InitGameboy(args[1]);
             }
 
-            GL.Enable(EnableCap.Blend);
-            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            GL.Enable(EnableCap.DepthTest);
-            GL.DepthFunc(DepthFunction.Lequal);
-            GL.Enable(EnableCap.Texture2D);
-            GL.ClearColor(1, 1, 1, 1);
-
             this.audio = new GusboyAudio(SAMPLE_RATE);
-
-            this.fillAudioBuffer.DoWork += this.FillAudioBuffer_DoWork;
 
             base.OnLoad();
         }
 
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
-            base.OnUpdateFrame(args);
+            int audioBufferCount = this.audio.CurrentBufferLatency();
 
-            // I don't understand why, but OpenAL's ProcessedBuffers doesn't seem to be updated often enough to do this synchronously.
-            if (!this.fillAudioBuffer.IsBusy)
+            while (audioBufferCount < MIN_BUFFER)
             {
-                this.fillAudioBuffer.RunWorkerAsync();
+                this.audio.AddSamples(this.gb.TickForAudio(DESIRED_BUFFER_LENGTH).ToArray());
+
+                audioBufferCount = this.audio.CurrentBufferLatency();
             }
         }
 
@@ -115,83 +157,123 @@
             base.OnKeyUp(e);
         }
 
-        protected override void OnRenderFrame(FrameEventArgs args)
-        {
-            this.frameCount++;
-
-            if (this.frameCount == 600)
-            {
-                // This code can go here (measures the emulator output framerate) or in OnRenderFrame (measures the present framerate).
-                Console.WriteLine($"Framerate: {this.frameCount / ((double)(Stopwatch.GetTimestamp() - this.lastFrameTick) / Stopwatch.Frequency):0.000}");
-                this.lastFrameTick = Stopwatch.GetTimestamp();
-                this.frameCount = 0;
-            }
-
-            // Default to the most recent frame if there is nothing new
-            int[] dequeuedFrame = null;
-
-            if (this.screenbuffers.Count > 0)
-            {
-                dequeuedFrame = this.screenbuffers.Dequeue();
-            }
-            else
-            {
-                // Slow down refresh to increase the buffer
-                this.AdjustDynamicRate(false);
-            }
-
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-            int id = GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2D, id);
-
-            GL.TexImage2D(
-                TextureTarget.Texture2D,
-                0,
-                PixelInternalFormat.Rgb,
-                160,
-                144,
-                0,
-                PixelFormat.Bgra,
-                PixelType.UnsignedByte,
-                dequeuedFrame ?? this.lastFrame);
-
-            GL.TexParameter(
-                TextureTarget.Texture2D,
-                TextureParameterName.TextureMinFilter,
-                (int)TextureMinFilter.Linear);
-
-            GL.TexParameter(
-                TextureTarget.Texture2D,
-                TextureParameterName.TextureMagFilter,
-                (int)TextureMagFilter.Nearest);
-
-            // This is black magic to me. What does it mean, ProjectPSX?
-            GL.Begin(PrimitiveType.Quads);
-            GL.TexCoord2(0, 1);
-            GL.Vertex2(-1, -1);
-            GL.TexCoord2(1, 1);
-            GL.Vertex2(1, -1);
-            GL.TexCoord2(1, 0);
-            GL.Vertex2(1, 1);
-            GL.TexCoord2(0, 0);
-            GL.Vertex2(-1, 1);
-            GL.End();
-
-            GL.DeleteTexture(id);
-            this.SwapBuffers();
-
-            if (dequeuedFrame != null)
-            {
-                this.unusedbuffers.Enqueue(dequeuedFrame);
-            }
-        }
-
         protected override void OnFileDrop(FileDropEventArgs e)
         {
             if (e.FileNames.Length == 1)
             {
                 this.InitGameboy(e.FileNames[0]);
+            }
+        }
+
+        private long lastRenderTick;
+
+        protected override void OnRenderFrame(FrameEventArgs args)
+        {
+            if (this.Exists & !this.IsExiting)
+            {
+                // Default to the most recent frame if there is nothing new
+                int[] dequeuedFrame = null;
+
+                if (this.screenbuffers.Count > 0)
+                {
+                    dequeuedFrame = this.screenbuffers.Dequeue();
+
+                    //if (++this.frameCount == 60)
+                    //{
+                    //    // This code can go here (measures the emulator output framerate) or in OnRenderFrame (measures the present framerate).
+                    //    Console.WriteLine($"Framerate: {Stopwatch.Frequency / (double)this.ticksPerFrame:0.000}");
+                    //    this.frameCount = 0;
+                    //}
+
+                    long currentTime = Stopwatch.GetTimestamp();
+
+                    this.frameTimes.Add(((currentTime - this.lastRenderTick) / (float)Stopwatch.Frequency) * 1000);
+                    this.lastRenderTick = currentTime;
+
+                    if (this.frameTimes.Count == 4000)
+                    {
+                        File.WriteAllLines("frametimes.txt", this.frameTimes.Select(f => f.ToString()));
+                        this.frameTimes.Clear();
+                    }
+                }
+                else
+                {
+                    // Slow down refresh to increase the buffer
+                    this.AdjustDynamicRate(false);
+                }
+
+                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+                int id = GL.GenTexture();
+                GL.BindTexture(TextureTarget.Texture2D, id);
+
+                GL.TexImage2D(
+                    TextureTarget.Texture2D,
+                    0,
+                    PixelInternalFormat.Rgb,
+                    160,
+                    144,
+                    0,
+                    PixelFormat.Bgra,
+                    PixelType.UnsignedByte,
+                    dequeuedFrame ?? this.lastFrame);
+
+                GL.TexParameter(
+                    TextureTarget.Texture2D,
+                    TextureParameterName.TextureMinFilter,
+                    (int)TextureMinFilter.Linear);
+
+                GL.TexParameter(
+                    TextureTarget.Texture2D,
+                    TextureParameterName.TextureMagFilter,
+                    (int)TextureMagFilter.Nearest);
+
+                // This is black magic to me. What does it mean, ProjectPSX?
+                GL.Begin(PrimitiveType.Quads);
+                GL.TexCoord2(0, 1);
+                GL.Vertex2(-1, -1);
+                GL.TexCoord2(1, 1);
+                GL.Vertex2(1, -1);
+                GL.TexCoord2(1, 0);
+                GL.Vertex2(1, 1);
+                GL.TexCoord2(0, 0);
+                GL.Vertex2(-1, 1);
+                GL.End();
+
+                GL.DeleteTexture(id);
+                this.SwapBuffers();
+
+                if (dequeuedFrame != null)
+                {
+                    this.unusedbuffers.Enqueue(dequeuedFrame);
+                }
+            }
+        }
+
+        private void RenderThread_DoWork(object sender, DoWorkEventArgs e)
+        {
+            GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
+
+            this.MakeCurrent();
+
+            // Initialize
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.Enable(EnableCap.DepthTest);
+            GL.DepthFunc(DepthFunction.Lequal);
+            GL.Enable(EnableCap.Texture2D);
+            GL.ClearColor(1, 1, 1, 1);
+
+            this.nextRenderTick = Stopwatch.GetTimestamp();
+            this.lastRenderTick = Stopwatch.GetTimestamp();
+
+            while (this.Exists)
+            {
+                if (Stopwatch.GetTimestamp() >= this.nextRenderTick)
+                {
+                    this.OnRenderFrame(default);
+                    this.nextRenderTick += this.ticksPerFrame;
+                }
             }
         }
 
@@ -202,33 +284,17 @@
                 return;
             }
 
-            if (increase && this.RenderFrequency < MAX_FRAMERATE)
+            if (increase)
             {
-                // Slightly increase the update rate here, as the frames are accumulating too fast
-                this.RenderFrequency *= DYNAMIC_REFRESH_FACTOR;
-                this.UpdateFrequency = this.RenderFrequency * 2;
-                // Console.WriteLine($"Buffer full, new render target: {this.RenderFrequency:0.000}");
+                // Decrease the time between frames as we're accumulating them to ofast
+                this.ticksPerFrame = (int)(this.ticksPerFrame / DYNAMIC_REFRESH_FACTOR);
+                Console.WriteLine($"Buffer full, new render target: {this.ticksPerFrame}");
             }
-            else if (!increase && this.RenderFrequency > MIN_FRAMERATE)
+            else if (!increase)
             {
-                // Slightly decrease the update rate here, as we're consuming frames too fast.
-                this.RenderFrequency /= DYNAMIC_REFRESH_FACTOR;
-                this.UpdateFrequency = this.RenderFrequency * 2;
-                // Console.WriteLine($"Buffer empty, new render target: {this.RenderFrequency:0.000}");
-            }
-        }
-
-        private void FillAudioBuffer_DoWork(object sender, DoWorkEventArgs e)
-        {
-            while (this.audio.HasEmptyBuffers() && this.gb != null)
-            {
-                while (this.gb.AudioBuffer.Count < DESIRED_BUFFER_LENGTH)
-                {
-                    this.gb.Tick();
-                }
-
-                this.audio.AddSamples(this.gb.AudioBuffer.ToArray());
-                this.gb.AudioBuffer.Clear();
+                // Increase the time between frames, as we're consuming frames too fast.
+                this.ticksPerFrame = (int)(this.ticksPerFrame * DYNAMIC_REFRESH_FACTOR);
+                Console.WriteLine($"Buffer empty, new render target: {this.ticksPerFrame}");
             }
         }
 
@@ -237,6 +303,8 @@
             if (File.Exists(filePath))
             {
                 this.gb = new Gameboy(this.MessageCallback, this.DrawFramebuffer, this.framebuffer, SAMPLE_RATE, filePath);
+                //this.lastFrameTick = Stopwatch.GetTimestamp();
+                //this.lastRenderTick = Stopwatch.GetTimestamp();
             }
         }
 

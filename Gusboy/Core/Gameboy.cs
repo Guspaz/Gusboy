@@ -80,6 +80,19 @@ namespace Gusboy
             }
         }
 
+        public float[] TickForAudio(int sampleCount)
+        {
+            while (this.Apu.Buffer.Count < sampleCount)
+            {
+                this.Tick();
+            }
+
+            var buffer = this.Apu.Buffer.ToArray();
+            this.Apu.Buffer.Clear();
+
+            return buffer;
+        }
+
         internal bool MessageCallback(string message, bool removePrevious = false) => this.messageCallback(message, removePrevious);
     }
 }

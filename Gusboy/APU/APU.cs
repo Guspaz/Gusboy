@@ -231,7 +231,6 @@
             this.channel2.RightEnable = true;
             this.channel2.FakeBootstrap(1309);
 
-            // TODO: Verify that channel3.RightEnable works at all
             this.channel3.LeftEnable = true;
             this.channel3.FakeBootstrap(569, 3);
 

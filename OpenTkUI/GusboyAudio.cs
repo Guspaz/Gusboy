@@ -1,18 +1,13 @@
 ﻿namespace OpenTkUI
 {
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
     using OpenTK.Audio.OpenAL;
-    using OpenTK.Mathematics;
 
     public class GusboyAudio
     {
         private readonly int sampleRate;
         private readonly int alSource;
-        private readonly int maxBuffers = 100;
+        private readonly int maxBuffers = 200;
         private readonly ALDevice alDevice;
         private readonly ALContext alContext;
 
@@ -37,33 +32,35 @@
             ALC.CloseDevice(this.alDevice);
         }
 
-        public bool HasEmptyBuffers()
+        public int CurrentBufferLatency()
         {
-            AL.GetSource(this.alSource, ALGetSourcei.BuffersProcessed, out int buffersProcessed);
             AL.GetSource(this.alSource, ALGetSourcei.BuffersQueued, out int buffersQueued);
+            AL.GetSource(this.alSource, ALGetSourcei.BuffersProcessed, out int buffersProcessed);
 
-            return buffersProcessed > 0 || buffersQueued < this.maxBuffers;
+            return buffersQueued - buffersProcessed;
         }
 
         public void AddSamples(float[] samples)
         {
             int buffer;
 
-            // Safety net: the caller should have checked HasEmptyBuffers before trying to send us data
-            if (!this.HasEmptyBuffers())
-            {
-                return;
-            }
+            AL.GetSource(this.alSource, ALGetSourcei.BuffersProcessed, out int buffersProcessed);
+            AL.GetSource(this.alSource, ALGetSourcei.BuffersQueued, out int buffersQueued);
 
-            if (this.NeedToCreateBuffers())
+            if (buffersProcessed > 0)
             {
-                // There are unused buffers (we're at the star of playback) so queue them
+                // There are buffers waiting to be processed
+                buffer = AL.SourceUnqueueBuffer(this.alSource);
+            }
+            else if (buffersQueued < this.maxBuffers)
+            {
+                // No buffers waiting to be processed, but we haven't hit the max yet.
                 buffer = AL.GenBuffer();
             }
             else
             {
-                // There are no unused buffers, unqueue one
-                buffer = AL.SourceUnqueueBuffer(this.alSource);
+                // ERROR: Buffer is full
+                return;
             }
 
             // OpenAL doesn't accept float samples, so we must convert. Linq would be a one-liner but this is probably faster.
@@ -83,14 +80,6 @@
             {
                 AL.SourcePlay(this.alSource);
             }
-        }
-
-        private bool NeedToCreateBuffers()
-        {
-            AL.GetSource(this.alSource, ALGetSourcei.BuffersProcessed, out int buffersProcessed);
-            AL.GetSource(this.alSource, ALGetSourcei.BuffersQueued, out int buffersQueued);
-
-            return buffersQueued + buffersProcessed < this.maxBuffers;
         }
     }
 }
