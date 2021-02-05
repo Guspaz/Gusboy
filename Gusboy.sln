@@ -14,7 +14,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinFormsUI", "WinFormsUI\Wi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GusboyGbsPlayer", "GusboyGbsPlayer\GusboyGbsPlayer.csproj", "{0A593193-0826-4225-8860-FAFF8C697D21}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenTkUI", "OpenTkUI\OpenTkUI.csproj", "{4AAA82DD-3CC6-4479-BCC1-C7AE42804D77}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SdlUI", "SdlUI\SdlUI.csproj", "{4AAA82DD-3CC6-4479-BCC1-C7AE42804D77}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

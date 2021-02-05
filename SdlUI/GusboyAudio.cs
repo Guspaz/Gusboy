@@ -11,9 +11,6 @@
 
         public GusboyAudio(int sampleRate)
         {
-            // TODO: Move this to the main code when there's more than just audio
-            _ = SDL.SDL_Init(SDL.SDL_INIT_AUDIO);
-
             SDL.SDL_AudioSpec desiredSpec = new SDL.SDL_AudioSpec
             {
                 freq = sampleRate,
