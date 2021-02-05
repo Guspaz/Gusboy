@@ -1,4 +1,4 @@
-﻿namespace OpenTkUI
+﻿namespace SdlUI
 {
     using System;
     using SDL2;
