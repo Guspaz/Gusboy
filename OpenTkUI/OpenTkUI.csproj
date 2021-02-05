@@ -7,8 +7,8 @@
 
   <ItemGroup>
     <PackageReference Include="NAudio" Version="1.10.0" />
-    <PackageReference Include="OpenAL-Soft" Version="1.16.0" />
     <PackageReference Include="OpenTK" Version="4.4.0" />
+    <PackageReference Include="ppy.SDL2-CS" Version="1.0.53" />
     <PackageReference Include="StyleCop.Analyzers.Unstable" Version="1.2.0.321">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

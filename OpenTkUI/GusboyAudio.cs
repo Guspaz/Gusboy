@@ -1,84 +1,105 @@
 ﻿namespace OpenTkUI
 {
     using System;
-    using OpenTK.Audio.OpenAL;
+    using System.Runtime.InteropServices;
+    using SDL2;
 
     public class GusboyAudio
     {
-        private readonly int sampleRate;
-        private readonly int alSource;
-        private readonly int maxBuffers = 200;
-        private readonly ALDevice alDevice;
-        private readonly ALContext alContext;
+        private readonly SDL.SDL_AudioSpec obtainedSpec;
+        private readonly IntPtr stream;
 
         public GusboyAudio(int sampleRate)
         {
-            this.sampleRate = sampleRate;
+            // TODO: Move this to the main code when there's more than just audio
+            _ = SDL.SDL_Init(SDL.SDL_INIT_AUDIO);
 
-            this.alDevice = ALC.OpenDevice(null);
-            var alContextAttributes = new ALContextAttributes()
+            SDL.SDL_AudioSpec desiredSpec = new SDL.SDL_AudioSpec
             {
-                Sync = true,
+                freq = sampleRate,
+                format = SDL.AUDIO_F32,
+                channels = 2,
+                samples = 1024,
+                callback = this.Callback,
+                userdata = IntPtr.Zero, // TODO: Is this required?
             };
-            this.alContext = ALC.CreateContext(this.alDevice, alContextAttributes);
-            ALC.MakeContextCurrent(this.alContext);
 
-            this.alSource = AL.GenSource();
+            if (SDL.SDL_OpenAudio(ref desiredSpec, out this.obtainedSpec) < 0)
+            {
+                Console.WriteLine($"ERROR: Couldn't open audio: {SDL.SDL_GetError()}");
+                return;
+            }
+
+            // Console.WriteLine("Audio information:");
+            // Console.WriteLine($"   Freq: {this.obtainedSpec.freq}");
+            // Console.WriteLine($"   Channels: {this.obtainedSpec.channels}");
+            // Console.WriteLine($"   Samples: {this.obtainedSpec.samples}");
+            // Console.WriteLine($"   Format: {this.obtainedSpec.format}");
+            this.stream = SDL.SDL_NewAudioStream(
+                desiredSpec.format,
+                desiredSpec.channels,
+                desiredSpec.freq,
+                this.obtainedSpec.format,
+                this.obtainedSpec.channels,
+                this.obtainedSpec.freq);
+
+            if (this.stream == IntPtr.Zero)
+            {
+                Console.WriteLine($"ERROR: Couldn't create audio stream: {SDL.SDL_GetError()}");
+                return;
+            }
+
+            SDL.SDL_PauseAudio(0);
         }
 
         ~GusboyAudio()
         {
-            ALC.DestroyContext(this.alContext);
-            ALC.CloseDevice(this.alDevice);
+            SDL.SDL_FreeAudioStream(this.stream);
         }
 
-        public int CurrentBufferLatency()
+        public int BufferSize()
         {
-            AL.GetSource(this.alSource, ALGetSourcei.BuffersQueued, out int buffersQueued);
-            AL.GetSource(this.alSource, ALGetSourcei.BuffersProcessed, out int buffersProcessed);
-
-            return buffersQueued - buffersProcessed;
+            return SDL.SDL_AudioStreamAvailable(this.stream) / sizeof(float) / 2;
         }
 
         public void AddSamples(float[] samples)
         {
-            int buffer;
+            var handle = GCHandle.Alloc(samples, GCHandleType.Pinned);
+            int result = SDL.SDL_AudioStreamPut(this.stream, handle.AddrOfPinnedObject(), samples.Length * sizeof(float));
+            handle.Free();
 
-            AL.GetSource(this.alSource, ALGetSourcei.BuffersProcessed, out int buffersProcessed);
-            AL.GetSource(this.alSource, ALGetSourcei.BuffersQueued, out int buffersQueued);
-
-            if (buffersProcessed > 0)
+            if (result < 0)
             {
-                // There are buffers waiting to be processed
-                buffer = AL.SourceUnqueueBuffer(this.alSource);
+                Console.WriteLine($"ERROR: Failed to send samples to stream: {SDL.SDL_GetError()}");
             }
-            else if (buffersQueued < this.maxBuffers)
+        }
+
+        private void Callback(IntPtr userdata, IntPtr buffer, int len)
+        {
+            int available = SDL.SDL_AudioStreamAvailable(this.stream);
+
+            if (available < len)
             {
-                // No buffers waiting to be processed, but we haven't hit the max yet.
-                buffer = AL.GenBuffer();
+                // Buffer underflow, return empty
+                Marshal.Copy(new byte[len], 0, buffer, len);
+                SDL.SDL_AudioStreamClear(this.stream);
             }
             else
             {
-                // ERROR: Buffer is full
-                return;
-            }
+                int obtained = SDL.SDL_AudioStreamGet(this.stream, buffer, len);
 
-            // OpenAL doesn't accept float samples, so we must convert. Linq would be a one-liner but this is probably faster.
-            short[] shortBuffer = new short[samples.Length];
+                if (obtained == -1)
+                {
+                    Console.WriteLine($"ERROR: Failed to get converted audio data: {SDL.SDL_GetError()}");
+                }
+                else if (obtained != len)
+                {
+                    // Unexpected returned number? Clear the rest of the buffer
+                    Console.WriteLine("ERROR: Unexpected audio converted sample count.");
 
-            for (int i = 0; i < samples.Length; i++)
-            {
-                shortBuffer[i] = (short)Math.Clamp(samples[i] * 32768, -32768, 32767);
-            }
-
-            // Queue up the actual buffer
-            AL.BufferData<short>(buffer, ALFormat.Stereo16, shortBuffer, this.sampleRate);
-            AL.SourceQueueBuffer(this.alSource, buffer);
-
-            // If we're not already playing (or have previously stopped), then start/resume.
-            if (AL.GetSourceState(this.alSource) != ALSourceState.Playing)
-            {
-                AL.SourcePlay(this.alSource);
+                    // TODO: Validate this is right
+                    Marshal.Copy(new byte[len - obtained], obtained, buffer, len - obtained);
+                }
             }
         }
     }

@@ -16,10 +16,10 @@
     internal class Window : GameWindow
     {
         private const int SAMPLE_RATE = 32768; // This rate is divisible by the gameboy CPU clock and will result in the correct clockspeed.
-        private const int DESIRED_BUFFER_LENGTH = (SAMPLE_RATE * 2) / 1024; // ~1ms per buffer
-        private const int MAX_FRAMEQUEUE_LENGTH = 2;
-        private const double DYNAMIC_REFRESH_FACTOR = 1.0001;
-        private const int MIN_BUFFER = 50;
+        private const int DESIRED_BUFFER_LENGTH = (SAMPLE_RATE * 2) / (1024 * 8); // ~1ms per buffer / 8
+        private const double DYNAMIC_REFRESH_FACTOR = 1.001;
+        private const int TARGET_BUFFER = 100;
+        private const int TARGET_BUFFER_SAMPLES = (SAMPLE_RATE * TARGET_BUFFER) / 1000;
 
         private readonly Dictionary<Keys, Input.Keys> keymap = new Dictionary<Keys, Input.Keys>
         {
@@ -35,29 +35,30 @@
 
         // The buffer the gameboy renders directly into
         private readonly int[] framebuffer = new int[160 * 144];
+        private readonly int[] screenbuffer = new int[160 * 144];
 
-        // The buffer queues
-        private readonly Queue<int[]> screenbuffers = new Queue<int[]>();
-        private readonly Queue<int[]> unusedbuffers = new Queue<int[]>();
+        private readonly List<float> frameTimes = new List<float>();
 
-        // The most recently rendered frame
-        private readonly int[] lastFrame = new int[160 * 144];
+        private readonly Queue<int> audioBufferStatusQueue = new Queue<int>();
+
+        private readonly double baseTimeBetweenSamples = Stopwatch.Frequency / (1024 * 8);
+        private double timeBetweenSamples = Stopwatch.Frequency / (1024 * 8);
+        private long nextAudioSampleTime;
 
         private Gameboy gb;
         private GusboyAudio audio;
 
-        private int ticksPerFrame = (int)((1 / 59.7275) * Stopwatch.Frequency); // Doesn't need to be exact because we're going to vary it to keep the buffer full.
-
         private long frameCount;
 
-        private List<float> frameTimes = new List<float>();
-        private long nextRenderTick;
+        private int audioBufferStatusAccumulator;
 
-        private BackgroundWorker renderThread = new BackgroundWorker();
+        private long lastRenderTick;
+        private long lastFrameTime;
 
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
             : base(gameWindowSettings, nativeWindowSettings)
         {
+            this.MakeCurrent();
         }
 
         public override void Run()
@@ -69,8 +70,6 @@
             // Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
             // Process.GetCurrentProcess().ProcessorAffinity = (IntPtr)0x4; // Only run on core 3
             // System.Threading.Thread.CurrentThread.Priority = System.Threading.ThreadPriority.Highest;
-
-            this.renderThread.DoWork += this.RenderThread_DoWork;
 
             // Wait for something to initialize the gameboy
             while (this.gb == null)
@@ -86,9 +85,15 @@
 
             GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
 
-            this.Context.MakeNoneCurrent();
+            // Initialize
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.Enable(EnableCap.DepthTest);
+            GL.DepthFunc(DepthFunction.Lequal);
+            GL.Enable(EnableCap.Texture2D);
+            GL.ClearColor(1, 1, 1, 1);
 
-            this.renderThread.RunWorkerAsync();
+            this.nextAudioSampleTime = Stopwatch.GetTimestamp() + (int)this.timeBetweenSamples;
 
             while (true)
             {
@@ -121,13 +126,39 @@
 
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
-            int audioBufferCount = this.audio.CurrentBufferLatency();
-
-            while (audioBufferCount < MIN_BUFFER)
+            if (Stopwatch.GetTimestamp() >= this.nextAudioSampleTime)
             {
+                int audioBufferCount = this.audio.BufferSize();
+
+                this.audioBufferStatusAccumulator += audioBufferCount;
+                this.audioBufferStatusQueue.Enqueue(audioBufferCount);
+
+                if (this.audioBufferStatusQueue.Count > 128)
+                {
+                    this.audioBufferStatusAccumulator -= this.audioBufferStatusQueue.Dequeue();
+                }
+
+                float audioBufferStatusAverage = this.audioBufferStatusAccumulator / (float)this.audioBufferStatusQueue.Count;
+
                 this.audio.AddSamples(this.gb.TickForAudio(DESIRED_BUFFER_LENGTH).ToArray());
 
-                audioBufferCount = this.audio.CurrentBufferLatency();
+                // Console.WriteLine($"{audioBufferStatusAverage} - {this.TIME_BETWEEN_SAMPLES}");
+                if (audioBufferStatusAverage > TARGET_BUFFER_SAMPLES * 1.1)
+                {
+                    // Too many samples, increase the time between samples
+                    this.timeBetweenSamples = this.baseTimeBetweenSamples * DYNAMIC_REFRESH_FACTOR;
+                }
+                else if (audioBufferStatusAverage < TARGET_BUFFER_SAMPLES * 0.9)
+                {
+                    // Too few samples, decrease the time between samples
+                    this.timeBetweenSamples = this.baseTimeBetweenSamples / DYNAMIC_REFRESH_FACTOR;
+                }
+                else
+                {
+                    this.timeBetweenSamples = this.baseTimeBetweenSamples;
+                }
+
+                this.nextAudioSampleTime += (int)this.timeBetweenSamples;
             }
         }
 
@@ -165,43 +196,28 @@
             }
         }
 
-        private long lastRenderTick;
-
         protected override void OnRenderFrame(FrameEventArgs args)
         {
             if (this.Exists & !this.IsExiting)
             {
-                // Default to the most recent frame if there is nothing new
-                int[] dequeuedFrame = null;
-
-                if (this.screenbuffers.Count > 0)
+                if (++this.frameCount == 60)
                 {
-                    dequeuedFrame = this.screenbuffers.Dequeue();
-
-                    //if (++this.frameCount == 60)
-                    //{
-                    //    // This code can go here (measures the emulator output framerate) or in OnRenderFrame (measures the present framerate).
-                    //    Console.WriteLine($"Framerate: {Stopwatch.Frequency / (double)this.ticksPerFrame:0.000}");
-                    //    this.frameCount = 0;
-                    //}
-
-                    long currentTime = Stopwatch.GetTimestamp();
-
-                    this.frameTimes.Add(((currentTime - this.lastRenderTick) / (float)Stopwatch.Frequency) * 1000);
-                    this.lastRenderTick = currentTime;
-
-                    if (this.frameTimes.Count == 4000)
-                    {
-                        File.WriteAllLines("frametimes.txt", this.frameTimes.Select(f => f.ToString()));
-                        this.frameTimes.Clear();
-                    }
-                }
-                else
-                {
-                    // Slow down refresh to increase the buffer
-                    this.AdjustDynamicRate(false);
+                    // This code can go here (measures the emulator output framerate) or in OnRenderFrame (measures the present framerate).
+                    Console.WriteLine($"Framerate: {(double)this.frameCount / ((Stopwatch.GetTimestamp() - this.lastFrameTime) / (double)Stopwatch.Frequency):0.000}");
+                    this.lastFrameTime = Stopwatch.GetTimestamp();
+                    this.frameCount = 0;
                 }
 
+                // long currentTime = Stopwatch.GetTimestamp();
+
+                // this.frameTimes.Add(((currentTime - this.lastRenderTick) / (float)Stopwatch.Frequency) * 1000);
+                // this.lastRenderTick = currentTime;
+
+                // if (this.frameTimes.Count == 4000)
+                // {
+                //     File.WriteAllLines("frametimes.txt", this.frameTimes.Select(f => f.ToString()));
+                //     this.frameTimes.Clear();
+                // }
                 GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
                 int id = GL.GenTexture();
@@ -216,7 +232,7 @@
                     0,
                     PixelFormat.Bgra,
                     PixelType.UnsignedByte,
-                    dequeuedFrame ?? this.lastFrame);
+                    this.screenbuffer);
 
                 GL.TexParameter(
                     TextureTarget.Texture2D,
@@ -242,59 +258,6 @@
 
                 GL.DeleteTexture(id);
                 this.SwapBuffers();
-
-                if (dequeuedFrame != null)
-                {
-                    this.unusedbuffers.Enqueue(dequeuedFrame);
-                }
-            }
-        }
-
-        private void RenderThread_DoWork(object sender, DoWorkEventArgs e)
-        {
-            GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
-
-            this.MakeCurrent();
-
-            // Initialize
-            GL.Enable(EnableCap.Blend);
-            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            GL.Enable(EnableCap.DepthTest);
-            GL.DepthFunc(DepthFunction.Lequal);
-            GL.Enable(EnableCap.Texture2D);
-            GL.ClearColor(1, 1, 1, 1);
-
-            this.nextRenderTick = Stopwatch.GetTimestamp();
-            this.lastRenderTick = Stopwatch.GetTimestamp();
-
-            while (this.Exists)
-            {
-                if (Stopwatch.GetTimestamp() >= this.nextRenderTick)
-                {
-                    this.OnRenderFrame(default);
-                    this.nextRenderTick += this.ticksPerFrame;
-                }
-            }
-        }
-
-        private void AdjustDynamicRate(bool increase)
-        {
-            if (this.gb == null)
-            {
-                return;
-            }
-
-            if (increase)
-            {
-                // Decrease the time between frames as we're accumulating them to ofast
-                this.ticksPerFrame = (int)(this.ticksPerFrame / DYNAMIC_REFRESH_FACTOR);
-                Console.WriteLine($"Buffer full, new render target: {this.ticksPerFrame}");
-            }
-            else if (!increase)
-            {
-                // Increase the time between frames, as we're consuming frames too fast.
-                this.ticksPerFrame = (int)(this.ticksPerFrame * DYNAMIC_REFRESH_FACTOR);
-                Console.WriteLine($"Buffer empty, new render target: {this.ticksPerFrame}");
             }
         }
 
@@ -303,36 +266,16 @@
             if (File.Exists(filePath))
             {
                 this.gb = new Gameboy(this.MessageCallback, this.DrawFramebuffer, this.framebuffer, SAMPLE_RATE, filePath);
-                //this.lastFrameTick = Stopwatch.GetTimestamp();
-                //this.lastRenderTick = Stopwatch.GetTimestamp();
+                this.lastFrameTime = Stopwatch.GetTimestamp();
+                this.lastRenderTick = Stopwatch.GetTimestamp();
             }
         }
 
         private bool DrawFramebuffer()
         {
-            // If the buffer chain is full, drop the frame
-            if (this.screenbuffers.Count < MAX_FRAMEQUEUE_LENGTH)
-            {
-                int[] copybuffer;
+            Array.Copy(this.framebuffer, this.screenbuffer, this.framebuffer.Length);
 
-                if (this.unusedbuffers.Count > 0)
-                {
-                    copybuffer = this.unusedbuffers.Dequeue();
-                }
-                else
-                {
-                    copybuffer = new int[this.framebuffer.Length];
-                }
-
-                Array.Copy(this.framebuffer, copybuffer, this.framebuffer.Length);
-                Array.Copy(this.framebuffer, this.lastFrame, this.framebuffer.Length);
-                this.screenbuffers.Enqueue(copybuffer);
-            }
-            else
-            {
-                // Speed up to decrease the buffer
-                this.AdjustDynamicRate(true);
-            }
+            this.OnRenderFrame(default);
 
             return true;
         }
