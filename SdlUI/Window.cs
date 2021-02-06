@@ -13,11 +13,18 @@
 
     internal class Window
     {
-        private const int SAMPLE_RATE = 32768; // This rate is divisible by the gameboy CPU clock and will result in the correct clockspeed.
-        private const int DESIRED_BUFFER_LENGTH = (SAMPLE_RATE * 2) / (1024 * 8); // ~1ms per buffer / 8
+        // How many samples per second (The Gameboy CPU clock is evenly divisible by 32768)
+        private const int SAMPLE_RATE = 32768;
 
-        // TODO: Figure out if we can shorten this, it's a bit long.
-        private const int TARGET_BUFFER = 100;
+        // How many samples should we generate in one chunk?
+        private const int DESIRED_BUFFER_LENGTH = (SAMPLE_RATE * 2) / (1024 * 8); // 1/8th of a milliscond
+
+        // How many milliseconds of audio buffers should we try to maintain? Assumes the internal SDL buffers are always full.
+        private const int TARGET_BUFFER = 60;
+
+        // Used in the formula that adjusts the time between audio chunks to maintain the buffer size.
+        // Lower numbers are more aggressive but have less even frame pacing.
+        private const int AUDIO_ADJUSTMENT_FACTOR = 1000;
 
         private readonly Dictionary<SDL.SDL_Scancode, Input.Keys> keymap = new Dictionary<SDL.SDL_Scancode, Input.Keys>
         {
@@ -44,8 +51,8 @@
         private readonly IntPtr window;
         private readonly IntPtr renderer;
 
-        private readonly double baseTimeBetweenSamples = Stopwatch.Frequency / (1024 * 8);
-        private double timeBetweenSamples = Stopwatch.Frequency / (1024 * 8);
+        private readonly double baseTimeBetweenSamples = Stopwatch.Frequency / (SAMPLE_RATE * 2 / DESIRED_BUFFER_LENGTH);
+        private double timeBetweenSamples = Stopwatch.Frequency / (SAMPLE_RATE * 2 / DESIRED_BUFFER_LENGTH);
         private long nextAudioSampleTime;
 
         private Gameboy gb;
@@ -64,6 +71,9 @@
             this.renderer = rendererPointer;
             this.framebufferHandle = GCHandle.Alloc(this.framebuffer, GCHandleType.Pinned);
             this.framebufferSurface = SDL.SDL_CreateRGBSurfaceWithFormatFrom(this.framebufferHandle.AddrOfPinnedObject(), 160, 144, 32, 4 * 160, SDL.SDL_PIXELFORMAT_ARGB8888);
+
+            SDL.SDL_RenderSetLogicalSize(this.renderer, 160, 144);
+            SDL.SDL_RenderSetIntegerScale(this.renderer, SDL.SDL_bool.SDL_TRUE);
 
             // TODO: Get this from the emulator and not hardcoded
             // Clear the initial screen
@@ -89,11 +99,6 @@
 
             this.audio = new GusboyAudio(SAMPLE_RATE);
 
-            // Do some things to try to avoid spikes
-            // Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
-            // Process.GetCurrentProcess().ProcessorAffinity = (IntPtr)0x4; // Only run on core 3
-            // System.Threading.Thread.CurrentThread.Priority = System.Threading.ThreadPriority.Highest;
-
             // Wait for something to initialize the gameboy
             while (this.gb == null)
             {
@@ -106,9 +111,17 @@
 
             while (true)
             {
-                // TODO: Call this less often, closer to once or twice per frame?
+                // TODO: Call this less often, right now it's executed at ~8,000 Hz.
                 this.HandleEvent();
 
+                // Unroll this to have an 8:1 ratio between event handling and emulator execution.
+                this.OnUpdateFrame();
+                this.OnUpdateFrame();
+                this.OnUpdateFrame();
+                this.OnUpdateFrame();
+                this.OnUpdateFrame();
+                this.OnUpdateFrame();
+                this.OnUpdateFrame();
                 this.OnUpdateFrame();
             }
         }
@@ -136,12 +149,23 @@
                     break;
 
                 case SDL.SDL_EventType.SDL_WINDOWEVENT:
-                    // Console.WriteLine($"DEBUG: Unhandled SDL event {sdlevent.window.windowEvent}");
+                    // Force window size to match renderer scale, unless we're maximized
+                    if (sdlevent.window.windowEvent == SDL.SDL_WindowEventID.SDL_WINDOWEVENT_RESIZED
+                        && (SDL.SDL_GetWindowFlags(this.window) & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_MAXIMIZED) == 0)
+                    {
+                        SDL.SDL_RenderGetScale(this.renderer, out float scaleX, out float scaleY);
+                        SDL.SDL_SetWindowSize(this.window, (int)(scaleX * 160), (int)(scaleY * 144));
+                    }
+
                     break;
 
-                default:
-                    // Console.WriteLine($"DEBUG: Unhandled SDL event {sdlevent.type}");
-                    break;
+                // case SDL.SDL_EventType.SDL_WINDOWEVENT:
+                //     Console.WriteLine($"DEBUG: Unhandled SDL event {sdlevent.window.windowEvent}");
+                //     break;
+
+                // default:
+                //     Console.WriteLine($"DEBUG: Unhandled SDL event {sdlevent.type}");
+                //     break;
             }
         }
 
@@ -164,7 +188,7 @@
                 this.audio.AddSamples(this.gb.TickForAudio(DESIRED_BUFFER_LENGTH).ToArray());
 
                 // TODO: Better algorithm here.
-                this.timeBetweenSamples = this.baseTimeBetweenSamples * (1 + ((audioBufferStatusAverage - TARGET_BUFFER) / 10000));
+                this.timeBetweenSamples = this.baseTimeBetweenSamples * (1 + ((audioBufferStatusAverage - TARGET_BUFFER) / AUDIO_ADJUSTMENT_FACTOR));
 
                 this.nextAudioSampleTime += (int)this.timeBetweenSamples;
             }

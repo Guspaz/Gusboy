@@ -1,6 +1,7 @@
 ﻿namespace SdlUI
 {
     using System;
+    using System.Linq;
     using System.Runtime.InteropServices;
     using SDL2;
 
@@ -17,7 +18,7 @@
                 freq = sampleRate,
                 format = SDL.AUDIO_F32,
                 channels = 2,
-                samples = 256,
+                samples = 1024,
                 callback = this.Callback,
                 userdata = IntPtr.Zero,
             };
@@ -92,8 +93,8 @@
 
             if (available < len)
             {
-                // Buffer underflow, return empty
-                Marshal.Copy(new byte[len], 0, buffer, len);
+                // Buffer underflow, return silence
+                Marshal.Copy(Enumerable.Repeat(this.obtainedSpec.silence, len).ToArray(), 0, buffer, len);
                 SDL.SDL_AudioStreamClear(this.stream);
 
                 // Console.WriteLine("WARNING: Audio buffer empty.");
@@ -112,7 +113,7 @@
                     Console.WriteLine("ERROR: Unexpected audio converted sample count.");
 
                     // TODO: Validate this is right
-                    Marshal.Copy(new byte[len - obtained], 0, buffer + obtained, len - obtained);
+                    Marshal.Copy(Enumerable.Repeat(this.obtainedSpec.silence, len - obtained).ToArray(), 0, buffer + obtained, len - obtained);
                 }
             }
         }
