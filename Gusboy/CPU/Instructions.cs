@@ -1103,7 +1103,10 @@
 
         private int ei(int operand)
         {
-            this.fInterruptMasterEnable = true;
+            // Delay IME by one m-cycle
+            this.delayedIME = true;
+
+            // this.fInterruptMasterEnable = true;
             return 4;
         }
 

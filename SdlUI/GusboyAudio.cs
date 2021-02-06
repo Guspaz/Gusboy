@@ -8,6 +8,7 @@
     {
         private readonly SDL.SDL_AudioSpec obtainedSpec;
         private readonly IntPtr stream;
+        private readonly int obtainedSampleSize;
 
         public GusboyAudio(int sampleRate)
         {
@@ -16,9 +17,9 @@
                 freq = sampleRate,
                 format = SDL.AUDIO_F32,
                 channels = 2,
-                samples = 1024,
+                samples = 256,
                 callback = this.Callback,
-                userdata = IntPtr.Zero, // TODO: Is this required?
+                userdata = IntPtr.Zero,
             };
 
             if (SDL.SDL_OpenAudio(ref desiredSpec, out this.obtainedSpec) < 0)
@@ -31,6 +32,8 @@
             // Console.WriteLine($"   Freq: {this.obtainedSpec.freq}");
             // Console.WriteLine($"   Channels: {this.obtainedSpec.channels}");
             // Console.WriteLine($"   Samples: {this.obtainedSpec.samples}");
+            // Console.WriteLine($"   Size: {this.obtainedSpec.size}");
+            // Console.WriteLine($"   Silence: {this.obtainedSpec.silence}");
             // Console.WriteLine($"   Format: {this.obtainedSpec.format}");
             this.stream = SDL.SDL_NewAudioStream(
                 desiredSpec.format,
@@ -39,6 +42,8 @@
                 this.obtainedSpec.format,
                 this.obtainedSpec.channels,
                 this.obtainedSpec.freq);
+
+            this.obtainedSampleSize = (int)GetSampleSize(this.obtainedSpec);
 
             if (this.stream == IntPtr.Zero)
             {
@@ -56,7 +61,12 @@
 
         public int BufferSize()
         {
-            return SDL.SDL_AudioStreamAvailable(this.stream) / sizeof(float) / 2;
+            // Assume the internal buffer is always full, since we can't get its size
+            int bufferBytes = (int)this.obtainedSpec.size + SDL.SDL_AudioStreamAvailable(this.stream);
+
+            // TODO: Handle where internal buffer size is bigger than the desired buffer size (we'll starve the stream)
+            // We multiply by 500 instead of 1000 because we assume stereo.
+            return ((bufferBytes / this.obtainedSampleSize) * 500) / this.obtainedSpec.freq;
         }
 
         public void AddSamples(float[] samples)
@@ -71,6 +81,11 @@
             }
         }
 
+        private static uint GetSampleSize(SDL.SDL_AudioSpec obtainedSpec)
+        {
+            return obtainedSpec.size / obtainedSpec.samples / obtainedSpec.channels;
+        }
+
         private void Callback(IntPtr userdata, IntPtr buffer, int len)
         {
             int available = SDL.SDL_AudioStreamAvailable(this.stream);
@@ -80,6 +95,8 @@
                 // Buffer underflow, return empty
                 Marshal.Copy(new byte[len], 0, buffer, len);
                 SDL.SDL_AudioStreamClear(this.stream);
+
+                // Console.WriteLine("WARNING: Audio buffer empty.");
             }
             else
             {
@@ -95,7 +112,7 @@
                     Console.WriteLine("ERROR: Unexpected audio converted sample count.");
 
                     // TODO: Validate this is right
-                    Marshal.Copy(new byte[len - obtained], obtained, buffer, len - obtained);
+                    Marshal.Copy(new byte[len - obtained], 0, buffer + obtained, len - obtained);
                 }
             }
         }

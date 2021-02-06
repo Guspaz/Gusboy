@@ -17,6 +17,7 @@
         private const int ADDR_INT_SERIAL = 0x58;
         private const int ADDR_INT_JOYPAD = 0x60;
 
+        private bool delayedIME;
         private bool fInterruptMasterEnable;
         private bool fHaltBug;
 
@@ -30,6 +31,13 @@
 
         public void InterruptTick()
         {
+            if (this.delayedIME)
+            {
+                this.fInterruptMasterEnable = true;
+                this.delayedIME = false;
+                return;
+            }
+
             if (this.rInterruptEnable > 0 && this.rInterruptFlags > 0)
             {
                 // Get the set of interrupts that have fired and are enabled

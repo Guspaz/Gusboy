@@ -32,13 +32,14 @@
         private long oldCpuTicks;
         private int pendingApuTicks;
         private int timer = 1; // Can be set to 0 to run at uncapped framerate, but this has major side effects, only use for benchmarking
-        private int frameSequencerTimer;
         private int frameSequencerStep;
 
         private int superSampleTimer = SUPERSAMPLE_MODULO;
         private int superSampleCount;
         private double accumulationBufferLeft;
         private double accumulationBufferRight;
+
+        private int divFallingEdge;
 
         public APU(Gameboy gameBoy, int sampleRate)
         {
@@ -100,65 +101,63 @@
             this.oldCpuTicks = this.gb.Cpu.Ticks;
 
             int cycleLength = this.gb.Cpu.fSpeed ? 8 : 4;
+            int divMask = 1 << (14 - (int)this.gb.Cpu.fSpeedTimerMultiplier);
+
+            // TODO: Should this use a falling edge, or rising edge?
+            // TODO: Using this instead of the old counter approach means we might step the frame sequencer before some of the frequency ticks that should go before it, does that matter?
+            if (this.divFallingEdge != 0 && (this.gb.Cpu.rDIV & divMask) == 0)
+            {
+                if (this.apuPower)
+                {
+                    switch (this.frameSequencerStep)
+                    {
+                        case 0:
+                            this.channel1.LengthTimerTick();
+                            this.channel2.LengthTimerTick();
+                            this.channel3.LengthTimerTick();
+                            this.channel4.LengthTimerTick();
+                            break;
+                        case 2:
+                            this.channel1.SweepTick();
+                            this.channel1.LengthTimerTick();
+                            this.channel2.LengthTimerTick();
+                            this.channel3.LengthTimerTick();
+                            this.channel4.LengthTimerTick();
+                            break;
+                        case 4:
+                            this.channel1.LengthTimerTick();
+                            this.channel2.LengthTimerTick();
+                            this.channel3.LengthTimerTick();
+                            this.channel4.LengthTimerTick();
+                            break;
+                        case 6:
+                            this.channel1.SweepTick();
+                            this.channel1.LengthTimerTick();
+                            this.channel2.LengthTimerTick();
+                            this.channel3.LengthTimerTick();
+                            this.channel4.LengthTimerTick();
+                            break;
+                        case 7:
+                            this.channel1.VolumeEnvelopeTick();
+                            this.channel2.VolumeEnvelopeTick();
+                            this.channel4.VolumeEnvelopeTick();
+                            break;
+                    }
+
+                    if (++this.frameSequencerStep > 7)
+                    {
+                        this.frameSequencerStep = 0;
+                    }
+                }
+            }
+
+            this.divFallingEdge = this.gb.Cpu.rDIV & divMask;
 
             if (this.pendingApuTicks >= cycleLength)
             {
                 while (this.pendingApuTicks > 0)
                 {
                     this.pendingApuTicks -= cycleLength;
-
-                    if (this.frameSequencerTimer > 0)
-                    {
-                        this.frameSequencerTimer--;
-                    }
-
-                    if (this.frameSequencerTimer == 0)
-                    {
-                        if (this.apuPower)
-                        {
-                            switch (this.frameSequencerStep)
-                            {
-                                case 0:
-                                    this.channel1.LengthTimerTick();
-                                    this.channel2.LengthTimerTick();
-                                    this.channel3.LengthTimerTick();
-                                    this.channel4.LengthTimerTick();
-                                    break;
-                                case 2:
-                                    this.channel1.SweepTick();
-                                    this.channel1.LengthTimerTick();
-                                    this.channel2.LengthTimerTick();
-                                    this.channel3.LengthTimerTick();
-                                    this.channel4.LengthTimerTick();
-                                    break;
-                                case 4:
-                                    this.channel1.LengthTimerTick();
-                                    this.channel2.LengthTimerTick();
-                                    this.channel3.LengthTimerTick();
-                                    this.channel4.LengthTimerTick();
-                                    break;
-                                case 6:
-                                    this.channel1.SweepTick();
-                                    this.channel1.LengthTimerTick();
-                                    this.channel2.LengthTimerTick();
-                                    this.channel3.LengthTimerTick();
-                                    this.channel4.LengthTimerTick();
-                                    break;
-                                case 7:
-                                    this.channel1.VolumeEnvelopeTick();
-                                    this.channel2.VolumeEnvelopeTick();
-                                    this.channel4.VolumeEnvelopeTick();
-                                    break;
-                            }
-
-                            if (++this.frameSequencerStep > 7)
-                            {
-                                this.frameSequencerStep = 0;
-                            }
-                        }
-
-                        this.frameSequencerTimer = 8192 / 4; // DMG-length m-cycles
-                    }
 
                     if (this.apuPower)
                     {

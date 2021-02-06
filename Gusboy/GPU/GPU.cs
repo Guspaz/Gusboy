@@ -40,6 +40,8 @@
         private int hdmaDestination;
         private bool hdmaInProgress = false;
 
+        private bool previousStatInterruptFlag = false;
+
         public GPU(Gameboy gameBoy, Func<bool> drawFramebuffer, int[] framebuffer)
         {
             this.gb = gameBoy;
@@ -133,7 +135,6 @@
             set
             {
                 this.internalCurrentLine = value;
-
                 this.CheckLYCInterrupt();
             }
         }
@@ -294,12 +295,6 @@
             {
                 // Set match bit
                 this.lcdcStat |= 1 << 2;
-
-                // LYC = LY status interrupt
-                if ((this.lcdcStat & (1 << 6)) != 0)
-                {
-                    this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
-                }
             }
             else
             {
@@ -403,11 +398,6 @@
                             // VBLANK gets its own dedicated interrupt on top of the flag in STAT
                             this.gb.Cpu.TriggerInterrupt(CPU.INT_VBLANK);
 
-                            if (this.CheckModeFlag(GPUMode.VBLANK))
-                            {
-                                this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
-                            }
-
                             // The first frame after turning the LCD on is skipped (some games show garbage on this frame, real hardware doesn't draw it)
                             if (this.lcdWasOff)
                             {
@@ -436,11 +426,6 @@
                             // Not the last line, go to OAM on the next one
                             this.mode = GPUMode.OAM;
                             this.remainingCycles = this.TIME_OAM;
-
-                            if (this.CheckModeFlag(GPUMode.OAM))
-                            {
-                                this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
-                            }
 
                             // Increment LY at the end of HBLANK
                             this.CurrentLine++;
@@ -473,11 +458,6 @@
                             // End of the line, top of the screen OAM
                             this.mode = GPUMode.OAM;
                             this.remainingCycles = this.TIME_OAM;
-
-                            if (this.CheckModeFlag(GPUMode.OAM))
-                            {
-                                this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
-                            }
                         }
                         else
                         {
@@ -518,11 +498,6 @@
                         {
                             this.HdmaTick();
                         }
-
-                        if (this.CheckModeFlag(GPUMode.HBLANK))
-                        {
-                            this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
-                        }
                     }
                 }
 
@@ -538,6 +513,8 @@
                 {
                     this.CurrentOam = 0;
                 }
+
+                this.CheckStatInterrupt();
             }
         }
 
@@ -551,6 +528,20 @@
             this.lcdWasOff = false;
             this.ObjPal0 = 0;
             this.ObjPal1 = 0;
+        }
+
+        private void CheckStatInterrupt()
+        {
+            bool statInterruptFlag =
+                ((this.lcdcStat & (1 << 6)) != 0 && (this.lcdcStat & (1 << 2)) != 0)
+                || this.CheckModeFlag(this.mode);
+
+            if (statInterruptFlag && !this.previousStatInterruptFlag)
+            {
+                this.gb.Cpu.TriggerInterrupt(CPU.INT_LCDSTAT);
+            }
+
+            this.previousStatInterruptFlag = statInterruptFlag;
         }
 
         private void RenderScanline()
