@@ -111,7 +111,6 @@
 
             while (true)
             {
-                // TODO: Call this less often, right now it's executed at ~8,000 Hz.
                 this.HandleEvent();
 
                 // Unroll this to have an 8:1 ratio between event handling and emulator execution.

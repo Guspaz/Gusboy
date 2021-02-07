@@ -34,6 +34,7 @@
         private byte currentLineCompare;
         private byte hdmaControl;
         private int remainingCycles = 0;
+        private bool vblankInterruptFired;
         private int delayTicks = 0; // Some things while drawing the scanline stall the LCD clock and eats into HBLANK
 
         private int hdmaSource;
@@ -379,6 +380,13 @@
             this.gpuTicks = (this.gb.Cpu.Ticks - this.oldCpuTicks) >> 2;
             this.oldCpuTicks = this.gb.Cpu.Ticks;
 
+            // Check for vblank interrupt on the first GPU tick function call after entering it
+            if (!this.vblankInterruptFired && this.mode == GPUMode.VBLANK && this.LCDCFlag(LCDC.LCDPower))
+            {
+                this.gb.Cpu.TriggerInterrupt(CPU.INT_VBLANK);
+                this.vblankInterruptFired = true;
+            }
+
             for (int i = 0; i < this.gpuTicks; i++)
             {
                 this.remainingCycles -= 4;
@@ -395,8 +403,8 @@
                             this.mode = GPUMode.VBLANK;
                             this.remainingCycles = this.TIME_VBLANK;
 
-                            // VBLANK gets its own dedicated interrupt on top of the flag in STAT
-                            this.gb.Cpu.TriggerInterrupt(CPU.INT_VBLANK);
+                            // VBLANK gets its own dedicated interrupt on top of the flag in STAT, let it happen
+                            this.vblankInterruptFired = false;
 
                             // The first frame after turning the LCD on is skipped (some games show garbage on this frame, real hardware doesn't draw it)
                             if (this.lcdWasOff)
@@ -532,6 +540,7 @@
 
         private void CheckStatInterrupt()
         {
+            // TODO: We might need to delay this until the next tick function call after the conditions are met before firing the interrupt.
             bool statInterruptFlag =
                 ((this.lcdcStat & (1 << 6)) != 0 && (this.lcdcStat & (1 << 2)) != 0)
                 || this.CheckModeFlag(this.mode);
