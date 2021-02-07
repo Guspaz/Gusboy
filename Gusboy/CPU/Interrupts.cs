@@ -77,7 +77,7 @@
 
         public void TriggerInterrupt(byte interrupt) => this.rInterruptFlags |= interrupt;
 
-        private void FireInterrupt(int interrupt, int address)
+        private void FireInterrupt(int interrupt, ushort address)
         {
             if (this.fHalt || this.fStop)
             {

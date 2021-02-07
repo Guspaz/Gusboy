@@ -140,11 +140,19 @@
                     break;
 
                 case SDL.SDL_EventType.SDL_KEYDOWN:
-                    this.OnKeyDown(sdlevent.key.keysym.scancode);
+                    if (this.gb != null)
+                    {
+                        this.OnKeyDown(sdlevent.key.keysym.scancode);
+                    }
+
                     break;
 
                 case SDL.SDL_EventType.SDL_KEYUP:
-                    this.OnKeyUp(sdlevent.key.keysym.scancode);
+                    if (this.gb != null)
+                    {
+                        this.OnKeyUp(sdlevent.key.keysym.scancode);
+                    }
+
                     break;
 
                 case SDL.SDL_EventType.SDL_WINDOWEVENT:

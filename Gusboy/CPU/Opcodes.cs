@@ -290,10 +290,10 @@
         public struct Opcode
         {
             public readonly string Mnemonic;
-            public readonly int OperandLength;
+            public readonly ushort OperandLength;
             public readonly Func<int, int> Func;
 
-            public Opcode(string name, int paramLength, Func<int, int> func)
+            public Opcode(string name, ushort paramLength, Func<int, int> func)
             {
                 this.Mnemonic = name;
                 this.OperandLength = paramLength;

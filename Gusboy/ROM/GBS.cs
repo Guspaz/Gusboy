@@ -14,7 +14,7 @@
         private readonly ROM rom;
 
         private readonly byte[] memory = new byte[0xFFFF];
-        private int initialStackPointer;
+        private ushort initialStackPointer;
         private int interruptCounter;
         private long oldCpuTicks;
         private int interruptRate;
@@ -26,10 +26,10 @@
             this.Version = romFile[0x03];
             this.NumSongs = romFile[0x04];
             this.FirstSong = romFile[0x05];
-            this.LoadAddress = romFile[0x07] << 8 | romFile[0x06];
-            this.InitAddress = romFile[0x09] << 8 | romFile[0x08];
-            this.PlayAddress = romFile[0x0B] << 8 | romFile[0x0A];
-            this.StackPointer = romFile[0x0D] << 8 | romFile[0x0C];
+            this.LoadAddress = (ushort)(romFile[0x07] << 8 | romFile[0x06]);
+            this.InitAddress = (ushort)(romFile[0x09] << 8 | romFile[0x08]);
+            this.PlayAddress = (ushort)(romFile[0x0B] << 8 | romFile[0x0A]);
+            this.StackPointer = (ushort)(romFile[0x0D] << 8 | romFile[0x0C]);
             this.TimerModulo = romFile[0x0E];
             this.TimerControl = romFile[0x0F];
             this.Title = ROM.GetRomString(romFile, 0x10, 0x20);
@@ -81,13 +81,13 @@
 
         public byte FirstSong { get; set; }
 
-        public int LoadAddress { get; set; }
+        public ushort LoadAddress { get; set; }
 
-        public int InitAddress { get; set; }
+        public ushort InitAddress { get; set; }
 
-        public int PlayAddress { get; set; }
+        public ushort PlayAddress { get; set; }
 
-        public int StackPointer { get; set; }
+        public ushort StackPointer { get; set; }
 
         public byte TimerModulo { get; set; }
 

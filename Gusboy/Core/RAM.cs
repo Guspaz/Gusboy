@@ -721,7 +721,7 @@
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int GetShort(int address) => (this[address + 1] << 8) + this[address];
+        public ushort GetShort(int address) => (ushort)((this[address + 1] << 8) + this[address]);
 
         internal void ClearRAM()
         {

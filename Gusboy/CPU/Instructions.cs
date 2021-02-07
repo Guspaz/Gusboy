@@ -25,7 +25,7 @@
 
         private int jp_nn(int operand)
         {
-            this.rPC = operand;
+            this.rPC = (ushort)operand;
             return 16;
         }
 
@@ -33,7 +33,7 @@
         {
             if (!this.fZ)
             {
-                this.rPC = operand;
+                this.rPC = (ushort)operand;
                 return 16;
             }
             else
@@ -46,7 +46,7 @@
         {
             if (this.fZ)
             {
-                this.rPC = operand;
+                this.rPC = (ushort)operand;
                 return 16;
             }
             else
@@ -59,7 +59,7 @@
         {
             if (!this.fC)
             {
-                this.rPC = operand;
+                this.rPC = (ushort)operand;
                 return 16;
             }
             else
@@ -72,7 +72,7 @@
         {
             if (this.fC)
             {
-                this.rPC = operand;
+                this.rPC = (ushort)operand;
                 return 16;
             }
             else
@@ -84,7 +84,7 @@
         private int call_nn(int operand)
         {
             this.Ram.SetShort(this.rSP - 2, this.rPC);
-            this.rPC = operand;
+            this.rPC = (ushort)operand;
             this.rSP -= 2;
             return 24;
         }
@@ -94,7 +94,7 @@
             if (!this.fZ)
             {
                 this.Ram.SetShort(this.rSP - 2, this.rPC);
-                this.rPC = operand;
+                this.rPC = (ushort)operand;
                 this.rSP -= 2;
                 return 24;
             }
@@ -109,7 +109,7 @@
             if (this.fZ)
             {
                 this.Ram.SetShort(this.rSP - 2, this.rPC);
-                this.rPC = operand;
+                this.rPC = (ushort)operand;
                 this.rSP -= 2;
                 return 24;
             }
@@ -124,7 +124,7 @@
             if (!this.fC)
             {
                 this.Ram.SetShort(this.rSP - 2, this.rPC);
-                this.rPC = operand;
+                this.rPC = (ushort)operand;
                 this.rSP -= 2;
                 return 24;
             }
@@ -139,7 +139,7 @@
             if (this.fC)
             {
                 this.Ram.SetShort(this.rSP - 2, this.rPC);
-                this.rPC = operand;
+                this.rPC = (ushort)operand;
                 this.rSP -= 2;
                 return 24;
             }
@@ -364,25 +364,25 @@
 
         private int ld_bc_nn(int operand)
         {
-            this.rBC = operand;
+            this.rBC = (ushort)operand;
             return 12;
         }
 
         private int ld_de_nn(int operand)
         {
-            this.rDE = operand;
+            this.rDE = (ushort)operand;
             return 12;
         }
 
         private int ld_hl_nn(int operand)
         {
-            this.rHL = operand;
+            this.rHL = (ushort)operand;
             return 12;
         }
 
         private int ld_sp_nn(int operand)
         {
-            this.rSP = operand;
+            this.rSP = (ushort)operand;
             return 12;
         }
 
@@ -1041,7 +1041,7 @@
         {
             if (!this.fZ)
             {
-                this.rPC += (sbyte)(byte)operand;
+                this.rPC = (ushort)(this.rPC + (sbyte)(byte)operand);
                 return 12;
             }
             else
@@ -1054,7 +1054,7 @@
         {
             if (this.fZ)
             {
-                this.rPC += (sbyte)(byte)operand;
+                this.rPC = (ushort)(this.rPC + (sbyte)(byte)operand);
                 return 12;
             }
             else
@@ -1067,7 +1067,7 @@
         {
             if (!this.fC)
             {
-                this.rPC += (sbyte)(byte)operand;
+                this.rPC = (ushort)(this.rPC + (sbyte)(byte)operand);
                 return 12;
             }
             else
@@ -1080,7 +1080,7 @@
         {
             if (this.fC)
             {
-                this.rPC += (sbyte)(byte)operand;
+                this.rPC = (ushort)(this.rPC + (sbyte)(byte)operand);
                 return 12;
             }
             else
@@ -1091,7 +1091,7 @@
 
         private int jr_dn(int operand)
         {
-            this.rPC += (sbyte)(byte)operand;
+            this.rPC = (ushort)(this.rPC + (sbyte)(byte)operand);
             return 12;
         }
 
@@ -1618,7 +1618,7 @@
             this.fH = HalfCarryAdd((byte)this.rSP, (byte)operand);
             this.fC = (((byte)this.rSP + (byte)operand) & 0x100) == 0x100;
 
-            this.rSP += (sbyte)(byte)operand;
+            this.rSP = (ushort)(this.rSP + (sbyte)(byte)operand);
 
             this.fZ = false;
             this.fN = false;
@@ -1632,7 +1632,7 @@
             this.fH = HalfCarryAdd((byte)this.rSP, (byte)operand);
             this.fC = (((byte)this.rSP + (byte)operand) & 0x100) == 0x100;
 
-            this.rHL = this.rSP + (sbyte)(byte)operand;
+            this.rHL = (ushort)(this.rSP + (sbyte)(byte)operand);
 
             this.fZ = false;
             this.fN = false;
@@ -2120,7 +2120,7 @@
         private int pop_af(int operand)
         {
             // Special case, lower four bits of F are always 0
-            this.rAF = this.Ram.GetShort(this.rSP) & 0xFFF0;
+            this.rAF = (ushort)(this.Ram.GetShort(this.rSP) & 0xFFF0);
 
             this.rSP += 2;
             return 12;
@@ -2131,7 +2131,7 @@
             this.fH = HalfCarryAdd(this.rHL, this.rBC);
 
             int result = this.rHL + this.rBC;
-            this.rHL = result;
+            this.rHL = (ushort)result;
             this.fN = false;
             this.fC = (result & 0x10000) == 0x10000;
 
@@ -2143,7 +2143,7 @@
             this.fH = HalfCarryAdd(this.rHL, this.rDE);
 
             int result = this.rHL + this.rDE;
-            this.rHL = result;
+            this.rHL = (ushort)result;
             this.fN = false;
             this.fC = (result & 0x10000) == 0x10000;
 
@@ -2155,7 +2155,7 @@
             this.fH = HalfCarryAdd(this.rHL, this.rHL);
 
             int result = this.rHL + this.rHL;
-            this.rHL = result;
+            this.rHL = (ushort)result;
             this.fN = false;
             this.fC = (result & 0x10000) == 0x10000;
 
@@ -2168,7 +2168,7 @@
 
             // fH = ((rHL & 0xFFF) + (rSP & 0xFFF)) > 0xFFF;
             int result = this.rHL + this.rSP;
-            this.rHL = result;
+            this.rHL = (ushort)result;
             this.fN = false;
             this.fC = result > 0xFFFF;
 
