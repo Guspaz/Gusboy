@@ -14,6 +14,9 @@
 
         private readonly Tile[] tileCache = new Tile[32 * 32 * 2];
 
+        private readonly bool[] bgIsTransparent = new bool[256];
+        private readonly bool[] bgPriority = new bool[256];
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CacheTile(int n)
         {
@@ -38,10 +41,11 @@
             }
         }
 
-        private void RenderScanlineTiles(bool[] bgIsTransparent, bool[] bgPriority)
+        private void RenderScanlineTiles(int startingPixel = 0, int endingPixel = 160)
         {
             if (!this.gb.IsCgb && !this.LCDCFlag(LCDC.BGEnabled))
             {
+                // TODO: This needs to be updated for partial scanline rendering.
                 Array.Fill(this.framebuffer, this.palBg[this.palBgMap[0]], this.CurrentLine * 160, 160);
             }
             else if (this.gb.IsCgb || this.LCDCFlag(LCDC.BGEnabled) || this.renderingWindow)
@@ -65,16 +69,15 @@
 
                 // Delay HBLANK for the background scroll
                 // TODO: Should this happen if we're in the window?
-                this.delayTicks += this.ScrollX % 8;
-                bool windowDelay = false;
-
+                // this.delayTicks += this.ScrollX % 8;
+                // bool windowDelay = false;
                 bool precomputeRenderingWindow = this.LCDCFlag(LCDC.WindowEnable)
                             && this.CurrentLine >= this.startWinY
                             && this.WinX <= WINDOW_MAX_X;
 
                 int precomputeCurrentLineOffset = this.CurrentLine * 160;
 
-                for (int i = 0; i < 160; i++)
+                for (int i = startingPixel; i < endingPixel; i++)
                 {
                     this.renderingWindow = precomputeRenderingWindow
                             && i + WINDOW_X_OFFSET >= this.WinX;
@@ -86,11 +89,11 @@
                         tilemapFlag = LCDC.WindowTileMap;
 
                         // Delay HBLANK for the window
-                        if (!windowDelay)
-                        {
-                            this.delayTicks += 6;
-                            windowDelay = true;
-                        }
+                        // if (!windowDelay)
+                        // {
+                        //     this.delayTicks += 6;
+                        //     windowDelay = true;
+                        // }
                     }
                     else
                     {
@@ -146,8 +149,8 @@
                     byte palIndex = (byte)((((this.gb.Ram.Vram[this.tileCache[tileNum].VramBank, tileDataAddress + 1] >> shift) & 1) << 1) | ((this.gb.Ram.Vram[this.tileCache[tileNum].VramBank, tileDataAddress] >> shift) & 1));
 
                     // Used  later for rendering sprites
-                    bgIsTransparent[i] = palIndex == 0;
-                    bgPriority[i] = this.gb.IsCgb && this.LCDCFlag(LCDC.BGEnabled) && this.tileCache[tileNum].OAMPriority;
+                    this.bgIsTransparent[i] = palIndex == 0;
+                    this.bgPriority[i] = this.gb.IsCgb && this.LCDCFlag(LCDC.BGEnabled) && this.tileCache[tileNum].OAMPriority;
 
                     if (this.gb.IsCgb)
                     {

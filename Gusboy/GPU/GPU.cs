@@ -34,8 +34,10 @@
         private byte currentLineCompare;
         private byte hdmaControl;
         private int remainingCycles = 0;
+        private int pixelClock;
         private bool vblankInterruptFired;
         private int delayTicks = 0; // Some things while drawing the scanline stall the LCD clock and eats into HBLANK
+        private int totalDelay = 0;
 
         private int hdmaSource;
         private int hdmaDestination;
@@ -367,24 +369,54 @@
 
         // This is just the same as the VRAM restriction for now.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool CanAccessCGBPal(bool isDMA) => this.CanAccessVRAM(isDMA);
+        public bool CanAccessCGBPal(bool isDMA) => this.CanAccessVRAM(isDMA) || true;
 
         public void Tick()
         {
             if (!this.LCDCFlag(LCDC.LCDPower))
             {
+                // TODO: Keep a timer going to spit out a frame where vblank would normally have happened, without clocking the GPU. Just to reduce frame time spikes.
                 this.oldCpuTicks = this.gb.Cpu.Ticks;
                 return;
             }
 
-            this.gpuTicks = (this.gb.Cpu.Ticks - this.oldCpuTicks) >> 2;
+            long rawTicks = this.gb.Cpu.Ticks - this.oldCpuTicks;
+            this.gpuTicks = rawTicks >> 2;
             this.oldCpuTicks = this.gb.Cpu.Ticks;
 
             // Check for vblank interrupt on the first GPU tick function call after entering it
-            if (!this.vblankInterruptFired && this.mode == GPUMode.VBLANK && this.LCDCFlag(LCDC.LCDPower))
+            if (!this.vblankInterruptFired && this.mode == GPUMode.VBLANK)
             {
                 this.gb.Cpu.TriggerInterrupt(CPU.INT_VBLANK);
                 this.vblankInterruptFired = true;
+            }
+
+            // TODO: Sprite-based delays won't be considered here since we're not rendering sprites pixel-by-pixel.
+            if (this.mode == GPUMode.VRAM)
+            {
+                long speedAdjustedTicks = rawTicks >> (this.gb.Cpu.fSpeed ? 1 : 0);
+
+                for (int i = 0; i < speedAdjustedTicks; i++)
+                {
+                    // TODO: Something about this is causing the scanline to not finish rendering in the Pokemon Yellow intro
+                    if (this.delayTicks <= 0)
+                    {
+                        // TODO: Why does stuff break if this is not in chunks of 4? 1 and 8 both break stuff.
+                        if (this.pixelClock % 4 == 0 && this.pixelClock >= 0 && this.pixelClock <= 156)
+                        {
+                            this.RenderScanlineTiles(this.pixelClock, this.pixelClock + 4);
+                        }
+
+                        this.pixelClock++;
+                    }
+                    else
+                    {
+                        this.delayTicks--;
+                        int calculatedDelay = this.gb.Cpu.fSpeed ? 2 : 1;
+                        this.remainingCycles += calculatedDelay; // TODO: This might throw the GPU timing off since it works in chunks of 4 cycles. Fix that!
+                        this.totalDelay += calculatedDelay;
+                    }
+                }
             }
 
             for (int i = 0; i < this.gpuTicks; i++)
@@ -482,13 +514,12 @@
                         this.mode = GPUMode.VRAM;
                         this.remainingCycles = this.TIME_VRAM;
 
-                        // In a real system this would start drawing bit-by-bit here, but we're just going to do it all in one shot up front.
-                        this.RenderScanline();
+                        // Reset the pixel clock, which is incremented in VRAM mode. We want to delay rendering by 2 m-cycles into this mode
+                        this.pixelClock = -8;
 
-                        // Extend VRAM cycle based on what we did rendering the scanline. We'll subtract it from HBLANK.
-                        // TODO: Validate these exact timings somehow, pan docs isn't precise exacty
-                        // TODO: This is breaking too much stuff, my timing is too far off to use this.
-                        // this.remainingCycles += this.delayTicks * (this.gb.Cpu.fSpeed ? 2 : 1);
+                        // Calculate the initial delay
+                        // TODO: Also delay for window
+                        this.delayTicks += this.ScrollX % 8;
                     }
                     else
                     {
@@ -496,10 +527,13 @@
                         this.mode = GPUMode.HBLANK;
                         this.remainingCycles = this.TIME_HBLANK;
 
+                        // Render the sprite scanline starting in hblank.
+                        this.RenderScanlineSprites();
+
                         // We extended VBLANK to do rendering so we must steal from HBLANK.
-                        // TODO: This is breaking too much stuff, my timing is too far off to use this.
-                        // this.remainingCycles -= this.delayTicks * (this.gb.Cpu.fSpeed ? 2 : 1);
-                        this.delayTicks = 0;
+                        // TODO: Validate that this doesn't break too much
+                        this.remainingCycles -= this.totalDelay;
+                        this.totalDelay = 0;
 
                         // TODO: We should also be able to start this if it started during hblank.
                         if (this.hdmaInProgress)
@@ -551,16 +585,6 @@
             }
 
             this.previousStatInterruptFlag = statInterruptFlag;
-        }
-
-        private void RenderScanline()
-        {
-            bool[] bgIsTransparent = new bool[256];
-            bool[] bgPriority = new bool[256];
-
-            this.RenderScanlineTiles(bgIsTransparent, bgPriority);
-
-            this.RenderScanlineSprites(bgIsTransparent, bgPriority);
         }
 
         private void HdmaTick()

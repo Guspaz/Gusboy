@@ -9,7 +9,7 @@
     /// </summary>
     public partial class GPU
     {
-        private void RenderScanlineSprites(bool[] bgIsTransparent, bool[] bgPriority)
+        private void RenderScanlineSprites()
         {
             // Sprites
             if (this.LCDCFlag(LCDC.SpritesEnabled))
@@ -30,14 +30,14 @@
                 foreach (var currentSprite in prioritySprites)
                 {
                     // Delay HBLANK for sprites
-                    if (currentSprite.X >= this.WinX)
-                    {
-                        this.delayTicks += 11 - Math.Min(5, (currentSprite.X + (255 - this.WinX)) % 8);
-                    }
-                    else
-                    {
-                        this.delayTicks += 11 - Math.Min(5, (currentSprite.X + this.ScrollX) % 8);
-                    }
+                    // if (currentSprite.X >= this.WinX)
+                    // {
+                    //     this.delayTicks += 11 - Math.Min(5, (currentSprite.X + (255 - this.WinX)) % 8);
+                    // }
+                    // else
+                    // {
+                    //     this.delayTicks += 11 - Math.Min(5, (currentSprite.X + this.ScrollX) % 8);
+                    // }
 
                     // Sprite appears on this scanline, draw it.
                     for (int i = 0; i < 8; i++)
@@ -80,8 +80,8 @@
                         if (
                             palIndex != 0
                             && finalX < 160
-                            && (!currentSprite.Priority || bgIsTransparent[finalX])
-                            && (!bgPriority[finalX] || bgIsTransparent[finalX]))
+                            && (!currentSprite.Priority || this.bgIsTransparent[finalX])
+                            && (!this.bgPriority[finalX] || this.bgIsTransparent[finalX]))
                         {
                             this.framebuffer[(this.CurrentLine * 160) + (byte)(currentSprite.X + i)] = currentSprite.MappedPalette[palIndex];
                         }

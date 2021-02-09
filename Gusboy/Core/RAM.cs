@@ -13,7 +13,7 @@
 
         private int wramBank = 1; // Default for DMG, CGB will update as required
         private int backgroundPaletteIndex;
-        private bool backgroundPaletteAutoIncrement;
+        private bool backgroundPaletteAutoIncrement = true; // Defaults to on
         private int spritePaletteIndex;
         private bool spritePaletteAutoIncrement;
 
