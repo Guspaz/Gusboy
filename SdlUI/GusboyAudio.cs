@@ -8,7 +8,7 @@
     public class GusboyAudio
     {
         private readonly SDL.SDL_AudioSpec obtainedSpec;
-        private readonly IntPtr stream;
+        private readonly uint device;
         private readonly int obtainedSampleSize;
 
         public GusboyAudio(int sampleRate)
@@ -19,11 +19,10 @@
                 format = SDL.AUDIO_F32,
                 channels = 2,
                 samples = 1024,
-                callback = this.Callback,
                 userdata = IntPtr.Zero,
             };
 
-            if (SDL.SDL_OpenAudio(ref desiredSpec, out this.obtainedSpec) < 0)
+            if ((this.device = SDL.SDL_OpenAudioDevice(null, 0, ref desiredSpec, out this.obtainedSpec, 0)) < 0)
             {
                 Console.WriteLine($"ERROR: Couldn't open audio: {SDL.SDL_GetError()}");
                 return;
@@ -36,36 +35,20 @@
             // Console.WriteLine($"   Size: {this.obtainedSpec.size}");
             // Console.WriteLine($"   Silence: {this.obtainedSpec.silence}");
             // Console.WriteLine($"   Format: {this.obtainedSpec.format}");
-            this.stream = SDL.SDL_NewAudioStream(
-                desiredSpec.format,
-                desiredSpec.channels,
-                desiredSpec.freq,
-                this.obtainedSpec.format,
-                this.obtainedSpec.channels,
-                this.obtainedSpec.freq);
+            this.obtainedSampleSize = (int)(this.obtainedSpec.size / this.obtainedSpec.samples / this.obtainedSpec.channels);
 
-            this.obtainedSampleSize = (int)GetSampleSize(this.obtainedSpec);
-
-            if (this.stream == IntPtr.Zero)
-            {
-                Console.WriteLine($"ERROR: Couldn't create audio stream: {SDL.SDL_GetError()}");
-                return;
-            }
-
-            SDL.SDL_PauseAudio(0);
+            SDL.SDL_PauseAudioDevice(this.device, 0);
         }
 
         ~GusboyAudio()
         {
-            SDL.SDL_FreeAudioStream(this.stream);
+            SDL.SDL_CloseAudioDevice(this.device);
         }
 
         public int BufferSize()
         {
-            // Assume the internal buffer is always full, since we can't get its size
-            int bufferBytes = (int)this.obtainedSpec.size + SDL.SDL_AudioStreamAvailable(this.stream);
+            int bufferBytes = (int)SDL.SDL_GetQueuedAudioSize(this.device);
 
-            // TODO: Handle where internal buffer size is bigger than the desired buffer size (we'll starve the stream)
             // We multiply by 500 instead of 1000 because we assume stereo.
             return ((bufferBytes / this.obtainedSampleSize) * 500) / this.obtainedSpec.freq;
         }
@@ -73,48 +56,12 @@
         public void AddSamples(float[] samples)
         {
             var handle = GCHandle.Alloc(samples, GCHandleType.Pinned);
-            int result = SDL.SDL_AudioStreamPut(this.stream, handle.AddrOfPinnedObject(), samples.Length * sizeof(float));
+            int result = SDL.SDL_QueueAudio(this.device, handle.AddrOfPinnedObject(), (uint)(samples.Length * sizeof(float)));
             handle.Free();
 
             if (result < 0)
             {
-                Console.WriteLine($"ERROR: Failed to send samples to stream: {SDL.SDL_GetError()}");
-            }
-        }
-
-        private static uint GetSampleSize(SDL.SDL_AudioSpec obtainedSpec)
-        {
-            return obtainedSpec.size / obtainedSpec.samples / obtainedSpec.channels;
-        }
-
-        private void Callback(IntPtr userdata, IntPtr buffer, int len)
-        {
-            int available = SDL.SDL_AudioStreamAvailable(this.stream);
-
-            if (available < len)
-            {
-                // Buffer underflow, return silence
-                Marshal.Copy(Enumerable.Repeat(this.obtainedSpec.silence, len).ToArray(), 0, buffer, len);
-                SDL.SDL_AudioStreamClear(this.stream);
-
-                // Console.WriteLine("WARNING: Audio buffer empty.");
-            }
-            else
-            {
-                int obtained = SDL.SDL_AudioStreamGet(this.stream, buffer, len);
-
-                if (obtained == -1)
-                {
-                    Console.WriteLine($"ERROR: Failed to get converted audio data: {SDL.SDL_GetError()}");
-                }
-                else if (obtained != len)
-                {
-                    // Unexpected returned number? Clear the rest of the buffer
-                    Console.WriteLine("ERROR: Unexpected audio converted sample count.");
-
-                    // TODO: Validate this is right
-                    Marshal.Copy(Enumerable.Repeat(this.obtainedSpec.silence, len - obtained).ToArray(), 0, buffer + obtained, len - obtained);
-                }
+                Console.WriteLine($"ERROR: Failed to send audio samples to device: {SDL.SDL_GetError()}");
             }
         }
     }

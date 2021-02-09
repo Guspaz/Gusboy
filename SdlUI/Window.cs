@@ -72,14 +72,16 @@
             this.framebufferHandle = GCHandle.Alloc(this.framebuffer, GCHandleType.Pinned);
             this.framebufferSurface = SDL.SDL_CreateRGBSurfaceWithFormatFrom(this.framebufferHandle.AddrOfPinnedObject(), 160, 144, 32, 4 * 160, SDL.SDL_PIXELFORMAT_ARGB8888);
 
-            SDL.SDL_RenderSetLogicalSize(this.renderer, 160, 144);
-            SDL.SDL_RenderSetIntegerScale(this.renderer, SDL.SDL_bool.SDL_TRUE);
+            _ = SDL.SDL_RenderSetLogicalSize(this.renderer, 160, 144);
+            _ = SDL.SDL_RenderSetIntegerScale(this.renderer, SDL.SDL_bool.SDL_TRUE);
 
-            // TODO: Get this from the emulator and not hardcoded
-            // Clear the initial screen
-            SDL.SDL_SetRenderDrawColor(this.renderer, 0xC6, 0xCB, 0xA5, 0xFF); // MGB screen off colour
-            SDL.SDL_RenderClear(this.renderer);
-            SDL.SDL_RenderPresent(this.renderer);
+            // TODO: Get this from the emulator instead of hardcoding
+            Array.Fill(this.framebuffer, unchecked((int)0xffc6cba5));
+
+            _ = SDL.SDL_SetRenderDrawColor(this.renderer, 0, 0, 0, 0xFF);
+
+            // SDL.SDL_VERSION(out SDL.SDL_version version);
+            // Console.WriteLine($"Using SDL {version.major}.{version.minor}.{version.patch}");
         }
 
         ~Window()
@@ -103,6 +105,12 @@
             while (this.gb == null)
             {
                 this.HandleEvent();
+
+                _ = SDL.SDL_RenderClear(this.renderer);
+                var texture = SDL.SDL_CreateTextureFromSurface(this.renderer, this.framebufferSurface);
+                _ = SDL.SDL_RenderCopy(this.renderer, texture, IntPtr.Zero, IntPtr.Zero);
+                SDL.SDL_RenderPresent(this.renderer);
+                SDL.SDL_DestroyTexture(texture);
             }
 
             GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
@@ -127,7 +135,7 @@
 
         protected void HandleEvent()
         {
-            SDL.SDL_PollEvent(out SDL.SDL_Event sdlevent);
+            _ = SDL.SDL_PollEvent(out SDL.SDL_Event sdlevent);
 
             switch (sdlevent.type)
             {
@@ -165,14 +173,6 @@
                     }
 
                     break;
-
-                // case SDL.SDL_EventType.SDL_WINDOWEVENT:
-                //     Console.WriteLine($"DEBUG: Unhandled SDL event {sdlevent.window.windowEvent}");
-                //     break;
-
-                // default:
-                //     Console.WriteLine($"DEBUG: Unhandled SDL event {sdlevent.type}");
-                //     break;
             }
         }
 
@@ -186,7 +186,7 @@
                 // TODO: Remove magic number
                 if (((currentTime - this.nextAudioSampleTime) / this.baseTimeBetweenSamples) > 410)
                 {
-                    Console.WriteLine("WARNING: audio clock is too far behind, rebasing sample clock.");
+                    Console.WriteLine("WARNING: audio clock is too far behind, rebasing clock.");
                     this.nextAudioSampleTime = currentTime + (int)this.baseTimeBetweenSamples;
                 }
 
@@ -258,11 +258,13 @@
                 this.frameTimes.Clear();
             }
 
+            _ = SDL.SDL_RenderClear(this.renderer);
+
             // Copy the framebuffer from the array to the GPU VRAM
             var texture = SDL.SDL_CreateTextureFromSurface(this.renderer, this.framebufferSurface);
 
             // Draw the texture to the screen (default source/destination will just fill the window/screen)
-            SDL.SDL_RenderCopy(this.renderer, texture, IntPtr.Zero, IntPtr.Zero);
+            _ = SDL.SDL_RenderCopy(this.renderer, texture, IntPtr.Zero, IntPtr.Zero);
 
             // Swap buffers (tell the GPU to display this frame)
             SDL.SDL_RenderPresent(this.renderer);
