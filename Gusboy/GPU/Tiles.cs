@@ -17,6 +17,8 @@
         private readonly bool[] bgIsTransparent = new bool[256];
         private readonly bool[] bgPriority = new bool[256];
 
+        private bool windowDelay = false;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CacheTile(int n)
         {
@@ -67,10 +69,6 @@
                     this.BackgroundCacheDirty = false;
                 }
 
-                // Delay HBLANK for the background scroll
-                // TODO: Should this happen if we're in the window?
-                // this.delayTicks += this.ScrollX % 8;
-                // bool windowDelay = false;
                 bool precomputeRenderingWindow = this.LCDCFlag(LCDC.WindowEnable)
                             && this.CurrentLine >= this.startWinY
                             && this.WinX <= WINDOW_MAX_X;
@@ -89,11 +87,11 @@
                         tilemapFlag = LCDC.WindowTileMap;
 
                         // Delay HBLANK for the window
-                        // if (!windowDelay)
-                        // {
-                        //     this.delayTicks += 6;
-                        //     windowDelay = true;
-                        // }
+                        if (!this.windowDelay)
+                        {
+                            this.delayTicks += 6;
+                            this.windowDelay = true;
+                        }
                     }
                     else
                     {

@@ -512,10 +512,9 @@
                         this.remainingCycles = this.TIME_VRAM;
 
                         // Reset the pixel clock, which is incremented in VRAM mode. We want to delay rendering by 2 m-cycles into this mode
-                        this.pixelClock = -8;
+                        this.pixelClock = -6;
 
                         // Calculate the initial delay
-                        // TODO: Also delay for window
                         this.delayTicks += this.ScrollX % 8;
                     }
                     else
@@ -527,10 +526,10 @@
                         // Render the sprite scanline starting in hblank.
                         this.RenderScanlineSprites();
 
-                        // We extended VBLANK to do rendering so we must steal from HBLANK.
-                        // TODO: Validate that this doesn't break too much
+                        // We extended VRAM to do rendering so we must steal from HBLANK.
                         this.remainingCycles -= this.totalDelay;
                         this.totalDelay = 0;
+                        this.windowDelay = false;
 
                         // TODO: We should also be able to start this if it started during hblank.
                         if (this.hdmaInProgress)
