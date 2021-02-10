@@ -380,8 +380,7 @@
                 return;
             }
 
-            long rawTicks = this.gb.Cpu.Ticks - this.oldCpuTicks;
-            this.gpuTicks = rawTicks >> 2;
+            this.gpuTicks = this.gb.Cpu.Ticks - this.oldCpuTicks;
             this.oldCpuTicks = this.gb.Cpu.Ticks;
 
             // Check for vblank interrupt on the first GPU tick function call after entering it
@@ -391,37 +390,35 @@
                 this.vblankInterruptFired = true;
             }
 
-            // TODO: Sprite-based delays won't be considered here since we're not rendering sprites pixel-by-pixel.
-            if (this.mode == GPUMode.VRAM)
-            {
-                long speedAdjustedTicks = rawTicks >> (this.gb.Cpu.fSpeed ? 1 : 0);
-
-                for (int i = 0; i < speedAdjustedTicks; i++)
-                {
-                    // TODO: Something about this is causing the scanline to not finish rendering in the Pokemon Yellow intro
-                    if (this.delayTicks <= 0)
-                    {
-                        // TODO: Why does stuff break if this is not in chunks of 4? 1 and 8 both break stuff.
-                        if (this.pixelClock % 4 == 0 && this.pixelClock >= 0 && this.pixelClock <= 156)
-                        {
-                            this.RenderScanlineTiles(this.pixelClock, this.pixelClock + 4);
-                        }
-
-                        this.pixelClock++;
-                    }
-                    else
-                    {
-                        this.delayTicks--;
-                        int calculatedDelay = this.gb.Cpu.fSpeed ? 2 : 1;
-                        this.remainingCycles += calculatedDelay; // TODO: This might throw the GPU timing off since it works in chunks of 4 cycles. Fix that!
-                        this.totalDelay += calculatedDelay;
-                    }
-                }
-            }
-
             for (int i = 0; i < this.gpuTicks; i++)
             {
-                this.remainingCycles -= 4;
+                this.remainingCycles--;
+
+                // TODO: Sprite-based delays won't be considered here since we're not rendering sprites pixel-by-pixel.
+                // TODO: Move this bit into the below for loop so that we always get access to the full set of remaining cycles.
+                if (this.mode == GPUMode.VRAM)
+                {
+                    if (!this.gb.Cpu.fSpeed || this.remainingCycles % 2 == 0)
+                    {
+                        if (this.delayTicks <= 0)
+                        {
+                            // TODO: Why does stuff break if this is not in chunks of 4? 1 and 8 both break stuff.
+                            if (this.pixelClock % 4 == 0 && this.pixelClock >= 0 && this.pixelClock <= 156)
+                            {
+                                this.RenderScanlineTiles(this.pixelClock, this.pixelClock + 4);
+                            }
+
+                            this.pixelClock++;
+                        }
+                        else
+                        {
+                            this.delayTicks--;
+                            int calculatedDelay = this.gb.Cpu.fSpeed ? 2 : 1;
+                            this.remainingCycles += calculatedDelay; // TODO: Might need special handling if we run out of pixels we empty out delayTicks.
+                            this.totalDelay += calculatedDelay;
+                        }
+                    }
+                }
 
                 if (this.remainingCycles <= 0)
                 {
