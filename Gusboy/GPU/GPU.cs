@@ -22,7 +22,7 @@
         private readonly Func<bool> drawFramebuffer;
         private int[] palBgMap = new int[4];
         private byte lcdcStat = 0;
-        private GPUMode mode = GPUMode.HBLANK;
+        public GPUMode mode = GPUMode.HBLANK;
         private byte control = 0;
         private bool lcdWasOff = true; // LCD starts off
         private long gpuTicks = 0;
@@ -90,7 +90,7 @@
             this.BuildColourCache(this.gb.UseFilter);
         }
 
-        private enum GPUMode
+        public enum GPUMode
         {
             HBLANK = 0,
             VBLANK = 1,
@@ -355,7 +355,7 @@
             }
         }
 
-        // Always access when LCD power is off, but that forces mode 0 anyway. DMA period blocks access but the memory mapper handles that globally.
+        // Always access when LCD power is off, but that forces mode 0 anyway. DMA period blocks access but th e memory mapper handles that globally.
         // DMA itself gets to bypass the restriction, I think?
         // Disabled for now because my timing isn't accurate enough to enforce this properly.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -365,11 +365,21 @@
         // DMA itself gets to bypass the restriction, I think?
         // Disabled for now because my timing isn't accurate enough to enforce this properly.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool CanAccessVRAM(bool isDMA) => this.mode == GPUMode.HBLANK || this.mode == GPUMode.VBLANK || this.mode == GPUMode.OAM || isDMA;
+        public bool CanAccessVRAM(bool isDMA)
+        {
+            if ((this.mode == GPUMode.HBLANK || this.mode == GPUMode.VBLANK || this.mode == GPUMode.OAM || isDMA) == false)
+            {
+                Console.WriteLine($"Illegal VRAM access during mode {this.mode} with {this.remainingCycles} remaining cycles with pixel clock {this.pixelClock}. LCD is {this.LCDCFlag(LCDC.LCDPower)}");
+            }
+
+            return this.mode == GPUMode.HBLANK || this.mode == GPUMode.VBLANK || this.mode == GPUMode.OAM || isDMA;
+        }
 
         // This is just the same as the VRAM restriction for now.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool CanAccessCGBPal(bool isDMA) => this.CanAccessVRAM(isDMA) || true;
+        public bool CanAccessCGBPal(bool isDMA) => this.CanAccessVRAM(isDMA);
+
+        int debugTicks = 0;
 
         public void Tick()
         {
@@ -392,6 +402,7 @@
 
             for (int i = 0; i < this.gpuTicks; i++)
             {
+                this.debugTicks++;
                 this.remainingCycles--;
 
                 // TODO: Sprite-based delays won't be considered here since we're not rendering sprites pixel-by-pixel.
@@ -494,6 +505,10 @@
                         {
                             // End of the line, top of the screen OAM
                             this.mode = GPUMode.OAM;
+
+                            Console.WriteLine($"Changing mode to {this.mode} after {this.debugTicks} ticks.");
+                            this.debugTicks = 0;
+
                             this.remainingCycles = this.TIME_OAM;
                         }
                         else

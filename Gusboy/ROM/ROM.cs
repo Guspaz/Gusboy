@@ -10,7 +10,7 @@
     /// </summary>
     public partial class ROM
     {
-        private readonly Mapper mapper;
+        public readonly Mapper mapper;
 
         private readonly Gameboy gb;
         private byte[] biosFile;

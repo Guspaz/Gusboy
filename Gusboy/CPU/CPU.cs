@@ -1,4 +1,4 @@
-﻿// #define ENABLE_TRACING
+﻿//#define ENABLE_TRACING
 
 namespace Gusboy
 {
@@ -36,7 +36,7 @@ namespace Gusboy
         public void Tick()
         {
 #if ENABLE_TRACING
-                sw.Write($"A:{rA:X2} F:{(fZ ? "Z" : "-")}{(fN ? "N" : "-")}{(fH ? "H" : "-")}{(fC ? "C" : "-")} BC:{rBC:X4} DE:{rDE:x4} HL:{rHL:x4} SP:{(int)rSP:x4} M: {(int)this.gb.Gpu.mode} IME: {(fInterruptMasterEnable ? 1 : 0)} IF: {rInterruptFlags:X2} IE: {rInterruptEnable:X2} BNK: {(this.gb.Rom.mapper as MBC5).GetBank():X2} PC:{rPC:x4}");
+                sw.Write($"A:{rA:X2} F:{(fZ ? "Z" : "-")}{(fN ? "N" : "-")}{(fH ? "H" : "-")}{(fC ? "C" : "-")} BC:{rBC:X4} DE:{rDE:x4} HL:{rHL:x4} SP:{(int)rSP:x4} M: {(int)this.gb.Gpu.mode} IME: {(fInterruptMasterEnable ? 1 : 0)} IF: {rInterruptFlags:X2} IE: {rInterruptEnable:X2} PC:{rPC:x4}");
                 //sw.Write($"{ram.rom.bankNumber:X2} A:{rA:X2} F:{(fZ ? "Z" : "-")}{(fN ? "N" : "-")}{(fH ? "H" : "-")}{(fC ? "C" : "-")} BC:{rBC:X4} DE:{rDE:x4} HL:{rHL:x4} SP:{rSP:x4} PC:{rPC:x4} ");
 #endif
 
