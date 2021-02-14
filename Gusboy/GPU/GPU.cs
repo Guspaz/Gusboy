@@ -359,17 +359,17 @@
         // DMA itself gets to bypass the restriction, I think?
         // Disabled for now because my timing isn't accurate enough to enforce this properly.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool CanAccessOAM(bool isDMA) => this.mode == GPUMode.HBLANK || this.mode == GPUMode.VBLANK || isDMA;
+        public bool CanAccessOAM(bool isDMA) => true || this.mode == GPUMode.HBLANK || this.mode == GPUMode.VBLANK || isDMA;
 
         // Always access when LCD power is off, but that forces mode 0 anyway. DMA period blocks access but the memory mapper handles that globally.
         // DMA itself gets to bypass the restriction, I think?
         // Disabled for now because my timing isn't accurate enough to enforce this properly.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool CanAccessVRAM(bool isDMA) => this.mode == GPUMode.HBLANK || this.mode == GPUMode.VBLANK || this.mode == GPUMode.OAM || isDMA;
+        public bool CanAccessVRAM(bool isDMA) => true || this.mode == GPUMode.HBLANK || this.mode == GPUMode.VBLANK || this.mode == GPUMode.OAM || isDMA;
 
         // This is just the same as the VRAM restriction for now.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool CanAccessCGBPal(bool isDMA) => this.CanAccessVRAM(isDMA) || true;
+        public bool CanAccessCGBPal(bool isDMA) => true || this.CanAccessVRAM(isDMA);
 
         public void Tick()
         {
