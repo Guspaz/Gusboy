@@ -1,26 +1,42 @@
+![Latest Build](https://github.com/Guspaz/Gusboy/workflows/Latest%20Build/badge.svg)
 # Gusboy
 C# Gameboy Color emulator
 
-I created this emulator back in 2017, got it so a bunch of games I tried were playable, but stopped before implementing audio, because it seemed too hard. Now, years later, I've picked it up again, implemented audio (passes 8/12 dmg_sound) and Gameboy Color support, improved performance, dramatically improved accuracy, cleaned up the code a bunch, etc. It's hardly "production quality" levels of accuracy or polish (very very far from it), but most games run without obvious major glitches.
+Gusboy is a Gameboy Color emulator written in C# and targeting .NET 5.0. It plays most games without obvious issues, including those with things like hicolour effects. It's still a work-in-progress, and the design is something of a mess, as I had no idea what I was doing when I started.
 
-It's still a work-in-progress, and I had no idea what I was doing at the start, so the design is a huge mess, warped by troubleshooting things until they work. I've been cleaning up and refactoring, but it's still not great. The CPU in particular, I cringe at how I implemented it as hundreds of standalone functions, so much code instead of even just relying on reference parameters. The thing is, the CPU execution unit, as hilariously bloated as it is, seems to work perfectly (passes cpu_instrs and instr_timing) and isn't a performance bottleneck, so it's not worth rewriting at the moment.
+The primary front-end relies on SDL2 (and should theoretically be cross-platform), though a WinForms UI is available (but disabled in the build by default). The front-end interfaces with the emulator via a fairly thin API whereby audio and video are exposed via float and int32 buffers, input events are sent in via function calls, and a callback is used to let the front-end know when the emulator has hit vblank. It's left to the front-end to time the emulator execution: the SDL2 front-end uses a 32,768 audio sample rate to run the emulator at the right speed.
 
-GBS file support is in too, it will detect GBS files and use a custom mapper to play them (left/right controls which song plays). There is also a separate music player UI that can be used for GBS files.
+#### Features
 
-The UI depends on NAudio and WinForms, but the emulator itself should be platform-independent (a cross-platform OpenTK ui is in the works) It interfaces with the UI through a fairly thin API. Video is handled via an int32 framebuffer and a callback function to notify the application that the Gameboy has finished rendering a frame (it hit its vblank). Audio is handled by a float buffer that the application can consume as desired. Input is handled by KeyUp and KeyDown methods that the application can call. It's left up to the application to wire itself up to that and call the emulator's tick function in a loop.
-
-Speed control is left up to the application. You can either loop the emulator until it notifies you that a frame is ready, and then halt emulation until the next vsync, synchronizing to video, or you can drain the audio buffer at the same speed as playback, synchronizing to audio. The included UI does the latter, every time NAudio wants to read more audio data, the emulator is run until its internal audio buffer has enough data to satisfy NAudio's read request. You get smooth audio at the expense of frame pacing (which needs work even if we have audio sync).
+- Full sound and video emulation
+- DMG and CGB (colour) support
+- SDL2 front-end
+- Sub-scanline renderer (background tiles only)
+- SRAM/RTC save support
+- Plays most games without obvious issues
+- GBS support (press left/right to change tracks)
+- Supports MBC1/MBC3+RTC/MBC5/GBS mappers
+- CGB-on-CGB and DMG-on-DMG support
 
 #### TODOs/Wishlist
 
-In no particular order
+In random order:
 
-- Implement cross-platform UI in OpenTK (in progress)
+- Make emulator configurable via config file and commandline parameters
+  - Currently most things are compile-time options
+- Add support for 44-byte RTC save format
+- Implement more mappers
 - Improve GPU caching mechanism to be more granular
-- Implement real HDMA (currently faked as GDMA)
+  - Currently expires entire tile cache on any write to vram
+- Improve sub-scanline renderer to support both the Pocket demo and GBVideoPlayer2 simultaneously
+  - First-pixel offset of 6 clocks works for pocket demo, 8 clocks works for GBVideoPlayer2, timing must be off somewhere
+- Implement real HDMA
+  - Currently faked as a GDMA, which seems to cause few issues
+- Implement DMG-on-CGB mode
 - Simplify APU if possible
+  - The NR register implementation is quite verbose
 - Rewrite the CPU execution unit to not have a dedicated function for each and every opcode
   - Maybe a first attempt would use reference parameters for registers
-- Try to move more of the GPU code into the cache functions
 - In general, pass more tests
+  - Setting up a branch of the gameboy emulator shootout repo would help with this
 - Other general improvements, there's always more that can be done
