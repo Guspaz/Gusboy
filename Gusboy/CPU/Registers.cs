@@ -10,6 +10,8 @@
 
         // 8-bit registers
         private byte rA;
+        
+        // TODO: pop AF will set the non-settable nibble of this, fix that.
         private byte rF;
         private byte rB;
         private byte rC;
