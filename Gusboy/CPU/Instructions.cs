@@ -2284,9 +2284,7 @@
             }
 
             this.fZ = false;
-            this.fN &= true;
             this.fH = false;
-            this.fC &= true;
 
             if ((a & 0x100) != 0)
             {
