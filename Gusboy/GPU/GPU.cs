@@ -511,7 +511,7 @@
                         this.mode = GPUMode.VRAM;
                         this.remainingCycles = this.TIME_VRAM;
 
-                        // Reset the pixel clock, which is incremented in VRAM mode. We want to delay rendering by 2 m-cycles into this mode
+                        // Reset the pixel clock, which is incremented in VRAM mode.
                         this.pixelClock = -6;
 
                         // Calculate the initial delay

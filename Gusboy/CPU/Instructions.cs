@@ -2283,16 +2283,20 @@
                 }
             }
 
-            this.rF = (byte)(this.rF & ~(0x20 | 0x80));
+            this.fZ = false;
+            this.fN &= true;
+            this.fH = false;
+            this.fC &= true;
+
             if ((a & 0x100) != 0)
             {
-                this.rF |= 0x10;
+                this.fC = true;
             }
 
             a &= 0xFF;
             if (a == 0)
             {
-                this.rF |= 0x80;
+                this.fZ = true;
             }
 
             this.rA = (byte)a;

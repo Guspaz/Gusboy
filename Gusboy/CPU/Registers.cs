@@ -10,15 +10,18 @@
 
         // 8-bit registers
         private byte rA;
-        
-        // TODO: pop AF will set the non-settable nibble of this, fix that.
-        private byte rF;
         private byte rB;
         private byte rC;
         private byte rD;
         private byte rE;
         private byte rH;
         private byte rL;
+
+        // Flags
+        private bool fZ;
+        private bool fN;
+        private bool fH;
+        private bool fC;
 
         // Internal flags
         private bool fSpeedInternal;
@@ -50,12 +53,15 @@
         // 16-bit registers
         private ushort rAF
         {
-            get => (ushort)((this.rA << 8) | this.rF);
+            get => (ushort)((this.rA << 8) | (this.fZ ? 0b1000_0000 : 0) | (this.fN ? 0b0100_0000 : 0) | (this.fH ? 0b0010_0000 : 0) | (this.fC ? 0b0001_0000 : 0));
 
             set
             {
                 this.rA = (byte)(value >> 8);
-                this.rF = (byte)value;
+                this.fZ = (value & 0b1000_0000) != 0;
+                this.fN = (value & 0b0100_0000) != 0;
+                this.fH = (value & 0b0010_0000) != 0;
+                this.fC = (value & 0b0001_0000) != 0;
             }
         }
 
@@ -92,49 +98,10 @@
             }
         }
 
-        // Flags
-        private bool fZ
-        {
-            get => this.GetFlag(7);
-            set => this.SetFlag(value, 7);
-        }
-
-        private bool fN
-        {
-            get => this.GetFlag(6);
-            set => this.SetFlag(value, 6);
-        }
-
-        private bool fH
-        {
-            get => this.GetFlag(5);
-            set => this.SetFlag(value, 5);
-        }
-
-        private bool fC
-        {
-            get => this.GetFlag(4);
-            set => this.SetFlag(value, 4);
-        }
-
         public void InitGbs(byte rA, ushort rSP)
         {
             this.rA = rA;
             this.rSP = rSP;
-        }
-
-        private bool GetFlag(int i) => (this.rF & (1 << i)) != 0;
-
-        private void SetFlag(bool value, int i)
-        {
-            if (value)
-            {
-                this.rF |= (byte)(1 << i);
-            }
-            else
-            {
-                this.rF &= (byte)(~(1 << i));
-            }
         }
     }
 }
