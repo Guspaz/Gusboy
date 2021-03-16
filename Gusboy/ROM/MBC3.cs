@@ -151,7 +151,7 @@
                 value &= 0b0111_1111;
 
                 // MBC3 does not allow ROMB to be 0
-                this.rROMB = value == 0 ? 1 : value;
+                this.rROMB = (byte)(value == 0 ? 1 : value);
             }
             else if (address >= 0x4000 && address <= 0x5FFF)
             {

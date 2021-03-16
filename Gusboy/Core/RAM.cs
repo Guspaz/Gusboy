@@ -51,7 +51,7 @@
                         return this.Rom[i]; // Cartridge ROM
 
                     case >= 0x8000 and <= 0x9FFF:
-                        return this.Gpu.CanAccessVRAM(isDma) ? this.Vram[this.VramBank, i - 0x8000] : 0xFF;
+                        return (byte)(this.Gpu.CanAccessVRAM(isDma) ? this.Vram[this.VramBank, i - 0x8000] : 0xFF);
 
                     case >= 0xA000 and <= 0xBFFF:
                         return this.Rom[i]; // Cartridge RAM
@@ -94,7 +94,7 @@
                         return RAM.Unsupported(0x00); // SB (Serial data transfer)
 
                     case 0xFF02:
-                        return RAM.Unsupported(this.gb.IsCgb ? 0x7C : 0x7E); // SC (serial data transfer)
+                        return RAM.Unsupported((byte)(this.gb.IsCgb ? 0x7C : 0x7E)); // SC (serial data transfer)
 
                     case 0xFF03:
                         return RAM.Unsupported(0xFF); // Serial data transfer registers
@@ -190,7 +190,7 @@
                         return 0xFF; // Unused APU registers
 
                     case >= 0xFF30 and <= 0xFF3F:
-                        return this.Apu.WaveEnabled ? 0xFF : this.Apu.WaveTable[i - 0xFF30];
+                        return (byte)(this.Apu.WaveEnabled ? 0xFF : this.Apu.WaveTable[i - 0xFF30]);
 
                     case 0xFF40:
                         return this.Gpu.GetLCDC();
@@ -232,13 +232,13 @@
                         return RAM.Unsupported(0xFF);
 
                     case 0xFF4D:
-                        return this.gb.IsCgb ? (byte)(((this.Cpu.fSpeed ? 1 : 0) << 7) | (this.Cpu.fPrepareSwitch ? 1 : 0) | 0b0111_1110) : 0xFF;
+                        return (byte)(this.gb.IsCgb ? (byte)(((this.Cpu.fSpeed ? 1 : 0) << 7) | (this.Cpu.fPrepareSwitch ? 1 : 0) | 0b0111_1110) : 0xFF);
 
                     case 0xFF4E:
                         return RAM.Unsupported(0xFF);
 
                     case 0xFF4F:
-                        return this.gb.IsCgb ? (byte)(this.VramBank | 0x1111_1110) : 0xFF;
+                        return (byte)(this.gb.IsCgb ? (byte)(this.VramBank | 0x1111_1110) : 0xFF);
 
                     case >= 0xFF50 and <= 0xFF54:
                         return RAM.Unsupported(0xFF); // DMA stuff (is write-only)
@@ -297,13 +297,13 @@
                         }
 
                     case 0xFF6C:
-                        return !this.gb.IsCgb ? 0xFF : (this.Gpu.OAMPriorityMode ? 0 : 1); // NOTE: This is inverted to default to DMG mode.
+                        return (byte)(!this.gb.IsCgb ? 0xFF : (this.Gpu.OAMPriorityMode ? 0 : 1)); // NOTE: This is inverted to default to DMG mode.
 
                     case >= 0xFF6D and <= 0xFF6F:
                         return RAM.Unsupported(0xFF);
 
                     case 0xFF70:
-                        return this.gb.IsCgb ? (byte)(this.wramBank | 0x1111_1000) : 0xFF;
+                        return (byte)(this.gb.IsCgb ? (byte)(this.wramBank | 0x1111_1000) : 0xFF);
 
                     case >= 0xFF71 and <= 0xFF7F:
                         return RAM.Unsupported(0xFF); // Unsupported/unused (mostly CGB stuff)

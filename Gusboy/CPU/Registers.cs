@@ -37,7 +37,7 @@
             set
             {
                 this.fSpeedInternal = value;
-                this.fSpeedTimerMultiplier = this.fSpeed ? 1 : 2;
+                this.fSpeedTimerMultiplier = (uint)(this.fSpeed ? 1 : 2);
             }
         }
 

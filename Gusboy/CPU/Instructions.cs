@@ -2256,48 +2256,34 @@
 
         private int daa(int operand)
         {
-            int a = this.rA;
-
             if (!this.fN)
             {
-                if (this.fH || (a & 0x0F) > 9)
+                if (this.fC || this.rA > 0x99)
                 {
-                    a += 6;
+                    this.rA += 0x60;
+                    this.fC = true;
                 }
 
-                if (this.fC || a > 0x9F)
+                if (this.fH || (this.rA & 0x0F) > 0x09)
                 {
-                    a += 0x60;
+                    this.rA += 0x06;
                 }
             }
             else
             {
-                if (this.fH)
-                {
-                    a = (a - 6) & 0xFF;
-                }
-
                 if (this.fC)
                 {
-                    a -= 0x60;
+                    this.rA -= 0x60;
+                }
+
+                if (this.fH)
+                {
+                    this.rA -= 0x06;
                 }
             }
 
-            this.fZ = false;
+            this.fZ = this.rA == 0;
             this.fH = false;
-
-            if ((a & 0x100) != 0)
-            {
-                this.fC = true;
-            }
-
-            a &= 0xFF;
-            if (a == 0)
-            {
-                this.fZ = true;
-            }
-
-            this.rA = (byte)a;
 
             return 4;
         }

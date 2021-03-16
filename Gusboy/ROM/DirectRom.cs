@@ -9,7 +9,7 @@
         {
         }
 
-        public override byte Read(int address) => address <= 0x7FFF ? this.RomFile[address] : 0xFF;
+        public override byte Read(int address) => (byte)(address <= 0x7FFF ? this.RomFile[address] : 0xFF);
 
         public override void Write(int address, byte value)
         {

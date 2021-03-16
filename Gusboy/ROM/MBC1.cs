@@ -86,7 +86,7 @@
                 value &= 0b0001_1111;
 
                 // MBC1 does not allow BANK1 to be 0
-                value = value == 0 ? 1 : value;
+                value = (byte)(value == 0 ? 1 : value);
 
                 // MBC1M does additional masking
                 this.rBANK1 = this.isMBC1M ? (byte)(value & 0b0000_1111) : value;
