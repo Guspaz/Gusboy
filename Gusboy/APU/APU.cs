@@ -12,7 +12,7 @@
         private const int CPU_CLOCK = 4194304 / 4; // Convert to m-cycles
         private const int SUPERSAMPLE_MODULO = 2;
         private const double CAPACITOR_BASE_DMG = 0.999958;
-        private const double CAPACITOR_BASE_CGB = 0.999958; // Should be 0.998943 but that sounds very tinny
+        private const double CAPACITOR_BASE_CGB = 0.999943; // gbdev.gg8.se says it should be 0.998943 but that sounds very tinny
 
         private readonly Gameboy gb;
         private readonly SquareChannel channel1 = new SquareChannel();

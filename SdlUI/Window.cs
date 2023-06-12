@@ -41,8 +41,7 @@
         // The buffer the gameboy renders directly into
         private readonly int[] framebuffer = new int[160 * 144];
 
-        private readonly GCHandle framebufferHandle;
-        private readonly IntPtr framebufferSurface;
+        private readonly IntPtr renderTexture;
 
         private readonly List<float> frameTimes = new List<float>();
 
@@ -69,25 +68,19 @@
         {
             this.window = windowPointer;
             this.renderer = rendererPointer;
-            this.framebufferHandle = GCHandle.Alloc(this.framebuffer, GCHandleType.Pinned);
-            this.framebufferSurface = SDL.SDL_CreateRGBSurfaceWithFormatFrom(this.framebufferHandle.AddrOfPinnedObject(), 160, 144, 32, 4 * 160, SDL.SDL_PIXELFORMAT_ARGB8888);
+            this.renderTexture = SDL.SDL_CreateTexture(rendererPointer, SDL.SDL_PIXELFORMAT_ARGB8888, (int)SDL.SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING, 160, 144);
 
             _ = SDL.SDL_RenderSetLogicalSize(this.renderer, 160, 144);
             _ = SDL.SDL_RenderSetIntegerScale(this.renderer, SDL.SDL_bool.SDL_TRUE);
 
             // TODO: Get this from the emulator instead of hardcoding
-            Array.Fill(this.framebuffer, unchecked((int)0xffc6cba5));
+            _ = SDL.SDL_SetRenderDrawColor(this.renderer, 0xC6, 0xCB, 0xA5, 0xFF);
 
-            _ = SDL.SDL_SetRenderDrawColor(this.renderer, 0, 0, 0, 0xFF);
+            SDL.SDL_VERSION(out SDL.SDL_version version);
+            Console.WriteLine($"Using SDL {version.major}.{version.minor}.{version.patch}");
 
-            // SDL.SDL_VERSION(out SDL.SDL_version version);
-            // Console.WriteLine($"Using SDL {version.major}.{version.minor}.{version.patch}");
-        }
-
-        ~Window()
-        {
-            SDL.SDL_FreeSurface(this.framebufferSurface);
-            this.framebufferHandle.Free();
+            SDL.SDL_GetRendererInfo(rendererPointer, out SDL.SDL_RendererInfo info);
+            Console.WriteLine($"Renderer: {Marshal.PtrToStringAnsi(info.name)}");
         }
 
         public void Run()
@@ -107,10 +100,7 @@
                 this.HandleEvent();
 
                 _ = SDL.SDL_RenderClear(this.renderer);
-                var texture = SDL.SDL_CreateTextureFromSurface(this.renderer, this.framebufferSurface);
-                _ = SDL.SDL_RenderCopy(this.renderer, texture, IntPtr.Zero, IntPtr.Zero);
                 SDL.SDL_RenderPresent(this.renderer);
-                SDL.SDL_DestroyTexture(texture);
             }
 
             GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
@@ -258,19 +248,16 @@
                 this.frameTimes.Clear();
             }
 
-            _ = SDL.SDL_RenderClear(this.renderer);
-
             // Copy the framebuffer from the array to the GPU VRAM
-            var texture = SDL.SDL_CreateTextureFromSurface(this.renderer, this.framebufferSurface);
+            _ = SDL.SDL_LockTexture(this.renderTexture, IntPtr.Zero, out IntPtr pixels, out int pitch);
+            Marshal.Copy(this.framebuffer, 0, pixels, this.framebuffer.Length);
+            SDL.SDL_UnlockTexture(this.renderTexture);
 
             // Draw the texture to the screen (default source/destination will just fill the window/screen)
-            _ = SDL.SDL_RenderCopy(this.renderer, texture, IntPtr.Zero, IntPtr.Zero);
+            _ = SDL.SDL_RenderCopy(this.renderer, this.renderTexture, IntPtr.Zero, IntPtr.Zero);
 
             // Swap buffers (tell the GPU to display this frame)
             SDL.SDL_RenderPresent(this.renderer);
-
-            // We're done with the texture so ditch it
-            SDL.SDL_DestroyTexture(texture);
         }
 
         private float UpdateAudioBufferAverage(int newValue)

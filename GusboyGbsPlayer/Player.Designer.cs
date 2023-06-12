@@ -105,11 +105,11 @@ namespace GusboyGbsPlayer
             this.waveformPainter1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.waveformPainter1.BackColor = System.Drawing.Color.Black;
-            this.waveformPainter1.ForeColor = System.Drawing.Color.Green;
-            this.waveformPainter1.Location = new System.Drawing.Point(12, 85);
+            this.waveformPainter1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(198)))), ((int)(((byte)(203)))), ((int)(((byte)(165)))));
+            this.waveformPainter1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(74)))), ((int)(((byte)(81)))), ((int)(((byte)(57)))));
+            this.waveformPainter1.Location = new System.Drawing.Point(0, 85);
             this.waveformPainter1.Name = "waveformPainter1";
-            this.waveformPainter1.Size = new System.Drawing.Size(352, 75);
+            this.waveformPainter1.Size = new System.Drawing.Size(376, 75);
             this.waveformPainter1.TabIndex = 5;
             this.waveformPainter1.Text = "waveformPainter1";
             // 
